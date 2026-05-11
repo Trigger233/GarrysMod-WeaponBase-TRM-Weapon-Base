@@ -76,9 +76,12 @@ function SWEP:ChangeWeaponStats()
     end
     
     self:ApplyModelChanged()
-
-    self:SetClip1(self.Primary.ClipSize)
-    self:SetClip2(self.Secondary.ClipSize)
+    if self:Clip1() > self.Primary.ClipSize then
+        self:SetClip1(self.Primary.ClipSize)
+    end
+    if self:Clip2() > self.Secondary.ClipSize then
+        self:SetClip2(self.Secondary.ClipSize)
+    end
 
     self:SetSpread(self.Spread.Base)
     self:SetSpreadVertical(self.Spread.Vertical)
@@ -173,7 +176,24 @@ function SWEP:BuildViewModelData()
         if data then
             self.m_Attachment[Modelattachment.name] = data
             self.m_Attachment[Modelattachment.name].id = Modelattachment.id
+            self.m_Attachment[Modelattachment.name].Ent = vm
+
         end
+    end
+    
+
+    
+
+    for _Key , _model in pairs(self.AttachmentModels) do
+        local stat = _model
+        for _ ,att in pairs( _model:GetAttachments() ) do
+            local data = _model:GetAttachment(att.id)
+            self.m_Attachment[att.name] = data 
+            self.m_Attachment[att.name].id = att.id
+            self.m_Attachment[att.name].Ent = _model
+        end
+
+        
     end
     
     -- Bone 数据
@@ -186,16 +206,43 @@ function SWEP:BuildViewModelData()
         for i = 0, count - 1 do
             local name = vm:GetBoneName(i)
             local matrix = vm:GetBoneMatrix(i)
-            if matrix and name then
-                -- ✅ 先确保表存在
-                if not self.m_Bone[name] then
-                    self.m_Bone[name] = {}
-                end
+            if matrix and name  then
+                self.m_Bone[name] = {} 
                 self.m_Bone[name].Pos = matrix:GetTranslation()
                 self.m_Bone[name].Ang = matrix:GetAngles()
                 self.m_Bone[name].Id = i
+                self.m_Bone[name].Ent = vm
             end
         end
+    end
+
+    for _key , _Model in pairs(self.AttachmentModels) do
+        local count = _Model:GetBoneCount()
+        if  not count or  count <=0 then continue end
+        for j = 0 , count do
+            local name = _Model:GetBoneName(j)
+            local _Matrix = _Model:GetBoneMatrix(j)
+            if name and _Matrix  then
+                if not self.m_Bone[name] then self.m_Bone[name] = {} end
+                self.m_Bone[name].Pos = _Matrix:GetTranslation()
+                self.m_Bone[name].Ang = _Matrix:GetAngles()
+                self.m_Bone[name].Id = j
+                self.m_Bone[name].Ent = _Model
+            end
+        end
+
+
+    end
+
+
+
+
+
+
+    if CurTime() - (self.lastdebug or 0) > 10 and GetConVar("developer"):GetInt() == 1 then
+            PrintTable(self.m_Bone)
+            self.lastdebug  =CurTime()
+            --print(CurTime())
     end
 end
 
@@ -316,19 +363,20 @@ function SWEP:BuildCustomizedGun()
             end
 
             -- TFA 方式创建：SetNoDraw(true)，在 ViewModelDrawn 手动 DrawModel
+            local slotData = self.Attachments and self.Attachments[tonumber(slotKey)]
             local model = ClientsideModel(attData.Model, RENDERGROUP_VIEWMODEL)
+            local parent = vm
             model._attID = attID
             model._slotKey = slotKey
 
             model:SetNoDraw(true)
             model:SetNotSolid(true)
             model:SetMoveType(MOVETYPE_NONE)
-            model:SetOwner(vm)
+            model:SetOwner(parent)
 
-            local slotData = self.Attachments and self.Attachments[tonumber(slotKey)]
 
             if attData.Bonemerge == true then
-                model:SetParent(vm)
+                model:SetParent(parent)
                 model:AddEffects(EF_BONEMERGE)
                 model:AddEffects(EF_BONEMERGE_FASTCULL)
                 model:SetLocalPos(Vector(0, 0, 0))
@@ -341,12 +389,12 @@ function SWEP:BuildCustomizedGun()
                 if attData.Pos and isvector(attData.Pos) then usePos:Add(attData.Pos) end
                 if attData.Angles and isangle(attData.Angles) then useAng:Add(attData.Angles) end
 
-                local boneIdx = vm:LookupBone(useBone)
+                local boneIdx = parent:LookupBone(useBone)
                 if boneIdx and boneIdx > 0 then
-                    model:FollowBone(vm, boneIdx)
+                    model:FollowBone(parent, boneIdx)
                     model.m_Bone = boneIdx
                 end
-                model:SetParent(vm)
+                model:SetParent(parent)
                 model:SetLocalPos(usePos)
                 model:SetLocalAngles(useAng)
             end

@@ -15,14 +15,13 @@ function SWEP:Think()
         self:OwnerStatThink()
         self:DoCameraRecoil()
         self:Recover()
-
+        self:UpdatePoseParameters()
     end
 
     --self:IconThink()
 end
 
 function SWEP:AttachmentsThink()
-
 end
 
 function SWEP:bDownThink()

@@ -408,6 +408,7 @@ function SWEP:ViewModelDrawn(vm)
             end
         end
     end
+    
 end
 
 function SWEP:PreDrawViewModel()

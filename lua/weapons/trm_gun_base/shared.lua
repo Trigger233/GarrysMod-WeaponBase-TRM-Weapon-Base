@@ -571,11 +571,11 @@ hook.Add("PlayerPostThink","PoseParameterControl",function(ply)
     if not util.IsTRMBase(weapon)  then 
     return end
         
-    if weapon.PoseParameter then
-		weapon:PoseParameter()
-	end
+    -- if weapon.PoseParameter then
+	-- 	weapon:PoseParameter()
+	-- end
     weapon:Sprint()
-    weapon:UpdatePoseParameters()
+    -- weapon:UpdatePoseParameters()
 end)
 
  

@@ -3,7 +3,7 @@
 -- =============================================
 
 function SWEP:UpdatePoseParameters()
-    if CLIENT and not IsFirstTimePredicted() then return end
+    if SERVER  then return end
     local vm = self:GetViewModel()
     if not IsValid(vm) then return end
 
@@ -12,7 +12,7 @@ function SWEP:UpdatePoseParameters()
     local speed = IsValid(owner) and owner:GetVelocity():Length2D() or 0
     local runSpeed = IsValid(owner) and owner:GetRunSpeed() or 1
     local walkSpeed = IsValid(owner) and owner:GetWalkSpeed() or 1
-    local dt = engine.TickInterval() * 10
+    local dt = engine.TickInterval() * 2
     -- Aim Pose
     if self.Sight and self.Sight.PoseParameter then
         self.m_AimPose = Lerp(  dt * 20, self.m_AimPose or 0, self:GetAimDelta()) or 0

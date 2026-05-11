@@ -8,4 +8,7 @@ function trm_weapon_base_util.IsDucking(ply)
     local height = ply:EyePos().z - ply:GetPos().z
     return height <= 32 or ply:KeyDown(IN_DUCK)
 end
- 
+
+if CLIENT then
+  
+end

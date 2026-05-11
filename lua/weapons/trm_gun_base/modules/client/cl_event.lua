@@ -26,13 +26,15 @@ function SWEP:DoMuzzleEffect()
     local vm = self:GetViewModel()
 
     effect:SetColor(255,255,255,255)
-    effect:SetAttachment(att.id)
-    effect:SetOrigin(att.Pos)
-    effect:SetAngles(att.Ang)
-    effect:SetEntity(vm) 
+    effect:SetAttachment(   att.id  )
+    effect:SetOrigin(   att.Pos )
+    effect:SetAngles(   att.Ang )
+    effect:SetEntity(   att.Ent ) 
     effect:SetScale(1)
     effect:SetFlags(2)
-    
+
+    --print(att.id)
+
     util.Effect(self.Effects.Muzzle.effect,effect)
 end
 
