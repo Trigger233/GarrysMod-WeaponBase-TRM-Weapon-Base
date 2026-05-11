@@ -1,0 +1,477 @@
+﻿if  SERVER then return end
+
+function SWEP:CustomBob()
+    if not CLIENT then 
+        return 
+    end
+    
+    local owner = self:GetOwner()
+    if not IsValid(owner)  then
+        return Vector(0, 0, 0), Angle(0, 0, 0)
+    end
+    
+    local speed = owner:GetVelocity():Length2D()
+    
+    -- 移动时累积，停止时衰减
+    if speed > 10  then
+        self.Bob_t = (self.Bob_t or 0) + RealFrameTime() * speed * 0.05
+        -- 不限制范围，让 sin 自然循环
+    else
+        self.Bob_t = (self.Bob_t or 0) * 0.95  -- 停止时归零
+    end
+    
+    local t = math.sin(self.Bob_t) * (speed / 300)
+    local mult = math.min(speed / 300, 1) 
+    -- 位置偏移
+    local pos = Vector(
+        math.sin(self.Bob_t) * -0.9 * mult,      -- 左右
+        math.cos(self.Bob_t * 1.5) * 0.5 * mult,  -- 前后
+        math.abs(math.sin(self.Bob_t)) * 0.25 * mult  -- 上下
+    )
+    
+    -- 角度偏移
+    local ang = Angle(
+        math.sin(self.Bob_t * 2) * 1.5 * mult,   -- Pitch
+        math.sin(self.Bob_t) * 1 * mult,          -- Yaw
+        math.sin(self.Bob_t * 1.5) * 2 * mult   -- Roll
+    )
+    
+    return pos, ang
+end
+
+function SWEP:Sway()
+    if not CLIENT then 
+        return Angle(0,0,0), Vector(0,0,0)
+    end
+    
+    -- 非预测帧：直接返回当前值（不更新，但不抖）
+    if not IsFirstTimePredicted() and SERVER then
+        -- 确保有值
+        if not self.m_SwayAngle then
+            self.m_SwayAngle = Angle(0,0,0)
+            self.m_SwayPos = Vector(0,0,0)
+        end
+        return self.m_SwayAngle, self.m_SwayPos
+    end
+    
+    -- 以下只在预测帧执行
+    local angles = self:GetOwner():EyeAngles()
+    if not self.m_LastViewModelAngle then
+        self.m_LastViewModelAngle = angles
+        self.m_SwayAngle = Angle(0, 0, 0)
+        self.m_SwayPos = Vector(0, 0, 0)
+        return Angle(0, 0, 0), Vector(0, 0, 0)
+    end
+    
+    local ft = math.min(RealFrameTime(), 0.033)  -- 限制最大帧间隔
+    
+    local dx = -math.AngleDifference(angles.yaw, self.m_LastViewModelAngle.yaw)
+    local dy = math.AngleDifference(angles.pitch, self.m_LastViewModelAngle.pitch)
+    self.m_LastViewModelAngle = angles
+    
+    -- 限制差值（重要！网络延迟会导致突变）
+    
+    dx = math.Clamp(dx, -10, 10)
+    dy = math.Clamp(dy, -10, 10)
+    
+    local maxSway = 10
+    local force = 0.1
+    local smooth = 15  -- 稍微降低，减少抖动
+    
+    self.m_SwayAngle.yaw = math.Clamp(self.m_SwayAngle.yaw - dx * force, -maxSway, maxSway)
+    self.m_SwayAngle.pitch = math.Clamp(self.m_SwayAngle.pitch - dy * force, -maxSway, maxSway)
+    
+    -- 归位
+    self.m_SwayAngle.yaw = Lerp(ft * smooth, self.m_SwayAngle.yaw, 0)
+    self.m_SwayAngle.pitch = Lerp(ft * smooth, self.m_SwayAngle.pitch, 0)
+    
+    -- 位置派生
+    local posSway = Vector(0, 0, 0)
+    posSway.x = self.m_SwayAngle.yaw * -1
+    posSway.y = math.abs(self.m_SwayAngle.yaw) * -0.5
+    posSway.z = -self.m_SwayAngle.pitch * 0.5
+    
+    -- 存到 self 供非预测帧返回
+    self.m_SwayPos = posSway
+    
+    return self.m_SwayAngle, posSway
+end
+
+function SWEP:GetClientAimDelta()
+    if not CLIENT then
+        return self:GetAimDelta()
+    end
+    
+    local target = self:GetAimDelta() or 0
+    local smoothSpeed = 25  -- 平滑速度，越大越快
+    
+    self.m_SmoothAimDelta = self.m_SmoothAimDelta or 0
+    self.m_SmoothAimDelta = Lerp(FrameTime() * smoothSpeed, self.m_SmoothAimDelta, target)
+    
+    -- 接近时直接归位避免残留
+    if math.abs(self.m_SmoothAimDelta - target) < 0.01 then
+        self.m_SmoothAimDelta = target
+    end
+    
+    return self.m_SmoothAimDelta
+end
+
+function SWEP:GetClientVisualRecoil()
+    if SERVER then return end
+    local source = self:GetVisualRecoil()
+    if not self.m_Client_VisualRecoil then
+        self.m_Client_VisualRecoil = source
+    end
+    self.m_Client_VisualRecoil = LerpAngle( RealFrameTime() * 10 , self.m_Client_VisualRecoil , source )
+
+    return self.m_Client_VisualRecoil
+end
+
+function SWEP:GetDucking()
+    local owner = self:GetOwner()
+    self.m_DuckDelta = self.m_DuckDelta or 0
+    if IsValid(owner) then
+        local target = ( trm_weapon_base_util.IsDucking(owner) and owner:OnGround() ) and 1 or 0
+        self.m_DuckDelta = Lerp(FrameTime() * 10, self.m_DuckDelta, target)
+    else
+        self.m_DuckDelta = 0
+    end
+    return self.m_DuckDelta
+end
+
+
+
+
+
+function SWEP:TranslateFOV(fov)
+    local aimDelta = self:GetAimDelta() or 0
+    local normalFOV = GetConVar("fov_desired"):GetInt() 
+    local aimFOV = normalFOV / self.Aim.Scale  -- 建议 55-65 之间
+    -- if self:IsReloading() then aimFOV = normalFOV  end
+    -- 使用平滑曲线，让过渡更自然
+    local easedDelta = math.pow(aimDelta,2)  
+    local FOV = Lerp(easedDelta, normalFOV, aimFOV)
+    self.m_MouseSensitivity = Lerp(easedDelta, 1, 1 /self.Aim.Scale )
+    return FOV
+end
+
+
+local cvar_camera = CreateClientConVar("trmbase_camera_animation_scale",1.0)
+
+function SWEP:CalcView(ply, pos, angles, fov)
+    local vm = self:GetViewModel(0)
+    if not IsValid(vm) then return pos, angles, fov end
+    
+    -- 不需要相机跟随的动画
+    local ignoreAnims = {"Fire", "Idle"}
+    local currentSeq = self.m_CurrentSequence or self:GetPlayingSequence() or ""
+    
+    for _, anim in ipairs(ignoreAnims) do
+        if string.find(currentSeq, anim) then
+            return pos, angles, fov
+        end
+    end
+    
+    local attachmentID = vm:LookupAttachment(self.CameraAttachment)
+    if not attachmentID or attachmentID <= 0 then
+        
+        return pos, angles, fov end
+    
+    local attachment = vm:GetAttachment(attachmentID)
+    if not attachment then return pos, angles, fov end
+    if self.CameraOffset then
+        angles:Add(self.CameraOffset)
+    end
+
+    local localAng = vm:WorldToLocalAngles(attachment.Ang)  
+    local mul = cvar_camera:GetFloat() 
+    if self.CameraReserve == true then 
+        localAng:Mul(-1) 
+    end
+    localAng:Mul(mul)
+    angles:Add(localAng)
+
+    return pos, angles, fov
+end
+
+local CachePos = Vector(0,0,0)
+local CacheAngle =  Angle(0,0,0)
+
+local AimOffset , AimOffsetAngle
+
+function SWEP:CalcViewModelView(vm ,pos , angles , poss , angless )
+    if SERVER then return end
+
+
+    local aimdelta = self:GetClientAimDelta()
+    --Idle Offset
+    if not self.m_IdleDelta then self.m_IdleDelta = 1 end
+    self.m_IdleDelta = Lerp(    RealFrameTime() * 10 , self.m_IdleDelta or 0 , self:IsInspecting() and 0 or 1 ) * (1 -aimdelta)
+    CachePos = (self.VMOffset.Idle.Pos.x*angles:Right() + self.VMOffset.Idle.Pos.y*angles:Forward() - self.VMOffset.Idle.Pos.z*angles:Up()) * self.m_IdleDelta
+    CacheAngle = self.VMOffset.Idle.Ang  *  self.m_IdleDelta 
+
+    pos:Add(CachePos)
+    angles:Add(CacheAngle)
+    --Sway 
+    CacheAngle , CachePos  = self:Sway()
+    local  Pos = -Vector( angles:Right() * CachePos.x , angles:Forward() * CachePos.y , angles:Up() * CachePos.z   )  * Lerp(aimdelta ,1 , 0.2 )
+    pos:Add(Pos)
+    angles:Add(CacheAngle* Lerp(aimdelta ,1 , 0.2 ))
+    --Bob
+    local BobPos , BobAngle = self:CustomBob()
+    local ApplyBobPos = Vector( angles:Right() * BobPos.x , angles:Forward() * BobPos.y , angles:Up() * BobPos.z   ) * ( 1 - aimdelta )
+    BobAngle:Mul(1 - aimdelta )
+    pos:Add(ApplyBobPos)
+    angles:Add(BobAngle)
+    --Duck Pose
+    local DuckDelta = (1 - aimdelta) * self:GetDucking()
+    local DuckPos = (angles:Right() * self.VMOffset.Crouch.Pos.x +  
+                 angles:Forward() * self.VMOffset.Crouch.Pos.y + 
+                 angles:Up() * self.VMOffset.Crouch.Pos.z) * DuckDelta    
+    local DuckAngle = self.VMOffset.Crouch.Ang * DuckDelta
+    pos:Add(DuckPos)
+    angles:Add(DuckAngle)
+    --Sprint Pose
+
+    local sprintDelta = self:GetSprintDelta()
+    local sprintPos = (angles:Right() * self.VMOffset.Sprint.Pos.x +  
+    angles:Forward() * self.VMOffset.Sprint.Pos.y + 
+    angles:Up() * self.VMOffset.Sprint.Pos.z) * sprintDelta    
+    local sprintAngle = self.VMOffset.Sprint.Ang * sprintDelta
+
+    pos:Add(sprintPos)
+    angles:Add(sprintAngle)
+    -- Aim Pose（基础偏移用 VM 朝向）
+    AimOffset = self.Sight.Pos and Vector(self.Sight.Pos) or Vector(0,0,0)
+    AimOffsetAngle = self.Sight.Ang and Angle(self.Sight.Ang) or Angle(0,0,0)
+    local applyAimPos = (angles:Right() * AimOffset.x + angles:Forward() * AimOffset.y +  angles:Up() * AimOffset.z) * aimdelta
+    pos:Add(applyAimPos)
+    angles:Add(AimOffsetAngle * aimdelta)
+
+    -- 配件瞄具偏移（用骨骼自身 axis 变换，与 GenerateAimOffset 的 WorldToLocal 坐标空间一致）
+    if self:GetSight() then
+        local sight = self:GetSight()
+        local boneAng = sight.AimBoneAng or angles
+        local sightPos = (boneAng:Right() * sight.AimPos.x + boneAng:Forward() * sight.AimPos.y + boneAng:Up() * sight.AimPos.z) * aimdelta
+        pos:Add(sightPos)
+        local applyAng = sight.AimAng * aimdelta
+        angles:Add(applyAng)
+    end
+
+
+
+    --Visual Recoil（只有玩家持有时才应用）
+    if IsValid(self:GetOwner()) and self:GetOwner():IsPlayer() then
+        -- 后坐力后退（position）
+        self.m_VRecoilBack = Lerp(  RealFrameTime() * 20 , self.m_VRecoilBack or 0 ,  self:GetVisualRecoilBackward() or self.m_VRecoilBack) 
+        pos:Add(Vector(  -self.m_VRecoilBack * angles:Forward()  , -self.m_VRecoilBack * angles:Right()  , -self.m_VRecoilBack * angles:Up()  )  )
+
+        -- 后坐力角度偏移（pitch/yaw 让 viewmodel 上跳）
+        local visAng = self:GetClientVisualRecoil()
+       
+
+        angles:RotateAroundAxis(    angles:Right() , -visAng.p * 0.65 )
+        angles:RotateAroundAxis(    angles:Up() , visAng.y * 0.68 )
+        --angles:RotateAroundAxis(    angles:Forward() , visAng.y * -3 )
+
+
+        --angles:Add(self.m_VisualRecoilAngle)
+    end 
+
+
+    return pos , angles
+end
+
+
+
+function SWEP:ShouldDrawViewModel()
+    local owner = self:GetOwner()
+    if owner:InVehicle() then return false end
+
+    
+    return true
+end
+
+-- function SWEP:GetViewModelPosition(pos , angles )
+
+    --     -- 冻结模式：直接返回保存的值
+    --     if self.m_VMFrozen and self.m_VMFreezePos and self.m_VMFreezeAng then
+    --         return Vector(self.m_VMFreezePos), Angle(self.m_VMFreezeAng)
+    --     end
+    --     if not( CLIENT and self:GetOwner():IsPlayer() ) then return end
+        
+    --     if (not IsValid(self) || not IsValid(self:GetOwner())) then 
+    --         return false
+    --     end
+        
+    --     local delta =  self:GetSmoothAimDelta()
+    --     --Aim
+    --         local SightPos = self.Sight.Pos
+    --         local AimPos = (SightPos.x*angles:Right() + SightPos.y*angles:Forward() - SightPos.z*angles:Up()) * delta 
+    --         pos:Add(AimPos)
+    --         -- local AimAngle = self.Sight.Angles  * delta 
+    --         -- angles:Add(AimAngle)
+    --         if self:GetSight() != false  then
+    --            local SightOffset  = self:GetSight()
+    --            local add = (    SightOffset.x*angles:Right() + SightOffset.y*angles:Forward() - SightOffset.z*angles:Up()   ) * delta 
+    --            -- print(add)
+    --            add:Mul(delta)
+    --            pos:Add(add) 
+    --         end
+        
+    --         local sightAng = self:GetActiveSightAngle()
+    --         sightAng:Mul(-delta)
+    --         angles:Add(sightAng)
+    --     --Bobbing
+    --         local bobPos ,  BobAng = self:CustomBob(angles)
+    --         bobPos:Mul(1 - delta)
+    --         BobAng:Mul(1 - delta)
+    --         pos:Add(angles:Right() * bobPos.x)
+    --         pos:Add(angles:Forward() * bobPos.y)
+    --         pos:Add(angles:Up() * bobPos.z)
+        
+    --         angles:Add(BobAng)  -- 角度晃动
+    --         --pos:Add(bobPos)
+    --     --sway
+    --         local SwayAng , SwayPos = self:Sway()
+    --         SwayAng:Mul(1 - delta)
+    --         SwayPos:Mul(1 - delta)
+    --         angles:Add(SwayAng)
+
+    --         pos:Add(angles:Right() * -SwayPos.x )
+    --         pos:Add(angles:Forward() * SwayPos.y )
+    --         pos:Add(angles:Up() * SwayPos.z ) 
+    
+
+    --     --VisualRecoil
+    --         if not self.m_VRecoilBack then
+    --             self.m_VRecoilBack = 0 
+    --         end
+
+    --         self.m_VRecoilBack = Lerp(engine.TickInterval() * 0.5 , self.m_VRecoilBack ,  self:GetVisualRecoilBackward() or self.m_VRecoilBack) 
+            
+    --         pos:Add(Vector(  -self.m_VRecoilBack * angles:Forward()  , -self.m_VRecoilBack * angles:Right()  , -self.m_VRecoilBack * angles:Up()  )  ) 
+        
+
+    --     --Idle pos offset
+    --         local DPos = (self.VMOffset.Idle.Pos.x*angles:Right() + self.VMOffset.Idle.Pos.y*angles:Forward() - self.VMOffset.Idle.Pos.z*angles:Up()) * (1 - delta)
+    --         local DAngle = self.VMOffset.Idle.Ang  *( 1 -  delta )
+    --         pos:Add(DPos)
+    --         angles:Add(DAngle) 
+    
+    --     -- Sprint pos offset
+    --         local Sdelta = self:GetSprintDelta()
+    --         local SPos = (self.VMOffset.Sprint.Pos.x*angles:Right() + self.VMOffset.Sprint.Pos.y*angles:Forward() - self.VMOffset.Sprint.Pos.z*angles:Up()) * Sdelta
+    --         local SAngle = self.VMOffset.Sprint.Ang  * Sdelta    
+    --         pos:Add(SPos)
+    --         angles:Add(SAngle)
+
+    --     --duck pos offset
+    --         local delta = self:GetDucking() * (1 - self:GetSmoothAimDelta())
+    --         local DPos = (self.VMOffset.Crouch.Pos.x*angles:Right() + self.VMOffset.Crouch.Pos.y*angles:Forward() - self.VMOffset.Crouch.Pos.z*angles:Up()) * delta
+    --         local DAngle = self.VMOffset.Crouch.Ang  * delta
+    --         pos:Add(DPos)
+    --         angles:Add(DAngle)
+
+
+
+
+
+
+
+        
+    --         return pos , angles 
+-- end
+
+
+
+
+function SWEP:ViewModelDrawn(vm)
+    if not IsValid(vm) then return  end
+
+    -- TFA 风格：先刷新骨骼缓存
+    vm:InvalidateBoneCache()
+    vm:SetupBones()
+
+    self:BuildViewModelData()
+
+    self:BuildCustomizedGun()
+
+    -- 逐个调用配件的 Render（用 pcall 包住，防止激光等配件崩了卡死后面的瞄准镜）
+    for slot, att in pairs(self.CurrentAttachments) do
+        local data = BASE_TRM_ATTS[att]
+        local model = self.AttachmentModels[slot]
+        if data.Render and IsValid(model) then
+            local ok, err = pcall(data.Render, data, self, model)
+            if not ok then
+                -- 静默处理
+            end
+        end
+    end
+end
+
+function SWEP:PreDrawViewModel()
+end
+
+
+
+
+concommand.Add("trm_clear_test_model", function(ply)
+    local wep = ply:GetActiveWeapon()
+    if not IsValid(wep) then return end
+
+    if wep.test and IsValid(wep.test.m_model) then
+        wep.test.m_model:Remove()
+        wep.test.m_model = nil
+        print("测试模型已清除")
+    else
+        print("没有找到测试模型")
+    end
+end)
+
+-- =============================================
+-- 调试：冻结 viewmodel 位置/角度
+-- =============================================
+
+concommand.Add("trmbase_freeze_vm", function(ply, cmd, args)
+    local wep = ply:GetActiveWeapon()
+    if not IsValid(wep) or not util.IsTRMBase(wep) then
+        print("[TRMBase] 当前武器不是 TRM Base 武器")
+        return
+    end
+
+    wep.m_VMFrozen = not wep.m_VMFrozen
+
+    if wep.m_VMFrozen then
+        -- 记录当前 viewmodel 的位置和角度
+        local vm = wep:GetViewModel(0)
+        if IsValid(vm) then
+            wep.m_VMFreezePos = vm:GetPos()
+            wep.m_VMFreezeAng = vm:GetAngles()
+        end
+        print("[TRMBase] Viewmodel 已冻结")
+        print("  位置:", tostring(wep.m_VMFreezePos))
+        print("  角度:", tostring(wep.m_VMFreezeAng))
+        print("  再次执行 trmbase_freeze_vm 解冻")
+    else
+        print("[TRMBase] Viewmodel 已解冻")
+    end
+end)
+
+-- 打印当前 viewmodel 的位置/角度
+concommand.Add("trmbase_vm_info", function(ply)
+    local wep = ply:GetActiveWeapon()
+    if not IsValid(wep) or not util.IsTRMBase(wep) then return end
+
+    local vm = wep:GetViewModel(0)
+    if not IsValid(vm) then return end
+
+    print("========== Viewmodel Info ==========")
+    print("位置:", tostring(vm:GetPos()))
+    print("角度:", tostring(vm:GetAngles()))
+    print("冻结状态:", wep.m_VMFrozen and "是" or "否")
+    if wep.m_VMFrozen then
+        print("冻结位置:", tostring(wep.m_VMFreezePos))
+        print("冻结角度:", tostring(wep.m_VMFreezeAng))
+    end
+end)

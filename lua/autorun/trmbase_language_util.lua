@@ -1,0 +1,69 @@
+-- trmbase_language_util.lua
+if SERVER then
+    AddCSLuaFile()
+end
+if not CLIENT then return end
+
+TRMBase = TRMBase or {}
+TRMBase.Language = TRMBase.Language or {}
+
+-- 中文
+TRMBase.Language.cn = {
+    ["Optic"] = "瞄具",
+    ["Muzzle"] = "枪口",
+    ["Tactical"] = "战术配件",
+
+    -- VGUI
+    ["TRMBase_None"] = "无",
+    ["TRMBase_Customize"] = " - 自定义",
+    ["TRMBase_NoSlots"] = "此武器没有配件槽位",
+    ["TRMBase_CloseHint"] = "按 E 或 ESC 关闭",
+    ["TRMBase_SlotExcluded"] = "此槽位被已装备的配件排除",
+    ["TRMBase_Excluded"] = "已排除",
+
+    -- 属性面板
+    ["TRMBase_Stat_Damage"] = "伤害",
+    ["TRMBase_Stat_ClipSize"] = "弹匣容量",
+    ["TRMBase_Stat_RPM"] = "射速",
+    ["TRMBase_Stat_Spread"] = "散布",
+    ["TRMBase_Stat_AimSpeed"] = "开镜时间",
+    ["TRMBase_Stat_Recoil"] = "后坐力",
+}
+
+-- 英文
+TRMBase.Language.en = {
+    ["Optic"] = "Sight",
+    ["Muzzle"] = "Muzzle",
+    ["Tactical"] = "Tactical",
+
+    -- VGUI
+    ["TRMBase_None"] = "None",
+    ["TRMBase_Customize"] = " - Customize",
+    ["TRMBase_NoSlots"] = "This weapon has no attachment slots",
+    ["TRMBase_CloseHint"] = "Press E or ESC to close",
+    ["TRMBase_SlotExcluded"] = "This slot is excluded by equipped attachments",
+    ["TRMBase_Excluded"] = "Excluded",
+
+    -- 属性面板
+    ["TRMBase_Stat_Damage"] = "Damage",
+    ["TRMBase_Stat_ClipSize"] = "Clip Size",
+    ["TRMBase_Stat_RPM"] = "RPM",
+    ["TRMBase_Stat_Spread"] = "Spread",
+    ["TRMBase_Stat_AimSpeed"] = "Aim Time",
+    ["TRMBase_Stat_Recoil"] = "Recoil",
+}
+
+-- 获取当前语言
+function TRMBase.GetLanguage()
+    local lang = GetConVar("gmod_language"):GetString()
+    -- 兼容大小写
+    lang = string.lower(lang)
+    if lang == "zh-cn" or lang == "zh-tw" then
+        return TRMBase.Language.cn
+    end
+    return TRMBase.Language.en
+end
+
+for k, v in pairs(TRMBase.GetLanguage()) do
+    language.Add(k, v)
+end
