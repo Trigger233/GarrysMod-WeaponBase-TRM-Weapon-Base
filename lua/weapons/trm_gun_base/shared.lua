@@ -459,12 +459,7 @@ function SWEP:Deploy()
     self:SetCurrentTask("Deploy")
     self:PrepareViewModel()
 
-    -- 服务端同步配件给客户端
-    if SERVER then
-        -- 先加载保存的配件配置
-        self:LoadAttachmentPreset()
-        self:SyncAllAttachments()
-    end
+
 end
 
 function SWEP:OnDrop(owner)
@@ -557,7 +552,7 @@ function SWEP:Reload()
 end
 
 function SWEP:GetViewModel(index)
-    return self:GetOwner():GetViewModel(index || 0)
+    return  self:GetOwner() and self:GetOwner():GetViewModel(index || 0) or false 
 end
 
 function SWEP:IsEmpty()
@@ -619,6 +614,13 @@ end
 
 function SWEP:Equip()
     self:SetFirstDeployed(true)
+
+        -- 服务端同步配件给客户端
+    if SERVER then
+        -- 先加载保存的配件配置
+        self:LoadAttachmentPreset()
+        self:SyncAllAttachments()
+    end
 end
 
 function SWEP:FireAnimationEvent(pos,ang,event,option,source)

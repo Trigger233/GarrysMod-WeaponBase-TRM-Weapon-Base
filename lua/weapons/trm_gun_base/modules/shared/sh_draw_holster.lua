@@ -33,6 +33,15 @@ function SWEP:Holster(weapon)
             end
             self.TpAttachmentModels = {}
         end
+        if self.AttachmentModels then
+            for _, model in pairs(self.AttachmentModels) do
+                if IsValid(model) then
+                    model:Remove()
+                end
+            end
+            self.AttachmentModels = {}
+        end
+        
     end
 
 

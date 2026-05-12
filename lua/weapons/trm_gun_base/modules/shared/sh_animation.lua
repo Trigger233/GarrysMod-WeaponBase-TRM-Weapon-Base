@@ -36,7 +36,7 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration )
     vm:SetPlaybackRate(speed)
 
     if  useInternalDuration then
-        local nexttime = currentLength *  (animData.Length or 1 )*  duration  / speed
+        local nexttime = (animData.RealLength or currentLength )*  (  animData.Length or 1 )*  duration  / speed
         self:SetNextAnimationTime( CurTime() + nexttime )
         self:SetNextFireTime(  nexttime )
     end

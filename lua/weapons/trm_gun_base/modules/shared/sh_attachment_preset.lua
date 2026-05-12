@@ -58,17 +58,15 @@ end
 --- 从 JSON 加载配件配置并应用到武器
 function SWEP:LoadAttachmentPreset()
     if not SERVER then return end
+    self:EquipDefaultAttachments()
 
     local class = self:GetClass()
     if not class or class == "" then return end
 
     local path = PRESET_ROOT .. class .. "/save.json"
 
-    -- 没有保存过的配置 → 尝试装默认配件
-    if not file.Exists(path, "DATA") then
-        self:EquipDefaultAttachments()
-        return
-    end
+    
+   
 
     local json = file.Read(path, "DATA")
     if not json or json == "" then return end

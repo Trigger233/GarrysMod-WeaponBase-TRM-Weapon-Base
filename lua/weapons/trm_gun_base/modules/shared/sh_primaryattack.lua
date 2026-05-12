@@ -1,4 +1,3 @@
-
 function SWEP:CanPrimaryFire()
 	-- local seq =	self:GetPlayingSequence()
 	if self.BoltAction and self.Animations.Rechamber and self:GetChamberAmmo() <= 0 and not self:IsEmpty() and self:GetNextPrimaryFire() <= CurTime( ) then

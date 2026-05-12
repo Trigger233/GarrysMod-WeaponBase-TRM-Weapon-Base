@@ -23,7 +23,7 @@ function SWEP:DoMuzzleEffect()
    
     local effect = EffectData()
     local att = self:GetAttachmentData(self.Effects.Muzzle.attachment)
-    PrintTable(att )
+    --PrintTable(att )
     local vm = self:GetViewModel()
 
     effect:SetColor(255,255,255,255) 
@@ -38,15 +38,16 @@ function SWEP:DoMuzzleEffect()
 
     util.Effect(self.Effects.Muzzle.effect,effect)
     
-    local light = DynamicLight(self:EntIndex() ) 
-	light.Pos = att.Pos
-	light.r = 255
-	light.g = 255
-	light.b = 255
-	light.brightness = 150
-	light.decay = 1000
-	light.Size = 256
-	light.Style = 0
+	local dlight = DynamicLight(    self:EntIndex() )
+
+	dlight.Pos = att.Pos
+	dlight.r = 255
+	dlight.g = 255
+	dlight.b = 255
+	dlight.brightness = 5000
+	dlight.decay = 1000
+	dlight.Size = 256
+	dlight.Style = 0
    
 end
 

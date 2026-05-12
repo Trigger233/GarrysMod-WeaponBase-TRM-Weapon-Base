@@ -6,6 +6,8 @@ function SWEP:Task_Reload(cycle)
         self:SingleReload()
     end
 end
+local cvar_firebreakreload = CreateConVar("trmbase_fire_interupt_reload",0)
+
 function SWEP:MagzineReload()
     local Empty = self:Clip1() == 0 and true or false
 	self:SetNextAnimationTime(0)
@@ -16,6 +18,10 @@ function SWEP:MagzineReload()
         self:PlayAnimation("Reload" ,true , 0.5 )
     end
     self:SetCurrentTask("Finished")
+	if cvar_firebreakreload:GetInt() >= 1 then
+		self:SetNextFireTime(60/self.Primary.RPM) 
+		self:SetNextAnimationTime(0)
+	end
     
 end
 

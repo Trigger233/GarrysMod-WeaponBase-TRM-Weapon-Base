@@ -44,7 +44,7 @@ function ATTACHMENT:RenderReticle(weapon, model)
     
     -- 写入遮罩区域
     model:DrawModel()
-    render.SetStencilCompareFunction(STENCIL_EQUAL)
+    render.SetStencilCompareFunction(STENCIL_LESSEQUAL)
     
     -- 渲染红点
     local size = (ret.Size or 512) * 0.01

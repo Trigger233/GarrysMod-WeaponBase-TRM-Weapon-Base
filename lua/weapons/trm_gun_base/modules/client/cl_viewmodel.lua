@@ -40,7 +40,7 @@ function SWEP:CustomBob()
 end
 
 function SWEP:Sway()
-    if not CLIENT then 
+    if not CLIENT or not self:GetOwner() and not  self:GetOwner():IsPlayer() then 
         return Angle(0,0,0), Vector(0,0,0)
     end
     
@@ -304,7 +304,7 @@ function SWEP:ViewModelDrawn(vm)
     vm:InvalidateBoneCache()
     vm:SetupBones()
 
-    self:BuildViewModelData()
+    
 
     self:BuildCustomizedGun()
 
@@ -323,6 +323,7 @@ function SWEP:ViewModelDrawn(vm)
 end
 
 function SWEP:PreDrawViewModel()
+    self:BuildViewModelData()
 end
 
 

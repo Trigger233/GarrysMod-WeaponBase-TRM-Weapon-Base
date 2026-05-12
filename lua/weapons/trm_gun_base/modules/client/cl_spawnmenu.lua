@@ -5,6 +5,7 @@ hook.Add("PopulateToolMenu","TRM_weapon_base_q_menu",function()
         panel:ClearControls()
         panel:CheckBox("Infinite reserve Ammo","trmbase_infinite_ammo")
         panel:CheckBox("Auto Reload","trmbase_autoreload")
+        panel:CheckBox("FireInteruptReload","trmbase_fire_interupt_reload")
 
         
     end)

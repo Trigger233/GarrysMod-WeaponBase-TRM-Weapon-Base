@@ -83,7 +83,7 @@ function SWEP:DealMeleeDamage()
 
 	if IsValid(phys) then
 		if ent:IsPlayer() or ent:IsNPC() then
-			ent:SetVelocity(av * damage * 0.5)
+			ent:SetVelocity(owner:GetAimVector() * damage * 0.5)
 			phys:SetVelocity(phys:GetVelocity() + forward * damage * 0.5)
 		else
 			phys:ApplyForceOffset(forward * damage * 0.5, tr.HitPos)
