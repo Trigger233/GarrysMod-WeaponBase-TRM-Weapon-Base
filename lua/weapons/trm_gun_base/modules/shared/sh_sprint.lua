@@ -10,7 +10,7 @@ function SWEP:CanSprint()
     --     return false
     -- end
 
-    if  string.find(seq,"Reload") or string.find(task,"Reload")  or string.find(task,"Deploy") then
+    if  string.find(seq,"Reload") or string.find(task,"Reload")  or string.find(task,"Deploy")  then
         return false
     end
 
@@ -43,7 +43,7 @@ function SWEP:Task_Sprint(cycle)
         self:PlayAnimation("Idle" ,true)
     end
     
-    if self:GetOwner():KeyDown(IN_SPEED) == false then
+    if self:GetOwner():KeyDown(IN_SPEED) == false or not self:GetOwner():OnGround() then
         self:SetCurrentTask("SprintOut")
     end
     
@@ -60,7 +60,7 @@ function SWEP:Task_SprintOut(cycle)
         self:PlayAnimation("SprintOut",true)
     else
         self:Task_Idle()
-        self:SetNextFireTime(0.25)
+        self:SetNextFireTime(0.5)
     end
     self:SetCurrentTask("Finished")
     
@@ -77,7 +77,7 @@ function SWEP:Sprint()
         return
     end
     
-    if self:GetOwner():KeyDown(IN_SPEED) and self:CanSprint() and radio > 0.8  then 
+    if self:GetOwner():KeyDown(IN_SPEED) and self:CanSprint() and radio > 0.8 and self:GetOwner():OnGround() then 
         self:SetCurrentTask("SprintIn")
     end
 end

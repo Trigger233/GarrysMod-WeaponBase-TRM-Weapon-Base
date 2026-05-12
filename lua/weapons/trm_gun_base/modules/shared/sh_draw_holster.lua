@@ -19,6 +19,11 @@ function SWEP:Holster(weapon)
     -- 收起武器时清理第三人称配件模型（否则换武器后模型仍显示）
     -- 设重建标记，下次 Deploy 时触发 BuildCustomizedGun
     if CLIENT then
+            if IsValid(TRM_AttachMenu_Instance) then
+                TRM_AttachMenu_Instance:Close()
+            end
+            
+        
         self.m_NeedsBuild = true
         if self.TpAttachmentModels then
             for _, model in pairs(self.TpAttachmentModels) do

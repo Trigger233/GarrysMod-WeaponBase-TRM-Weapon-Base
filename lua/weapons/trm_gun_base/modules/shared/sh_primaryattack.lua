@@ -90,7 +90,7 @@ function SWEP:FirePrimaryBullet()
         Dir = aimDir,
         Distance = self.Primary.Range,
         Spread = spread ,
-        Tracer = 1,
+        Tracer = 0,
         Force = self.Primary.Force  ,
         Damage = self.Primary.Damage * self.Primary.NumBullets,
         AmmoType = self.Primary.Ammo ,
@@ -128,48 +128,20 @@ function SWEP:FirePrimaryBullet()
 end
 
 function SWEP:DoImpactEffect(tr,dmgType)
+	self:ImpactEffects(tr,dmgType)
 	return false 
 end
 
 function SWEP:ImpactEffects(tr,type)
-	if IsValid(tr.Entity) && tr.Entity.TakeDamageInfo then
 		
-		if not self.CurrentAttachments then
-			self.CurrentAttachments = {}
-		end
-		for slot , attClass in pairs(self.CurrentAttachments) do 
-			if BASE_TRM_ATTS[attClass].DoImpactEffect then
-				BASE_TRM_ATTS[attClass]:DoImpactEffect(ty,type)    
-			end    
-		end
-		
-		
-		
-		
-		
-		local bloodColor = tr.Entity:GetBloodColor()
-		if bloodColor && bloodColor >= 0 then
-			local blood = EffectData()
-			blood:SetColor(bloodColor)
-			blood:SetNormal(tr.Normal)
-			blood:SetOrigin(tr.HitPos)
-			blood:SetScale(1)
-			util.Effect("BloodImpact", blood)
-		end
-	else
-		local impact = EffectData()
-		impact:SetOrigin(tr.HitPos)
-		impact:SetStart(tr.StartPos)
-		impact:SetSurfaceProp(tr.SurfaceProps)
-		impact:SetEntity(tr.Entity)
-		impact:SetHitBox(tr.HitBoxBone || 0 )
-		impact:SetDamageType(DMG_CLUB)
-		util.Effect("Impact", impact)
-	end 
-
-
-
-	return true
+	if not self.CurrentAttachments then
+		self.CurrentAttachments = {}
+	end
+	for slot , attClass in pairs(self.CurrentAttachments) do 
+		if BASE_TRM_ATTS[attClass].DoImpactEffect then
+			BASE_TRM_ATTS[attClass]:DoImpactEffect(ty,type)    
+		end    
+	end
 end 
 
 
@@ -179,7 +151,7 @@ function SWEP:SetNextFireTime(t)
 end
 
 function SWEP:DoVisualRecoil()
-	if CLIENT and not IsFirstTimePredicted() then return end
+	if not (SERVER and IsFirstTimePredicted()) then return end
 	--暂时搁置
 	
     -- 初始化
@@ -243,7 +215,7 @@ function SWEP:DoVisualRecoil()
         self.m_VRecoilBack = 0
     end
     
-    local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2])
+    local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2]) * AdsScale
     self.m_VRecoilBack = self.m_VRecoilBack + baseBack + progBack
     
     -- 限制最大值
@@ -333,7 +305,7 @@ end
 
 
 function SWEP:DoCameraRecoil()
-	if not (game.SinglePlayer() or IsFirstTimePredicted()) then return end
+	if not (SERVER and IsFirstTimePredicted())  then return end
     local owner = self:GetOwner()
     if not IsValid(owner) then return end
     
@@ -342,30 +314,30 @@ function SWEP:DoCameraRecoil()
     
     local delay = 60 / self.Primary.RPM
     local elapsed = delay - (nextRecoil - CurTime())
-    local t = math.Clamp(elapsed / delay, 0, 1)
+    local t = math.Clamp((elapsed / delay) ^ 0.5, 0, 1)
     
     local recoilAngle = self:GetRecoil()
-    local kickDown =( self.Recoil.KickDown *0.8 or 0) * (delay * 10)  
+    local kickDown =( self.Recoil.KickDown  or 0) * delay * 5 
     
     -- 简单的三段曲线：上升 → 下降 → 归零
     local strength
-    if t < 0.3 then
+    if t < 0.5 then
         -- 阶段1：快速下降到 0 (t=0.3 时 strength=0)
-        strength = 1 - (t / 0.3)
-    elseif t < 0.6 then
+        strength = 1 - (t / 0.5)
+    elseif t < 0.7 then
         -- 阶段2：继续下降到负数 (t=0.6 时 strength=-kickDown)
-        local t2 = (t - 0.3) / 0.3  -- 0→1
+        local t2 = (t - 0.2) / 0.2  -- 0→1
         strength = -kickDown * t2
     else
         -- 阶段3：回到 0 (t=1 时 strength=0)
-        local t3 = (t - 0.6) / 0.4  -- 0→1
+        local t3 = (t - 0.7) / 0.3  -- 0→1
         strength = -kickDown * (1 - t3)
     end
     
     local current = Angle(
         recoilAngle.pitch * strength,
-        recoilAngle.yaw * strength,
-        recoilAngle.roll * strength
+        recoilAngle.yaw * t,
+        recoilAngle.roll * t
     )
     
     local eyeAngles = owner:EyeAngles()

@@ -101,17 +101,18 @@ function DrawCustomCrosshair(ply, wep)
     local spreadSizeX = spread * math.tan(spreadH)
     local spreadSizeY = spread * math.tan(spreadV)
     local sequence = wep.m_CurrentSequence or wep:GetPlayingSequence()
+    
     if (not wep.DrawCrossHairIS and not ply:ShouldDrawLocalPlayer() and wep:GetAimDelta() > 0.5 and (cv_debug:GetInt() == 0)) then
         alpha = 0
     end
 
-    if ply:IsSprinting() or ShouldHideCrosshair(sequence) then
+    if (ply:IsSprinting() and wep:CanSprint() ) or ShouldHideCrosshair(sequence) then
         alpha = 0
     end
 
     surface.SetDrawColor(r, g, b, alpha)
 
-    local width = 2
+    local width = 2.5
     local length = 16
 
     if style == 1 then

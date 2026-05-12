@@ -59,6 +59,8 @@ function SWEP:DrawWorldModel(flags)
     if showWorldModel then
         self:DrawModel()
     end
+
+   
 end
 
 function SWEP:DrawWorldModelTranslucent(flags)

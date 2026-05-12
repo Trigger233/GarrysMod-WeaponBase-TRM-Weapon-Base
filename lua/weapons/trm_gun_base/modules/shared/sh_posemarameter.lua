@@ -12,7 +12,7 @@ function SWEP:UpdatePoseParameters()
     local speed = IsValid(owner) and owner:GetVelocity():Length2D() or 0
     local runSpeed = IsValid(owner) and owner:GetRunSpeed() or 1
     local walkSpeed = IsValid(owner) and owner:GetWalkSpeed() or 1
-    local dt = engine.TickInterval() * 2
+    local dt = RealFrameTime() * 10
     -- Aim Pose
     if self.Sight and self.Sight.PoseParameter then
         self.m_AimPose = Lerp(  dt * 20, self.m_AimPose or 0, self:GetAimDelta()) or 0
@@ -23,10 +23,10 @@ function SWEP:UpdatePoseParameters()
 
     -- Sprint Pose
     if self.BasePoseParameter and self.BasePoseParameter.Sprint then
-        local sprintVal = self:CanSprint() and (speed / runSpeed) > 0.7 and self:GetSprintDelta() or 0
-        self.m_SprintPose = Lerp( dt , self.m_SprintPose or 0, sprintVal) or 0
+        local sprintVal = self:CanSprint() and speed > walkSpeed and self:GetSprintDelta()  or 0
+        self.m_SprintPose = Lerp( dt * 4  , self.m_SprintPose or 0, sprintVal) or 0
         for _, Pose in pairs(self.BasePoseParameter.Sprint) do
-            vm:SetPoseParameter(Pose, self.m_SprintPose)
+            vm:SetPoseParameter(Pose, self.m_SprintPose ) 
         end
     end
 
@@ -44,6 +44,6 @@ function SWEP:UpdatePoseParameters()
         self.m_WalkPose = Lerp( dt, self.m_WalkPose or 0, walkVal) or 0
         for _, Pose in pairs(self.BasePoseParameter.Walk) do
             vm:SetPoseParameter(Pose, self.m_WalkPose)
-        end
+        end 
     end
 end

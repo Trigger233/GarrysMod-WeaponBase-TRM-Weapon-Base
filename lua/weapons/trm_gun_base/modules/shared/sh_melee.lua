@@ -94,7 +94,7 @@ end
 function SWEP:MeleeDoor(tr)
     if CLIENT or not IsValid(tr.Entity) then return end
     local ent =tr.Entity
-    if not ent:GetClass() == "func_door_rotating" and not ent:GetClass() == "func_door_rotating" then return end
+    if not (ent:GetClass() == "func_door_rotating" or  ent:GetClass() == "func_door_rotating" )then return end
     ent:EmitSound("ambient/materials/door_hit1.wav", 100, math.random(80, 120))
     ent:SetKeyValue("Speed", "500")
     ent:SetKeyValue("Open Direction", "Both directions")

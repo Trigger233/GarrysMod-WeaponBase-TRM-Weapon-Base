@@ -5,7 +5,6 @@
     util.AddNetworkString("TRMBase_SyncAllAttachments")
 
     -- 注册服务端桩命令，使这些命令在控制台中可识别（实际逻辑在客户端执行）
-    -- concommand.Add("trmbase_customize", function() end)
 end
 -- ==========================================
 -- 包含所有 shared 文件（服务端+客户端都执行）
@@ -60,6 +59,11 @@ SWEP.ViewModel = nil
 SWEP.UseHands = true
 SWEP.ViewModelFOV = 55
 SWEP.WorldModel = nil
+
+SWEP.BodyGroup = {
+
+}
+SWEP.Skin = 0
 
 SWEP.RenderGroup = RENDERGROUP_OPAQUE
 SWEP.RenderMode = RENDERMODE_NORMAL
@@ -464,7 +468,12 @@ function SWEP:Deploy()
 end
 
 function SWEP:OnDrop(owner)
-   owner:SetActiveWeapon(NULL) 
+   owner:SetActiveWeapon(NULL)
+   
+   if IsValid(TRM_AttachMenu_Instance) then
+        TRM_AttachMenu_Instance:Close()
+    end
+    return true
 end
 
 function SWEP:OnReloaded()
@@ -674,3 +683,4 @@ function SWEP:GetPlayerMoveMult(ply)
 end
 
 -- 原有的 ApplyMoveSpeed 可以删掉了
+

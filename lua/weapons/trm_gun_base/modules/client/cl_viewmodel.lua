@@ -13,7 +13,7 @@ function SWEP:CustomBob()
     local speed = owner:GetVelocity():Length2D()
     
     -- 移动时累积，停止时衰减
-    if speed > 10  then
+    if speed > 10 and owner:OnGround() then
         self.Bob_t = (self.Bob_t or 0) + RealFrameTime() * speed * 0.05
         -- 不限制范围，让 sin 自然循环
     else
@@ -66,13 +66,13 @@ function SWEP:Sway()
     local ft = math.min(RealFrameTime(), 0.033)  -- 限制最大帧间隔
     
     local dx = -math.AngleDifference(angles.yaw, self.m_LastViewModelAngle.yaw)
-    local dy = math.AngleDifference(angles.pitch, self.m_LastViewModelAngle.pitch)
+    local dy = math.AngleDifference(angles.pitch, self.m_LastViewModelAngle.pitch) 
     self.m_LastViewModelAngle = angles
     
     -- 限制差值（重要！网络延迟会导致突变）
     
     dx = math.Clamp(dx, -10, 10)
-    dy = math.Clamp(dy, -10, 10)
+    dy = math.Clamp(dy, -20, 20)
     
     local maxSway = 10
     local force = 0.1
@@ -200,7 +200,7 @@ local CacheAngle =  Angle(0,0,0)
 local AimOffset , AimOffsetAngle
 
 function SWEP:CalcViewModelView(vm ,pos , angles , poss , angless )
-    if SERVER then return end
+    if not CLIENT then return end
 
 
     local aimdelta = self:GetClientAimDelta()
@@ -292,96 +292,7 @@ function SWEP:ShouldDrawViewModel()
     return true
 end
 
--- function SWEP:GetViewModelPosition(pos , angles )
 
-    --     -- 冻结模式：直接返回保存的值
-    --     if self.m_VMFrozen and self.m_VMFreezePos and self.m_VMFreezeAng then
-    --         return Vector(self.m_VMFreezePos), Angle(self.m_VMFreezeAng)
-    --     end
-    --     if not( CLIENT and self:GetOwner():IsPlayer() ) then return end
-        
-    --     if (not IsValid(self) || not IsValid(self:GetOwner())) then 
-    --         return false
-    --     end
-        
-    --     local delta =  self:GetSmoothAimDelta()
-    --     --Aim
-    --         local SightPos = self.Sight.Pos
-    --         local AimPos = (SightPos.x*angles:Right() + SightPos.y*angles:Forward() - SightPos.z*angles:Up()) * delta 
-    --         pos:Add(AimPos)
-    --         -- local AimAngle = self.Sight.Angles  * delta 
-    --         -- angles:Add(AimAngle)
-    --         if self:GetSight() != false  then
-    --            local SightOffset  = self:GetSight()
-    --            local add = (    SightOffset.x*angles:Right() + SightOffset.y*angles:Forward() - SightOffset.z*angles:Up()   ) * delta 
-    --            -- print(add)
-    --            add:Mul(delta)
-    --            pos:Add(add) 
-    --         end
-        
-    --         local sightAng = self:GetActiveSightAngle()
-    --         sightAng:Mul(-delta)
-    --         angles:Add(sightAng)
-    --     --Bobbing
-    --         local bobPos ,  BobAng = self:CustomBob(angles)
-    --         bobPos:Mul(1 - delta)
-    --         BobAng:Mul(1 - delta)
-    --         pos:Add(angles:Right() * bobPos.x)
-    --         pos:Add(angles:Forward() * bobPos.y)
-    --         pos:Add(angles:Up() * bobPos.z)
-        
-    --         angles:Add(BobAng)  -- 角度晃动
-    --         --pos:Add(bobPos)
-    --     --sway
-    --         local SwayAng , SwayPos = self:Sway()
-    --         SwayAng:Mul(1 - delta)
-    --         SwayPos:Mul(1 - delta)
-    --         angles:Add(SwayAng)
-
-    --         pos:Add(angles:Right() * -SwayPos.x )
-    --         pos:Add(angles:Forward() * SwayPos.y )
-    --         pos:Add(angles:Up() * SwayPos.z ) 
-    
-
-    --     --VisualRecoil
-    --         if not self.m_VRecoilBack then
-    --             self.m_VRecoilBack = 0 
-    --         end
-
-    --         self.m_VRecoilBack = Lerp(engine.TickInterval() * 0.5 , self.m_VRecoilBack ,  self:GetVisualRecoilBackward() or self.m_VRecoilBack) 
-            
-    --         pos:Add(Vector(  -self.m_VRecoilBack * angles:Forward()  , -self.m_VRecoilBack * angles:Right()  , -self.m_VRecoilBack * angles:Up()  )  ) 
-        
-
-    --     --Idle pos offset
-    --         local DPos = (self.VMOffset.Idle.Pos.x*angles:Right() + self.VMOffset.Idle.Pos.y*angles:Forward() - self.VMOffset.Idle.Pos.z*angles:Up()) * (1 - delta)
-    --         local DAngle = self.VMOffset.Idle.Ang  *( 1 -  delta )
-    --         pos:Add(DPos)
-    --         angles:Add(DAngle) 
-    
-    --     -- Sprint pos offset
-    --         local Sdelta = self:GetSprintDelta()
-    --         local SPos = (self.VMOffset.Sprint.Pos.x*angles:Right() + self.VMOffset.Sprint.Pos.y*angles:Forward() - self.VMOffset.Sprint.Pos.z*angles:Up()) * Sdelta
-    --         local SAngle = self.VMOffset.Sprint.Ang  * Sdelta    
-    --         pos:Add(SPos)
-    --         angles:Add(SAngle)
-
-    --     --duck pos offset
-    --         local delta = self:GetDucking() * (1 - self:GetSmoothAimDelta())
-    --         local DPos = (self.VMOffset.Crouch.Pos.x*angles:Right() + self.VMOffset.Crouch.Pos.y*angles:Forward() - self.VMOffset.Crouch.Pos.z*angles:Up()) * delta
-    --         local DAngle = self.VMOffset.Crouch.Ang  * delta
-    --         pos:Add(DPos)
-    --         angles:Add(DAngle)
-
-
-
-
-
-
-
-        
-    --         return pos , angles 
--- end
 
 
 

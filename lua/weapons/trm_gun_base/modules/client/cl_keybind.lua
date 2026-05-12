@@ -22,20 +22,11 @@ hook.Add("PlayerBindPress","TRMBASE_Weapon_Binds",function(ply,bind,pressed)
         RunConsoleCommand("trmbase_weaponinspect")
     end
 
-    if bind == "+use" then
+    
 
-        if IsValid(TRM_AttachMenu_Instance) then
-            TRM_AttachMenu_Instance:Close()
-            return true
-        end
-    end
-
-    if bind == "+menu_context"  and not ply:KeyDown(IN_USE) then
+    if bind == "+menu_context" and pressed  and not ply:KeyDown(IN_USE) then
         weapon:SetCurrentTask("Customize")
-        RunConsoleCommand("trmbase_customize")
-        if IsValid(TRM_AttachMenu_Instance) then
-            TRM_AttachMenu_Instance:Close()
-        end
+        RunConsoleCommand("+trmbase_customize")
         return true
     end
 

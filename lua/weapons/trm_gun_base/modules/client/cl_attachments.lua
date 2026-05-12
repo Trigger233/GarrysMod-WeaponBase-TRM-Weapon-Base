@@ -52,7 +52,7 @@ local PANEL = {}
 
 function PANEL:Init()
     self:SetTitle("")
-    self:ShowCloseButton(false)
+    self:ShowCloseButton(true)
     self:SetDraggable(false)
     self:MakePopup()
     self:SetKeyboardInputEnabled(false)
@@ -93,13 +93,13 @@ function PANEL:Init()
     self.m_SlotCombo:Dock(TOP)
     self.m_SlotCombo:SetTall(50)
     self.m_SlotCombo:DockMargin(0, 2, 0, 2)
-    self.m_SlotCombo:SetFont("DermaDefault")
+    self.m_SlotCombo:SetFont("DermaLarge")
     self.m_SlotCombo:SetText("")
     self.m_SlotCombo.Paint = function(s2,w2,h2)
         surface.SetDrawColor(255,255,255,200)
         surface.DrawRect(0,0,w2,h2)
-        surface.SetDrawColor(255,0,0)
-        surface.DrawOutlinedRect(0,0,w2,h2)
+        surface.SetDrawColor(0,0,0)
+        surface.DrawOutlinedRect(0,0,w2,h2,3)
     end
     self.m_SlotCombo.OnSelect = function(_, _, _, data)
         self.m_Slot = data
@@ -126,20 +126,20 @@ function PANEL:Init()
     self.m_HintLabel:SetTall(25)
     self.m_HintLabel:SetText(language.GetPhrase("#TRMBase_CloseHint")) 
 
-    -- ESC 关闭（框架 + 所有子控件统一处理）
-    self.OnKeyCodePressed = function(_, key)
-        if key == KEY_ESCAPE or key == KEY_E then
-            self:Close()
-        end
-    end
-    -- 确保 ComboBox 也把 ESC/E 传上来
-    self.m_SlotCombo.OnKeyCodePressed = function(_, key)
-        if key == KEY_ESCAPE or key == KEY_E then
-            self:Close()
-        else
-            -- 让 combo 自己处理其他按键
-        end
-    end
+    -- -- ESC 关闭（框架 + 所有子控件统一处理）
+    -- self.OnKeyCodePressed = function(_, key)
+    --     if key == KEY_ESCAPE or key == KEY_E then
+    --         self:Close()
+    --     end
+    -- end
+    -- -- 确保 ComboBox 也把 ESC/E 传上来
+    -- self.m_SlotCombo.OnKeyCodePressed = function(_, key)
+    --     if key == KEY_ESCAPE or key == KEY_E then
+    --         self:Close()
+    --     else
+    --         -- 让 combo 自己处理其他按键
+    --     end
+    -- end
 
     -- =============================================
     -- 右侧武器数据面板（Stats）
@@ -148,7 +148,7 @@ function PANEL:Init()
     local menuPanel = self
 
     self.m_StatsPanel = vgui.Create("DPanel", self)
-    self.m_StatsPanel:SetSize(ScrW() * 0.2, 1000)
+    self.m_StatsPanel:SetSize(ScrW() * 0.25, 1000)
     self.m_StatsPanel:AlignRight(5)
     self.m_StatsPanel:AlignTop(200)
 
@@ -157,10 +157,10 @@ function PANEL:Init()
         if not IsValid(wep) then return end
 
         -- 背景
-        surface.SetDrawColor(30, 30, 30, 240)
+        surface.SetDrawColor(30, 30, 30, 120)
         surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(66, 135, 245, 80)
-        surface.DrawOutlinedRect(0, 0, w, h, 1)
+        surface.SetDrawColor(255, 255, 255)
+        surface.DrawOutlinedRect(0, 0, w, h, 2)
 
         -- 武器名
         draw.SimpleText(wep:GetPrintName(), "DermaLarge", 10, 15,
@@ -169,14 +169,23 @@ function PANEL:Init()
         local def = weapons.Get(wep:GetClass())
         if not def then return end
         local sim = table.Copy(def)
-        -- 应用每个已装备配件的 ChangeWeaponStats（pcall 保护，防崩）
+
+        -- 应用默认配件（复制一份处理）
+        for slot, att in pairs(wep.Attachments or {}) do
+            if not att.Default then continue end
+            local attData = BASE_TRM_ATTS[att.Default]
+            if attData and attData.ChangeWeaponStats then
+                pcall(attData.ChangeWeaponStats, attData, def)  -- 用 sim，不污染原始表
+            end
+        end
+
+        -- 应用已装备配件
         for _, attClass in pairs(wep.CurrentAttachments or {}) do
             local attData = BASE_TRM_ATTS[attClass]
             if attData and attData.ChangeWeaponStats then
                 pcall(attData.ChangeWeaponStats, attData, sim)
             end
         end
-
         local function avg(t, _max)
             if type(t) ~= "table" then return t end  -- 如果不是表就当数字用
             if not _max then _max = 100 end
@@ -238,37 +247,50 @@ function PANEL:Init()
             local radio = math.Clamp( stat[2] / _max , 0 , 1) 
             local ori_radio = math.Clamp( stat[3] / _max , 0 , 1)  
             local delta = -(stat[3] - stat[2]) 
-            local _reserve = stat[4] and 1 or -1
+            local _reserve = not stat[4] 
             local _mainColor = Color(255,255,255)
             local _color = _mainColor
             
 
             if delta ~= 0 then
-                if ( delta * _reserve )> 0 then
-                    _color = Color(69,255,140)
-                else
-                    _color = Color(255,103,103)
-                end
-            draw.SimpleText( (delta > 0 and "+" or "") .. string.format("%.4f",delta) , "Trebuchet24" , x + 300 , y , _color , TEXT_ALIGN_BOTTOM , TEXT_ALIGN_RIGHT )
-            local text =  string.format("%.2f",stat[2] / stat[3] ).." x"
-            draw.SimpleText( text , "CloseCaption_Normal" , w- 100 , y - 5 , _color , TEXT_ALIGN_BOTTOM , TEXT_ALIGN_RIGHT )
-
+                    if ( delta * (_reserve and -1 or 1 ))> 0 then
+                        _color = Color(69,255,140)
+                    else
+                        _color = Color(255,103,103)
+                    end
+                draw.SimpleText( (delta > 0 and "+" or "") .. string.format("%.4f",delta) , "Trebuchet24" , x + 300 , y , _color , TEXT_ALIGN_BOTTOM , TEXT_ALIGN_RIGHT )
+                local text = "x".. string.format("%.1f",100 * stat[2] / stat[3] ).." %"
+                draw.SimpleText( text , "CloseCaption_Normal" , w- 100 , y - 5 , _color , TEXT_ALIGN_BOTTOM , TEXT_ALIGN_RIGHT )
             end
+
             draw.SimpleText(string.upper(stat[1]).."      "..stat[2] , "Trebuchet18" , x , y , _mainColor , TEXT_ALIGN_BOTTOM , TEXT_ALIGN_LEFT )
 
             y= y + 20
-
+            --Bar Display
+            --条的边框
             surface.SetDrawColor(_mainColor)
             surface.DrawOutlinedRect(x,y ,_w , _h , _padding * 0.5 )
 
             local _barLength = ( _w - 4 * _padding) * (self.animationState > 0.25 and self.animationState or 0 )
-            local _Delta_Radio = math.abs(delta) / _max
-            surface.SetDrawColor(_mainColor)
-            if delta > 0 then radio = ori_radio end
-            surface.DrawRect(x + 2 * _padding , y + 2 * _padding  ,_barLength * radio   , _h - 4 * _padding )
-            surface.SetDrawColor(_color)
-            surface.DrawRect(x + 2 * _padding + _barLength *radio , y + 2 * _padding  ,_barLength * _Delta_Radio  , _h - 4 * _padding )
+            --这里渲染普通条(长度比例为radio)
+            
+            --如果delta小于0且顺序 
+            if  _reserve then
+                radio = 1 - radio
+                ori_radio = 1 - ori_radio 
+                
+            end
+            if radio > ori_radio then
+                radio = ori_radio
+            end
 
+            surface.SetDrawColor(_mainColor)            
+            surface.DrawRect(x + 2 * _padding , y + 2 * _padding  ,_barLength * radio   , _h - 4 * _padding )
+            --颜色的变化条（）
+            local _Delta_Radio = math.abs(delta) / _max
+            surface.SetDrawColor(_color)            
+            surface.DrawRect(x + 2 * _padding + _barLength *radio , y + 2 * _padding  ,_barLength * _Delta_Radio  , _h - 4 * _padding )
+            --
             y = y +40 
 
         end
@@ -437,26 +459,30 @@ vgui.Register("TRM_AttachMenu", PANEL, "DFrame")
 -- concommand 开关
 -- =============================================
 
-concommand.Add("trmbase_customize", function()
-    if IsValid(TRM_AttachMenu_Instance) then
+concommand.Add("+trmbase_customize", function(ply)
+    if not  IsValid(TRM_AttachMenu_Instance) then
+        local weapon = ply:GetActiveWeapon()
+        if not IsValid(weapon) or not util.IsTRMBase(weapon) then
+            print("[TRMBase] 当前武器不是 TRM Base 武器")
+            return
+        end
+
+        gui.EnableScreenClicker(true)
+
+        local frame = vgui.Create("TRM_AttachMenu")
+        frame:SetWeapon(weapon)
+
+        TRM_AttachMenu_Instance = frame
+
+
+    else
         TRM_AttachMenu_Instance:Close()
-        return
+        
     end
 
-    local weapon = LocalPlayer():GetActiveWeapon()
-    if not IsValid(weapon) or not util.IsTRMBase(weapon) then
-        print("[TRMBase] 当前武器不是 TRM Base 武器")
-        return
-    end
-
-    gui.EnableScreenClicker(true)
-
-    local frame = vgui.Create("TRM_AttachMenu")
-    frame:SetWeapon(weapon)
-
-    TRM_AttachMenu_Instance = frame
 end)
 
+ 
 -- =============================================
 -- 网络同步
 -- =============================================

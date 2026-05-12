@@ -1,4 +1,5 @@
 function SWEP:PlayAnimation(sequenceClass, useInternalDuration )
+    if not( IsFirstTimePredicted() and SERVER )then return end
     local vm = self:GetViewModel()
     if self:GetNextAnimationTime() > CurTime() then return end
     
@@ -34,7 +35,7 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration )
     local speed = (animData.Speed or 1)
     vm:SetPlaybackRate(speed)
 
-    if SERVER and useInternalDuration then
+    if  useInternalDuration then
         local nexttime = currentLength *  (animData.Length or 1 )*  duration  / speed
         self:SetNextAnimationTime( CurTime() + nexttime )
         self:SetNextFireTime(  nexttime )
@@ -118,3 +119,51 @@ function SWEP:PlayWorldAnimation(sequenceClass)
         owner:SetAnimation(act)
     end
 end
+
+-- function SWEP:PlayAnimation(sequenceClass, useInternalDuration)
+--     -- 只让客户端播放第一人称动画
+--     if SERVER then
+--         -- 服务端：广播动画，但不播
+--         self:CallOnClient("PlayAnimation", sequenceClass, useInternalDuration)
+--         self:PlayWorldAnimation(sequenceClass)  -- 第三人称
+--         return
+--     end
+
+--     -- 客户端：真正播放
+--     if not IsFirstTimePredicted() then return end
+--     local vm = self:GetViewModel()
+--     if self:GetNextAnimationTime() > CurTime() then return end
+--     if not IsValid(vm) or not sequenceClass then return end
+
+--     local animData = self.Animations[sequenceClass]
+--     if not animData then return end
+
+--     local seq = animData.sequence
+--     if not seq or #seq == 0 then return end
+
+--     local sequencePlay = seq[math.Round(math.Rand(1, #seq))]
+
+--     self:SetPlayingSequence(sequenceClass)
+
+--     local seqId = vm:LookupSequence(sequencePlay)
+--     if seqId and seqId > 0 then
+--         vm:SendViewModelMatchingSequence(seqId)
+--         vm:SetCycle(0)
+
+--         local speed = animData.Speed or 1
+--         vm:SetPlaybackRate(speed)
+
+--         if animData.events then
+--             for _, event in pairs(animData.events) do
+--                 event.Triggered = false
+--             end
+--         end
+--     end
+
+--     if useInternalDuration then
+--         local duration = self:SequenceDuration(seqId or 1)
+--         local nexttime = (animData.Length or 1) * duration / (animData.Speed or 1)
+--         self:SetNextAnimationTime(CurTime() + nexttime)
+--         self:SetNextFireTime(nexttime)
+--     end
+-- end

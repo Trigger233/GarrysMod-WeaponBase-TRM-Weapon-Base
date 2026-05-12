@@ -25,37 +25,31 @@ function SWEP:IsSlotExcluded(slotIndex)
 end
  
 function SWEP:PrepareViewModel(vm)
-    if SERVER then self:CallOnClient("PrepareViewModel") return end 
-    if (not vm) then
+    if SERVER then
+        self:CallOnClient("PrepareViewModel")
+        return  -- 关键：服务端直接返回，不继续执行
+    end
+
+    if not vm then
         vm = self:GetViewModel()
     end
 
-    if (not IsValid(vm)) then
+    if not IsValid(vm) then
         return false
     end
 
-    vm:SetSkin(0) 
-
-    for b = 0, vm:GetNumBodyGroups() do
-        vm:SetBodygroup(b, 0)
-    end
-
-    self:SetSkin(0)
-
-    for b = 0, self:GetNumBodyGroups() do
-        self:SetBodygroup(b, 0)
-    end
-
-    for _ , att in pairs(self.CurrentAttachments) do
-        data = BASE_TRM_ATTS[att]
-        if data.PostProcess then
+    -- 配件后处理
+    for _, att in pairs(self.CurrentAttachments or {}) do
+        local data = BASE_TRM_ATTS[att]
+        if data and data.PostProcess then
             data:PostProcess(self)
         end
     end
 
-    self:SetModel(self.WorldModel) 
-    vm:SetWeaponModel(self.ViewModel,self)
-    print(tostring(self.ViewModel))
+   
+
+    self:SetModel(self.WorldModel)
+    vm:SetWeaponModel(self.ViewModel, self)
 end
 
 function SWEP:ApplyModelChanged()
@@ -372,11 +366,11 @@ function SWEP:BuildCustomizedGun()
             model:SetNoDraw(true)
             model:SetNotSolid(true)
             model:SetMoveType(MOVETYPE_NONE)
+            model:SetParent(parent)
             model:SetOwner(parent)
 
 
             if attData.Bonemerge == true then
-                model:SetParent(parent)
                 model:AddEffects(EF_BONEMERGE)
                 model:AddEffects(EF_BONEMERGE_FASTCULL)
                 model:SetLocalPos(Vector(0, 0, 0))
@@ -394,7 +388,6 @@ function SWEP:BuildCustomizedGun()
                     model:FollowBone(parent, boneIdx)
                     model.m_Bone = boneIdx
                 end
-                model:SetParent(parent)
                 model:SetLocalPos(usePos)
                 model:SetLocalAngles(useAng)
             end
@@ -425,7 +418,7 @@ function SWEP:BuildCustomizedGun()
             tpModel._slotKey = slotKey
             tpModel:SetNotSolid(true)
             tpModel:SetMoveType(MOVETYPE_NONE)
-
+            tpModel:SetNoDraw(false )
             -- 带偏移挂在武器实体上，让引擎自动渲染
             tpModel:SetParent(self)
             tpModel:AddEffects(EF_BONEMERGE)
