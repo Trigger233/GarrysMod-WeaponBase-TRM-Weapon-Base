@@ -62,14 +62,12 @@ end
 
 function SWEP:CanReload()
 	local reserveAmmo = self:GetOwner():GetAmmoCount(self:GetPrimaryAmmoType())
-    local function IsReloading(seq)
-        local seq =  self:GetPlayingSequence() 
-        return string.find(seq ,"Reload" )
-    end
+    local seq =  self:GetPlayingSequence() 
+    
 
 	local max = self.Primary.ClipSize + (    self.ReloadType == "Single" and 0 or	self.Primary.ChamberSize)
-	if IsReloading() then return false end 
-
+	if string.find(seq , "Reload") then return false end 
+	if not  GetConVar("trmbase_allow_sprintreload"):GetBool() and  string.find(seq , "Sprint") and not string.find(seq , "SprintOut") then return false end
 	if (cvar_infinite_reserve:GetBool()) then 
 		return  self:Clip1() < max
 	else

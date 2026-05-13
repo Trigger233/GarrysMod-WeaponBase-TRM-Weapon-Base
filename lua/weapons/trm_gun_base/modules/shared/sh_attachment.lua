@@ -24,40 +24,35 @@ function SWEP:IsSlotExcluded(slotIndex)
     return false
 end
  
-function SWEP:PrepareViewModel(vm)
-    if SERVER then return end
+function SWEP:PrepareViewModel()
+    --if SERVER then return end
 
-    if not vm then
-        local vm = self:GetOwner():GetViewModel() 
-    end
+    local vm = self:GetOwner():GetViewModel(0)  
 
-    if not IsValid(vm) or not vm then
+    if not IsValid(vm)  then
         return false
     end
 
-    -- 配件后处理
-    for _, att in pairs(self.CurrentAttachments or {}) do
-        local data = BASE_TRM_ATTS[att]
-        if data and data.PostProcess then
-            data:PostProcess(self)
-        end
-    end
+  
 
     
    
 
-    self:SetModel(self.WorldModel)
-    vm:SetWeaponModel(self.ViewModel, self)
+    --self:SetModel(self.WorldModel)
+    vm:SetWeaponModel(self.ViewModel , self)
+    
 end
 
 function SWEP:ApplyModelChanged()
-    if not CLIENT then return end
-    self:PrepareViewModel()
     
-    local vm = self:GetViewModel()
+    if  CLIENT then 
+        self:PrepareViewModel()
+        local vm = self:GetViewModel()
 
-    vm:SetBodyGroup(1,2) 
 
+    end
+
+    
 end
   
 
@@ -160,6 +155,7 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
 end
 
 function SWEP:BuildViewModelData()
+    if not CLIENT then return end
     local vm = self:GetViewModel(0)
     if not IsValid(vm) then return end
     
@@ -168,6 +164,7 @@ function SWEP:BuildViewModelData()
         self.m_Attachment = {}
     end
     
+    -- ViewModel 自身的 Attachments
     local Stat = vm:GetAttachments()
     for _, Modelattachment in pairs(Stat) do
         local data = vm:GetAttachment(Modelattachment.id)
@@ -175,26 +172,30 @@ function SWEP:BuildViewModelData()
             self.m_Attachment[Modelattachment.name] = data
             self.m_Attachment[Modelattachment.name].id = Modelattachment.id
             self.m_Attachment[Modelattachment.name].Ent = vm
-
         end
     end
     
-
-    
-
-    for _Key , _model in pairs(self.AttachmentModels) do
-        local stat = _model
-        for _ ,att in pairs( _model:GetAttachments() ) do
-            local data = _model:GetAttachment(att.id)
-            self.m_Attachment[att.name] = data 
-            self.m_Attachment[att.name].id = att.id
-            self.m_Attachment[att.name].Ent = _model
-        end
-
+    -- 配件模型的 Attachments（只有 Bonemerge 模式的配件才需要）
+    for slotKey, model in pairs(self.AttachmentModels or {}) do
+        if not IsValid(model) then continue end
         
+        local attID = self.CurrentAttachments and self.CurrentAttachments[slotKey]
+        if not attID then continue end
+        
+        local attData = BASE_TRM_ATTS[attID]
+        if not attData or not attData.Bonemerge then continue end  -- 只处理 Bonemerge 配件
+        
+        for _, att in pairs(model:GetAttachments()) do
+            local data = model:GetAttachment(att.id)
+            if data then
+                self.m_Attachment[att.name] = data
+                self.m_Attachment[att.name].id = att.id
+                self.m_Attachment[att.name].Ent = model
+            end
+        end
     end
     
-    -- Bone 数据
+    -- Bone 数据（ViewModel 自身）
     if not self.m_Bone then
         self.m_Bone = {}
     end
@@ -204,43 +205,48 @@ function SWEP:BuildViewModelData()
         for i = 0, count - 1 do
             local name = vm:GetBoneName(i)
             local matrix = vm:GetBoneMatrix(i)
-            if matrix and name  then
-                self.m_Bone[name] = {} 
+            if matrix and name then
+                self.m_Bone[name] = {
+                    Pos = matrix:GetTranslation(),
+                    Ang = matrix:GetAngles(),
+                    Id = i,
+                    Ent = vm,
+                }
+            end
+        end
+    end
+    
+    -- 配件模型的 Bones（只有 Bonemerge 模式的配件才需要）
+    for slotKey, model in pairs(self.AttachmentModels or {}) do
+        if not IsValid(model) then continue end
+        
+        local attID = self.CurrentAttachments and self.CurrentAttachments[slotKey]
+        if not attID then continue end
+        
+        local attData = BASE_TRM_ATTS[attID]
+        if not attData or not attData.Bonemerge then continue end
+        
+        local boneCount = model:GetBoneCount()
+        if not boneCount or boneCount <= 0 then continue end
+        
+        for j = 0, boneCount - 1 do
+            local name = model:GetBoneName(j)
+            local matrix = model:GetBoneMatrix(j)
+            if name and matrix then
+                if not self.m_Bone[name] then
+                    self.m_Bone[name] = {}
+                end
                 self.m_Bone[name].Pos = matrix:GetTranslation()
                 self.m_Bone[name].Ang = matrix:GetAngles()
-                self.m_Bone[name].Id = i
-                self.m_Bone[name].Ent = vm
-            end
-        end
-    end
-
-    for _key , _Model in pairs(self.AttachmentModels) do
-        local count = _Model:GetBoneCount()
-        if  not count or  count <=0 then continue end
-        for j = 0 , count do
-            local name = _Model:GetBoneName(j)
-            local _Matrix = _Model:GetBoneMatrix(j)
-            if name and _Matrix  then
-                if not self.m_Bone[name] then self.m_Bone[name] = {} end
-                self.m_Bone[name].Pos = _Matrix:GetTranslation()
-                self.m_Bone[name].Ang = _Matrix:GetAngles()
                 self.m_Bone[name].Id = j
-                self.m_Bone[name].Ent = _Model
+                self.m_Bone[name].Ent = model
             end
         end
-
-
     end
-
-
-
-
-
 
     if CurTime() - (self.lastdebug or 0) > 10 and GetConVar("developer"):GetInt() == 1 then
-            PrintTable(self.m_Bone)
-            self.lastdebug  =CurTime()
-            --print(CurTime())
+        PrintTable(self.m_Bone)
+        self.lastdebug = CurTime()
     end
 end
 
@@ -331,6 +337,7 @@ function SWEP:BuildCustomizedGun()
 
     self.m_Sight = nil 
 
+
     -- 初始化模型缓存表
     if not self.AttachmentModels then
         self.AttachmentModels = {}
@@ -347,23 +354,26 @@ function SWEP:BuildCustomizedGun()
         currentSlotKeys[slotKey] = true
 
         local attData = BASE_TRM_ATTS[attID]
-        if not attData or not attData.Model then continue end
+        if not attData  then continue end
 
         -- ========== 第一人称模型（挂 ViewModel） ==========
         -- 如果已有模型且装备相同，跳过
-        if IsValid(self.AttachmentModels[slotKey])
-            and self.AttachmentModels[slotKey]._attID == attID then
+        if IsValid(self.AttachmentModels[slotKey])  then
+            
+            if  self.AttachmentModels[slotKey]._attID ~= attID then
+                self.AttachmentModels[slotKey]:Remove()
+            end 
+
+
             -- 跳过 VM 模型创建，但 TP 模型仍需检查
         else
-            -- 移除旧模型
-            if IsValid(self.AttachmentModels[slotKey]) then
-                self.AttachmentModels[slotKey]:Remove()
-            end
-
+       
+            
+            if  not attData.Model then continue end
             -- TFA 方式创建：SetNoDraw(true)，在 ViewModelDrawn 手动 DrawModel
             local slotData = self.Attachments and self.Attachments[tonumber(slotKey)]
             local model = ClientsideModel(attData.Model, RENDERGROUP_VIEWMODEL)
-            local parent =self:GetBoneData(slotData.Bone) and self:GetBoneData(slotData.Bone).Ent or vm
+            local parent = vm
             model._attID = attID
             model._slotKey = slotKey
 
@@ -374,6 +384,7 @@ function SWEP:BuildCustomizedGun()
 
 
             if attData.Bonemerge == true then
+                model._BoneMerge = true
                 model:SetParent(parent)
                 model:AddEffects(EF_BONEMERGE)
                 model:AddEffects(EF_BONEMERGE_FASTCULL)
@@ -443,6 +454,7 @@ function SWEP:BuildCustomizedGun()
             self.TpAttachmentModels[slotKey] = tpModel
         end
     end
+    self:ReParentAttachmentModel() 
 
     -- 必须在模型创建完后才计算瞄具偏移（否则模型还不存在）
     self:GenerateAimOffset()

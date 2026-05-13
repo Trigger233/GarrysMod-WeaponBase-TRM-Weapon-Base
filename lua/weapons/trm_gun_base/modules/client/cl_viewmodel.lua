@@ -305,6 +305,7 @@ function SWEP:ViewModelDrawn(vm)
     vm:SetupBones()
 
     
+    self:BuildViewModelData()
 
     self:BuildCustomizedGun()
 
@@ -318,12 +319,12 @@ function SWEP:ViewModelDrawn(vm)
                 -- 静默处理
             end
         end
-    end
+    end 
     
 end
 
 function SWEP:PreDrawViewModel()
-    self:BuildViewModelData()
+    
 end
 
 

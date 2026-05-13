@@ -453,11 +453,15 @@ SWEP.Attachments = {}
 
 function SWEP:Deploy()
 	self:GetOwner():SetSaveValue("m_flNextAttack", 0)
+    self:PrepareViewModel()
 
     self:SetNextAnimationTime(0)
-
     self:SetCurrentTask("Deploy")
-    self:PrepareViewModel()
+
+    self:SyncAllAttachments()
+    if CLIENT then
+        self:BuildCustomizedGun() 
+    end
 
 
 end
@@ -495,6 +499,8 @@ function SWEP:OnReloaded()
     end
     
     ReloadClientFiles()
+
+    
     
     -- 重新初始化客户端相关变量
     self.m_SmoothAimDelta = 0

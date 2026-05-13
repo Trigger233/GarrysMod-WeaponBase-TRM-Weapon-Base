@@ -1,3 +1,4 @@
+local cvar_sprint_reload = CreateConVar("trmbase_allow_sprintreload",0,{FCVAR_ARCHIVE})
 function SWEP:CanSprint()
     local vm = self:GetViewModel(self)
     if not vm then return end
@@ -6,11 +7,11 @@ function SWEP:CanSprint()
     local cycle = vm:GetCycle()
     local task = self:GetCurrentTask()
     
-    -- if trm_weapon_base_util.IsDucking(owner) then
-    --     return false
-    -- end
+    if (string.find(seq,"Reload") or string.find(task,"Reload")  ) and cvar_sprint_reload:GetBool() then
+        return false
+    end
 
-    if  string.find(seq,"Reload") or string.find(task,"Reload")  or string.find(task,"Deploy")  then
+    if    string.find(task,"Deploy") or string.find(task,"Holster")   then
         return false
     end
 

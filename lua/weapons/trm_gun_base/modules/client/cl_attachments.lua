@@ -17,6 +17,24 @@ function SWEP:SendAttachmentToServer(slotKey, attID)
     print("[TRMBase] Send attachment:", slotKey, attID)
 end
 
+function SWEP:ReParentAttachmentModel()
+    if not CLIENT then return end
+    for _slot , _model in pairs(self.AttachmentModels) do
+        if IsValid(_model) then
+            local weaponTable = self.Attachments[_slot]
+            if not weaponTable or not weaponTable.Bone then continue end
+            local Data = self:GetBoneData(weaponTable.Bone)
+            if Data and _model:GetParent() ~= Data.Ent then
+                _model:SetParent(Data.Ent , Data.Id )
+            end
+            --print(_model:GetParent())
+            --PrintTable(_model)  
+ 
+        end
+    end
+
+end
+
 --- 翻译槽位名称（如果以 # 开头则走语言系统）
 local function TranslateSlotName(name)
     if not name then return "Unknown" end

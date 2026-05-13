@@ -311,7 +311,7 @@ function SWEP:DoCameraRecoil()
     local nextRecoil = self:GetNextRecoil()
     if CurTime() > nextRecoil then return end
     
-    local delay = 60 / self.Primary.RPM
+    local delay = 60 / self.Primary.RPM  
     local elapsed = delay - (nextRecoil - CurTime())
     local t = math.Clamp((elapsed / delay) ^ 0.5, 0, 1)
     
@@ -335,8 +335,8 @@ function SWEP:DoCameraRecoil()
     
     local current = Angle(
         recoilAngle.pitch * strength,
-        recoilAngle.yaw * t,
-        recoilAngle.roll * t
+        recoilAngle.yaw * strength ,
+        recoilAngle.roll * strength 
     )
     
     local eyeAngles = owner:EyeAngles()
