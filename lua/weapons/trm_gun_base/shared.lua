@@ -448,6 +448,7 @@ function SWEP:Initialize()
     self:EquipDefaultAttachments()
     self:PrecacheViewModel() 
 
+    
 end
 
 SWEP.Attachments = {}
@@ -464,13 +465,9 @@ function SWEP:Deploy()
     --elf:ApplyViewModelChange()
 
     self:SyncAllAttachments()
-    if CLIENT then
-        self:BuildCustomizedGun() 
-    else
-        self:CallOnClient("BuildCustomizedGun")
-    end
-    
-    self:ApplyViewModelChange()
+   
+    self:BuildCustomizedGun()
+ 
  
 
 end

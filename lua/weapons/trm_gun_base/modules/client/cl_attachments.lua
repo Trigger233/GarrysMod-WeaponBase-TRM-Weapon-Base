@@ -17,23 +17,7 @@ function SWEP:SendAttachmentToServer(slotKey, attID)
     print("[TRMBase] Send attachment:", slotKey, attID)
 end
 
-function SWEP:ReParentAttachmentModel()
-    -- if not CLIENT then return end
-    -- for _slot , _model in pairs(self.AttachmentModels or {}) do
-    --     if IsValid(_model) then
-    --         local weaponTable = self.Attachments[_slot]
-    --         if not weaponTable or not weaponTable.Bone then continue end
-    --         local Data = self:GetBoneData(weaponTable.Bone)
-    --         if Data and _model:GetParent() ~= Data.Ent then
-    --             _model:SetParent(Data.Ent , Data.Id )
-    --         end
-    --         --print(_model:GetParent())
-    --         --PrintTable(_model)  
- 
-    --     end
-    -- end
 
-end
 
 --- 翻译槽位名称（如果以 # 开头则走语言系统）
 local function TranslateSlotName(name)
@@ -84,7 +68,7 @@ function PANEL:Init()
 
     -- 主内容区域
     self.m_MainPanel = vgui.Create("DPanel", self)
-    self.m_MainPanel:SetSize(360, 1000 * globalScale)
+    self.m_MainPanel:SetSize(550 * globalScale, 1000 * globalScale)
     self.m_MainPanel:AlignLeft()
     self.m_MainPanel:AlignTop(200 * globalScale )
     self.m_MainPanel.Paint = function(s, w, h)
@@ -167,7 +151,7 @@ function PANEL:Init()
     local menuPanel = self
 
     self.m_StatsPanel = vgui.Create("DPanel", self)
-    self.m_StatsPanel:SetSize(360, 1000 * globalScale)
+    self.m_StatsPanel:SetSize(550 * globalScale, 1000 * globalScale)
     self.m_StatsPanel:AlignRight(5)
     self.m_StatsPanel:AlignTop(200)
 
@@ -369,7 +353,7 @@ function PANEL:RefreshAttList()
     if slot.Default and BASE_TRM_ATTS[slot.Default] then
         skipDefault = slot.Default
         local defName = language.GetPhrase(BASE_TRM_ATTS[slot.Default].Name) or skipDefault
-        self:AddAttButton(language.GetPhrase("#TRMBase_None"), skipDefault, currentAtt == skipDefault, slotKey, false)
+        self:AddAttButton(defName.."["..language.GetPhrase("#TRMBase_Default").."]", skipDefault, currentAtt == skipDefault, slotKey, false)
     else
         self:AddAttButton(language.GetPhrase("#TRMBase_None"), nil, currentAtt == nil or currentAtt == "None", slotKey, false)
 
@@ -437,7 +421,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded)
         draw.SimpleText(name, "DermaLarge", 12, h / 2, textColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
         if isActive then
-            draw.SimpleText("[Selected]", "DermaDefault", w - 15, h / 2, Color(100, 255, 100), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+            draw.SimpleText("[Selected]", "Trebuchet24", w - 15, h / 2, Color(100, 255, 100), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
         elseif slotExcluded then
             draw.SimpleText("[" .. language.GetPhrase("#TRMBase_Excluded") .. "]", "DermaDefault", w - 15, h / 2, Color(200, 100, 100), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
         end

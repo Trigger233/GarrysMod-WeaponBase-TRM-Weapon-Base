@@ -41,7 +41,6 @@ function ATTACHMENT:SetMagFollowerPoseParam(weapon, model ,val)
     max = max || 1
     
     model:SetPoseParameter(self.PoseParameter, math.Clamp(val, min, max))
-    model:InvalidateBoneCache()
 
     
 

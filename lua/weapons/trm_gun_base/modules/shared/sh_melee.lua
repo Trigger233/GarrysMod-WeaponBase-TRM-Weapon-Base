@@ -94,12 +94,12 @@ end
 function SWEP:MeleeDoor(tr)
     if CLIENT or not IsValid(tr.Entity) then return end
     local ent =tr.Entity
-    if not (ent:GetClass() == "func_door_rotating" or  ent:GetClass() == "func_door_rotating" )then return end
+    if not (ent:GetClass() == "prop_door_rotating" or  ent:GetClass() == "func_door_rotating" ) then return end
     ent:EmitSound("ambient/materials/door_hit1.wav", 100, math.random(80, 120))
     ent:SetKeyValue("Speed", "500")
     ent:SetKeyValue("Open Direction", "Both directions")
-    ent:SetKeyValue("opendir", "0")
-    ent:Fire("openawayfrom", self:GetOwner():EntIndex(), .01)
+    --ent:SetKeyValue("opendir", "0")
+    ent:Fire("openawayfrom", self:GetOwner():EntIndex(), 0)
 
     timer.Simple(0.3, function()
 			if IsValid(ent) then

@@ -89,7 +89,7 @@ function SWEP:FirePrimaryBullet()
         Dir = aimDir,
         Distance = self.Primary.Range,
         Spread = spread ,
-        Tracer = 0,
+        Tracer = 1,
         Force = self.Primary.Force  ,
         Damage = self.Primary.Damage * self.Primary.NumBullets,
         AmmoType = self.Primary.Ammo ,

@@ -11,13 +11,14 @@ TRMBase.Language = TRMBase.Language or {}
 TRMBase.Language.cn = {
     ["Optic"] = "瞄具",
     ["Muzzle"] = "枪口",
-    ["Tactical"] = "战术配件",
+    ["Laser"] = "战术配件",
     ["Mag"] = "弹匣" ,
     ["Barrel"] = "枪管" ,
     ["Stock"] = "枪托" ,
     ["Grip"] = "前握把" ,
 
     -- VGUI
+    ["TRMBase_Default"] = "默认配件",
     ["TRMBase_None"] = "无",
     ["TRMBase_Customize"] = " - 自定义",
     ["TRMBase_NoSlots"] = "此武器没有配件槽位",
@@ -38,9 +39,11 @@ TRMBase.Language.cn = {
 TRMBase.Language.en = {
     ["Optic"] = "Sight",
     ["Muzzle"] = "Muzzle",
-    ["Tactical"] = "Tactical",
+    ["Laser"] = "Tactical",
 
     -- VGUI
+    ["TRMBase_Default"] = "Default",
+
     ["TRMBase_None"] = "None",
     ["TRMBase_Customize"] = " - Customize",
     ["TRMBase_NoSlots"] = "This weapon has no attachment slots",

@@ -4,11 +4,9 @@ ATTACHMENT.Category = "att_laser"
 ATTACHMENT.Base = "att_laser"
 ATTACHMENT.Angles = Angle(-90,0,180)
 ATTACHMENT.Pos = Vector(3,1,0)
-
-function ATTACHMENT:ChangeWeaponStats(weapon)
-    weapon.Spread.Base = weapon.Spread.Base * 0.90
-    weapon.Spread.Increase = weapon.Spread.Increase * 0.5
-    weapon.Aim.Time = weapon.Aim.Time * 0.8
-
-
-end
+ATTACHMENT.Laser = {
+    Attach = "Laser" ,
+    Color = Color(0,255,0,197) , 
+    Width = 1 , 
+    DotSize = 4 ,
+}

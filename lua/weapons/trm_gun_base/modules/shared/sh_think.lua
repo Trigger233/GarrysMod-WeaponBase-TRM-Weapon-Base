@@ -18,7 +18,6 @@ function SWEP:Think()
         self:UpdatePoseParameters()
     end
 
-    --self:IconThink()
 end
 
 function SWEP:AttachmentsThink()
@@ -41,15 +40,6 @@ function SWEP:OwnerStatThink()
     self.m_SprintDelta = Lerp(FrameTime() * 10, self.m_SprintDelta, self:GetOwner():IsSprinting() and 1 or 0)
     self:SetSprintDelta(self.m_SprintDelta)
 
-    -- IconThink 里已有相同逻辑，此处不再重复
-    -- self.WepSelectIcon = Material("vgui/hud/"..self:GetClass())
-
-    
-
 end
 
-function SWEP:IconThink()
-    if not IsValid(self.WepSelectIcon) then
-        self.WepSelectIcon = Material("vgui/hud/" .. self:GetClass())
-    end
-end
+

@@ -38,16 +38,16 @@ function SWEP:DoMuzzleEffect()
 
     util.Effect(self.Effects.Muzzle.effect,effect)
     
-	local dlight = DynamicLight(    self:EntIndex() )
+	local dlight = DynamicLight(    self:GetOwner():EntIndex() , true )
 
 	dlight.Pos = att.Pos
 	dlight.r = 255
-	dlight.g = 255
-	dlight.b = 255
-	dlight.brightness = 5000
+	dlight.g = 0
+	dlight.b = 0
+	dlight.brightness = 1500
 	dlight.decay = 1000
-	dlight.Size = 256
-	dlight.Style = 0
+	dlight.Size = 1024
+	dlight.Style = 1
    
 end
 

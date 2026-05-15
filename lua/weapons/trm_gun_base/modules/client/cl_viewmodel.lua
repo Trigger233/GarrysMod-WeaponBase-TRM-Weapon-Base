@@ -11,6 +11,7 @@ function SWEP:CustomBob()
     end
     
     local speed = owner:GetVelocity():Length2D()
+    if not self.Bob_t then self.Bob_t = 0 end
     
     -- 移动时累积，停止时衰减
     if speed > 10 and owner:OnGround() then
@@ -19,8 +20,7 @@ function SWEP:CustomBob()
     elseif speed < 10 then
         self.Bob_t = (self.Bob_t or 0) * 0.95  -- 停止时归零
     end
-    
-    local t = math.sin(self.Bob_t) * (speed / 300)
+    local t = math.sin(self.Bob_t or 0) * (speed / 300)
     local mult = math.min(speed / 300, 1) 
     -- 位置偏移
     local pos = Vector(
@@ -71,8 +71,8 @@ function SWEP:Sway()
     
     -- 限制差值（重要！网络延迟会导致突变）
     
-    dx = math.Clamp(dx, -10, 10)
-    dy = math.Clamp(dy, -20, 20)
+    -- dx = math.Clamp(dx, -10, 10)
+    -- dy = math.Clamp(dy, -20, 20)
     
     local maxSway = 10
     local force = 0.1
@@ -298,25 +298,25 @@ end
 
 
 function SWEP:ViewModelDrawn(vm)
-    if not IsValid(vm) then return  end
+    if not IsValid(vm) then return end
 
-    vm:InvalidateBoneCache()
+    -- 防护：拾取/切换武器时，旧武器的 ViewModelDrawn 可能仍跑最后一帧
+    -- 不响应，防止旧武器的 Attachments、模型数据污染当前武器的渲染
+    if self ~= (IsValid(LocalPlayer()) and LocalPlayer():GetActiveWeapon()) then return end
+
     vm:SetupBones()
 
-    
-    self:BuildViewModelData()
-
-    self:BuildCustomizedGun()
 
         -- 逐个调用配件的 Render（用 pcall 包住，防止激光等配件崩了卡死后面的瞄准镜）
     for slot, att in pairs(self.CurrentAttachments) do
         local data = BASE_TRM_ATTS[att]
         local model = self.AttachmentModels[slot]
         if data.Render and IsValid(model) then
-            local ok, err = pcall(data.Render, data, self, model)
-            if not ok then
-                -- 静默处理
-            end
+            -- local ok, err = pcall(data.Render, data, self, model)
+            -- if not ok then
+            --     -- 静默处理
+            -- end
+            data:Render(self,model)
         end
     end 
 
@@ -324,7 +324,7 @@ function SWEP:ViewModelDrawn(vm)
 end
 
 function SWEP:PostDrawViewModel()
-    
+
 end
 
 function SWEP:PreDrawViewModel()

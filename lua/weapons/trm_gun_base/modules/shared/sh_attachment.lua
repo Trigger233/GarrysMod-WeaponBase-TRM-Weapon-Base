@@ -348,6 +348,8 @@ function SWEP:EquipAttachment(slot, attClass)
     -- 注：上面已发送，此处不再重复
     
     -- 保存配置
+    self:BuildCustomizedGun()
+
     self:SaveAttachmentPreset()
 
     print("Equipped:", slot, attClass)
@@ -368,6 +370,8 @@ function SWEP:UnEquipAttachment(slot)
     net.SendPVS(self:GetPos())
 
     -- 保存配置
+    self:BuildCustomizedGun()
+
     self:SaveAttachmentPreset()
 
     print("Unequipped:", slot, self.CurrentAttachments[slot] or "None")
@@ -381,7 +385,6 @@ function SWEP:BuildCustomizedGun()
 
     self.m_Sight = nil 
 
-    self:ReParentAttachmentModel() 
 
     -- 初始化模型缓存表
     if not self.AttachmentModels then
@@ -397,6 +400,7 @@ function SWEP:BuildCustomizedGun()
 
     for slotKey, attID in pairs(self.CurrentAttachments or {}) do
         currentSlotKeys[slotKey] = true
+        --Create Attachment Model for Use
 
         local attData = BASE_TRM_ATTS[attID]
         if not attData  then continue end
@@ -418,41 +422,13 @@ function SWEP:BuildCustomizedGun()
             -- TFA 方式创建：SetNoDraw(true)，在 ViewModelDrawn 手动 DrawModel
             local slotData = self.Attachments and self.Attachments[tonumber(slotKey)]
             local model = ClientsideModel(attData.Model, RENDERGROUP_VIEWMODEL)
-            local parent = slotData.Bone and self:GetBoneData(slotData.Bone) and  self:GetBoneData(slotData.Bone).Ent or vm
-            model._attID = attID
-            model._slotKey = slotKey
 
             model:SetNoDraw(true)
             model:SetNotSolid(true)
             model:SetMoveType(MOVETYPE_NONE) 
-            model:SetOwner(parent)
+            model:SetOwner(vm)
 
-
-            if attData.Bonemerge == true then
-                model._BoneMerge = true
-                model:SetParent(parent)
-                model:AddEffects(EF_BONEMERGE)
-                model:AddEffects(EF_BONEMERGE_FASTCULL)
-                model:SetLocalPos(Vector(0, 0, 0))
-                model:SetLocalAngles(Angle(0, 0, 0))
-            else
-                local useBone = slotData and slotData.Bone or "ValveBiped.Bip01_R_Hand"
-                local usePos = slotData and Vector(slotData.Pos) or Vector(0, 0, 0)
-                local useAng = slotData and Angle(slotData.Ang) or Angle(0, 0, 0)
-
-                if attData.Pos and isvector(attData.Pos) then usePos:Add(attData.Pos) end
-                if attData.Angles and isangle(attData.Angles) then useAng:Add(attData.Angles) end
-
-                local boneIdx = parent:LookupBone(useBone)
-                if boneIdx and boneIdx > 0 then
-                    model:FollowBone(vm, boneIdx)
-                    model.m_Bone = boneIdx
-                end
-                --model:SetParent(parent)
-
-                model:SetLocalPos(usePos)
-                model:SetLocalAngles(useAng)
-            end
+            
 
             self.AttachmentModels[slotKey] = model
         end
@@ -486,7 +462,7 @@ function SWEP:BuildCustomizedGun()
             tpModel:AddEffects(EF_BONEMERGE)
             tpModel:AddEffects(EF_BONEMERGE_FASTCULL)
 
-            -- 计算偏移（与 VM 模型一致的逻辑，但基于武器自身坐标空间）
+            --计算偏移（与 VM 模型一致的逻辑，但基于武器自身坐标空间）
             local slotData = self.Attachments and self.Attachments[tonumber(slotKey)]
             local tpPos = slotData and Vector(slotData.Pos) or Vector(0, 0, 0)
             local tpAng = slotData and Angle(slotData.Ang) or Angle(0, 0, 0)
@@ -505,6 +481,11 @@ function SWEP:BuildCustomizedGun()
     self:PrepareViewModel()
     self:ApplyViewModelChange()
 
+    self:BuildViewModelData()
+
+    self:ApplyAttachmentModels()    
+    
+    
     self:GenerateAimOffset()
 
     -- 清除已卸载配件的模型（VM + TP）
@@ -522,11 +503,56 @@ function SWEP:BuildCustomizedGun()
     end
 end
 
-function SWEP:GetSight()
-    return self.m_Sight or false
+function SWEP:ApplyAttachmentModels()
+    if SERVER then return end 
+    local vm = self:GetViewModel() 
+    if not IsValid(vm) then return end 
+
+    for slot , attachment in pairs(self.CurrentAttachments ) do
+        local AttachmentData = BASE_TRM_ATTS[attachment] 
+        local WeaponData = self.Attachments and self.Attachments[tonumber(slot)]
+        if not AttachmentData.Model  then continue end
+        local model = self.AttachmentModels[slot] 
+        local Tpmodel = self.TpAttachmentModels[slot] 
+        local parent =  vm
+
+
+        if AttachmentData.Bonemerge then
+            model:SetParent(parent)
+            model:AddEffects(EF_BONEMERGE)
+            model:AddEffects(EF_BONEMERGE_FASTCULL)
+            model:SetLocalPos(Vector(0,0,0))
+            model:SetLocalAngles(Angle(0,0,0))
+        else
+            if not WeaponData.Bone then continue end
+            local bone = self:GetBoneData(WeaponData.Bone)
+            parent = bone.Ent
+            model:FollowBone(parent, bone.Id)
+
+            -- 先清零（确保不继承上次的结果）
+            model:SetLocalPos(Vector(0,0,0))
+            model:SetLocalAngles(Angle(0,0,0))
+
+            -- 组合偏移：槽位偏移 + 配件自身偏移
+            -- ⚠️ 关键：用 Vector()/Angle() 拷贝，永不读 GetLocalPos()，避免叠加
+            local finalPos = WeaponData.Pos and Vector(WeaponData.Pos) or Vector(0,0,0)
+            local finalAng = WeaponData.Ang and Angle(WeaponData.Ang) or Angle(0,0,0)
+            if AttachmentData.Pos and isvector(AttachmentData.Pos) then finalPos:Add(AttachmentData.Pos) end
+            if AttachmentData.Angles and isangle(AttachmentData.Angles) then finalAng:Add(AttachmentData.Angles) end
+
+            model:SetLocalPos(finalPos)
+            model:SetLocalAngles(finalAng)
+        end 
+
+    end
+
+    
 end
 
 
+function SWEP:GetSight()
+    return self.m_Sight or false
+end
 
 function SWEP:GenerateAimOffset()
     if SERVER then return end

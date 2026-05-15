@@ -3,10 +3,10 @@ ATTACHMENT.Name = "att_reticle"
 ATTACHMENT.Description = "The Base for Weapon"
 
 function ATTACHMENT:Render(wep , model)
-    BASE_TRM_ATTS[self.Base]:Render(wep,model)
     if wep:IsCarriedByLocalPlayer() then 
         self:RenderScope(wep , model )
-  
+    else
+        BASE_TRM_ATTS[self.Base]:Render(wep,model)
     end
         
 
@@ -43,14 +43,14 @@ function ATTACHMENT:RenderScope(wep, model)
                 origin = wep:GetOwner():GetShootPos(),
                 angles = wep:GetOwner():EyeAngles() + wep:GetVisualRecoil() ,
                 fov = 10,  -- 4.5 倍放大
-                drawviewmodel = false,
+                drawviewmodel = false ,
                 drawhud = false,
             })
         end
         
         -- 可选：叠加红点
         cam.Start2D()
-            surface.SetDrawColor(255, 0, 0, 100)
+            surface.SetDrawColor(43, 255, 0, 100)
             surface.DrawRect(256 - 4, 256 - 4, 8, 8)
         cam.End2D()
     render.PopRenderTarget()
@@ -64,5 +64,27 @@ function ATTACHMENT:RenderScope(wep, model)
     })
 
     SetMat(_Lense, "!" .. rtMat:GetName())
+
+
+    render.ClearStencil()
+    render.SetStencilWriteMask(0xFF)
+    render.SetStencilTestMask(0xFF)
+    render.SetStencilReferenceValue(0)
+    render.SetStencilCompareFunction(STENCIL_NEVER)
+    render.SetStencilPassOperation(STENCIL_REPLACE)
+    render.SetStencilEnable(true)
+    render.SetStencilReferenceValue(TRM_BASE_REF + 1)
+        
+
+    render.SetStencilCompareFunction(STENCIL_LESSEQUAL)
+
+
+
+
+    render.ClearStencil()
+    render.SetStencilEnable(false)
+    
+    model:DrawModel()
+
 
 end
