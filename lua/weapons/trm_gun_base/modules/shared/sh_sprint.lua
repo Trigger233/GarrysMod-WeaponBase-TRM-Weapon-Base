@@ -11,11 +11,11 @@ function SWEP:CanSprint()
         return false
     end
 
-    if    string.find(task,"Deploy") or string.find(task,"Holster")   then
+    if    string.find(task,"Deploy") or string.find(task,"Holster")  or string.find(task,"Inspect")  then
         return false
     end
 
-    if string.find( seq,"Sprint") or string.find(seq,"Inspect")  or string.find(seq,"Melee") or string.find(seq,"Draw") or string.find(seq,"Holster") then return false end 
+    if  string.find(seq,"Inspect")  or string.find(seq,"Melee") or string.find(seq,"Draw") or string.find(seq,"Holster") then return false end 
 
     -- if cycle < self.Animations[seq].Length then return false end
     return true

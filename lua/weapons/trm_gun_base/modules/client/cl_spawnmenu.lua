@@ -7,6 +7,7 @@ hook.Add("PopulateToolMenu","TRM_weapon_base_q_menu",function()
         panel:CheckBox("Auto Reload","trmbase_autoreload")
         panel:CheckBox("FireInteruptReload","trmbase_fire_interupt_reload")
         panel:CheckBox("SprintReload","trmbase_allow_sprintreload")
+        panel:CheckBox("Load ATT on Pickup","trmbase_load_attachment_on_pickup")
 
         
     end)

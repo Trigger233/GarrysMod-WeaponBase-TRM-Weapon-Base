@@ -12,7 +12,7 @@ function SWEP:UpdatePoseParameters()
     local speed = IsValid(owner) and owner:GetVelocity():Length2D() or 0
     local runSpeed = IsValid(owner) and owner:GetRunSpeed() or 1
     local walkSpeed = IsValid(owner) and owner:GetWalkSpeed() or 1
-    local dt = RealFrameTime() * 1
+    local dt = FrameTime() * 1
     -- Aim Pose
     if self.Sight and self.Sight.PoseParameter then
         self.m_AimPose = Lerp(  dt * 20, self.m_AimPose or 0, self:GetAimDelta()) or 0

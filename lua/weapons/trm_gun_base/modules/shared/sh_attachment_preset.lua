@@ -12,15 +12,15 @@ local PRESET_ROOT = "trm_weapon_base/preset/save_attachment/"
 function SWEP:EquipDefaultAttachments()
     if not SERVER then return end
     if not self.Attachments then return end
-
+    if not self.CurrentAttachments then
+        self.CurrentAttachments = {}
+    end
     local changed = false
     for i, slot in ipairs(self.Attachments) do
         if slot.Default and BASE_TRM_ATTS[slot.Default] then
             local slotKey = tostring(i)
-            if self.CurrentAttachments[slotKey] ~= slot.Default then
                 self.CurrentAttachments[slotKey] = slot.Default
                 changed = true
-            end
         end
     end
 

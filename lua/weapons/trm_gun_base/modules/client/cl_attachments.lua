@@ -18,20 +18,20 @@ function SWEP:SendAttachmentToServer(slotKey, attID)
 end
 
 function SWEP:ReParentAttachmentModel()
-    if not CLIENT then return end
-    for _slot , _model in pairs(self.AttachmentModels) do
-        if IsValid(_model) then
-            local weaponTable = self.Attachments[_slot]
-            if not weaponTable or not weaponTable.Bone then continue end
-            local Data = self:GetBoneData(weaponTable.Bone)
-            if Data and _model:GetParent() ~= Data.Ent then
-                _model:SetParent(Data.Ent , Data.Id )
-            end
-            --print(_model:GetParent())
-            --PrintTable(_model)  
+    -- if not CLIENT then return end
+    -- for _slot , _model in pairs(self.AttachmentModels or {}) do
+    --     if IsValid(_model) then
+    --         local weaponTable = self.Attachments[_slot]
+    --         if not weaponTable or not weaponTable.Bone then continue end
+    --         local Data = self:GetBoneData(weaponTable.Bone)
+    --         if Data and _model:GetParent() ~= Data.Ent then
+    --             _model:SetParent(Data.Ent , Data.Id )
+    --         end
+    --         --print(_model:GetParent())
+    --         --PrintTable(_model)  
  
-        end
-    end
+    --     end
+    -- end
 
 end
 
@@ -78,14 +78,15 @@ function PANEL:Init()
     self:SetPos(0, 0)
 
     self.animationState = 0
-    self.m_Slot = 1
+    self.m_Slot = self.m_Slot or 1
     self.m_Weapon = nil
+    local globalScale = ScreenScale(0.25)
 
     -- 主内容区域
     self.m_MainPanel = vgui.Create("DPanel", self)
-    self.m_MainPanel:SetSize(ScrW() * 0.25, math.min(ScrH() - 40, 1000))
+    self.m_MainPanel:SetSize(360, 1000 * globalScale)
     self.m_MainPanel:AlignLeft()
-    self.m_MainPanel:AlignTop(200)
+    self.m_MainPanel:AlignTop(200 * globalScale )
     self.m_MainPanel.Paint = function(s, w, h)
         surface.SetDrawColor(30, 30, 30, 50)
         surface.DrawRect(0, 0, w, h)
@@ -166,7 +167,7 @@ function PANEL:Init()
     local menuPanel = self
 
     self.m_StatsPanel = vgui.Create("DPanel", self)
-    self.m_StatsPanel:SetSize(ScrW() * 0.25, 1000)
+    self.m_StatsPanel:SetSize(360, 1000 * globalScale)
     self.m_StatsPanel:AlignRight(5)
     self.m_StatsPanel:AlignTop(200)
 

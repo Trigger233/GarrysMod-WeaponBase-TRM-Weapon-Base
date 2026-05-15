@@ -16,7 +16,7 @@ function SWEP:CustomBob()
     if speed > 10 and owner:OnGround() then
         self.Bob_t = (self.Bob_t or 0) + RealFrameTime() * speed * 0.05
         -- 不限制范围，让 sin 自然循环
-    else
+    elseif speed < 10 then
         self.Bob_t = (self.Bob_t or 0) * 0.95  -- 停止时归零
     end
     
@@ -40,7 +40,7 @@ function SWEP:CustomBob()
 end
 
 function SWEP:Sway()
-    if not CLIENT or not self:GetOwner() and not  self:GetOwner():IsPlayer() then 
+    if not (    CLIENT and  self:GetOwner() and   self:GetOwner():IsPlayer()) then 
         return Angle(0,0,0), Vector(0,0,0)
     end
     
@@ -220,7 +220,7 @@ function SWEP:CalcViewModelView(vm ,pos , angles , poss , angless )
     --Bob
     local BobPos , BobAngle = self:CustomBob()
     local ApplyBobPos = Vector( angles:Right() * BobPos.x , angles:Forward() * BobPos.y , angles:Up() * BobPos.z   ) * ( 1 - aimdelta )
-    BobAngle:Mul(1 - aimdelta )
+    BobAngle:Mul(1 - aimdelta * 0.2 )
     pos:Add(ApplyBobPos)
     angles:Add(BobAngle)
     --Duck Pose
@@ -300,7 +300,6 @@ end
 function SWEP:ViewModelDrawn(vm)
     if not IsValid(vm) then return  end
 
-    -- TFA 风格：先刷新骨骼缓存
     vm:InvalidateBoneCache()
     vm:SetupBones()
 
@@ -309,7 +308,7 @@ function SWEP:ViewModelDrawn(vm)
 
     self:BuildCustomizedGun()
 
-    -- 逐个调用配件的 Render（用 pcall 包住，防止激光等配件崩了卡死后面的瞄准镜）
+        -- 逐个调用配件的 Render（用 pcall 包住，防止激光等配件崩了卡死后面的瞄准镜）
     for slot, att in pairs(self.CurrentAttachments) do
         local data = BASE_TRM_ATTS[att]
         local model = self.AttachmentModels[slot]
@@ -320,6 +319,11 @@ function SWEP:ViewModelDrawn(vm)
             end
         end
     end 
+
+    
+end
+
+function SWEP:PostDrawViewModel()
     
 end
 

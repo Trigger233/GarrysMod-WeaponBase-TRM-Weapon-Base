@@ -58,7 +58,6 @@ function ATTACHMENT:RenderReticle(weapon, model)
     end
     
     render.DrawQuadEasy(att.Pos + offset, att.Ang:Forward():GetNegated(), size, size, color, -att.Ang.r + 180)
-    
-    render.SetStencilEnable(false)
     render.ClearStencil()
+    render.SetStencilEnable(false)
 end

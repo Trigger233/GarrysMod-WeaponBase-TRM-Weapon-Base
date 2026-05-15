@@ -29,7 +29,7 @@ function SWEP:Task_Inspect(cycle)
 end
 
 function SWEP:CanInspect()
-    return (self:GetCurrentTask() == "Finished"  )and (self.Animations.Inspect or self.Animations.Inspect_Empty)
+    return (self:GetCurrentTask() == "Finished" or string.find(self:GetCurrentTask(),"Sprint") )and (self.Animations.Inspect or self.Animations.Inspect_Empty) and not string.find(self:GetPlayingSequence(),"Inspect")
 end 
 
 function SWEP:IsInspecting()

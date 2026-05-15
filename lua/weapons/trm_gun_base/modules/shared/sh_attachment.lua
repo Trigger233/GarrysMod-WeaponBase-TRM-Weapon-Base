@@ -24,86 +24,132 @@ function SWEP:IsSlotExcluded(slotIndex)
     return false
 end
  
+
+--self:GetViewModel():SetWeaponModel("models/weapons/c_smg1.mdl",self)
+
+function SWEP:PrecacheViewModel()
+    self.m_ViewmodelCache = nil
+    self.m_SkinCache = nil 
+    self.m_BodyGroupCache = {}
+
+    for index , att in pairs(self.CurrentAttachments or {}) do
+        if not BASE_TRM_ATTS[att] then continue end 
+        local _att = BASE_TRM_ATTS[att]
+        if _att.ViewModel then
+            self.m_ViewmodelCache = _att.ViewModel 
+        elseif _att.Skin  then
+            self.m_SkinCache = _att.Skin 
+        elseif _att.BodyGroup then 
+            for _model , _submodel in pairs(_att.BodyGroup) do
+                self.m_BodyGroupCache[_model] = _submodel
+            end
+        end
+    end
+
+end
+  
 function SWEP:PrepareViewModel()
-    --if SERVER then return end
+    if (not vm) then
+        vm = self:GetViewModel(0)
+    end
 
-    local vm = self:GetOwner():GetViewModel(0)  
-
-    if not IsValid(vm)  then
+    if (not IsValid(vm) or not vm) then
         return false
     end
+ 
+    vm:SetSkin(0)
 
-  
-
-    
-   
-
-    --self:SetModel(self.WorldModel)
-    vm:SetWeaponModel(self.ViewModel , self)
-    
-end
-
-function SWEP:ApplyModelChanged()
-    
-    if  CLIENT then 
-        self:PrepareViewModel()
-        local vm = self:GetViewModel()
-
-
+    for b = 0, vm:GetNumBodyGroups() do
+        vm:SetBodygroup(b, 0)
     end
 
-    
+    self:SetSkin(0)
+
+    for b = 0, self:GetNumBodyGroups() do
+        self:SetBodygroup(b, 0)
+    end
+    vm:SetWeaponModel(self.ViewModel,self)
+
+    for _group , _sub in pairs(self.BodyGroups or {}) do
+        changeBodyGroup(vm,_group,_sub)
+        for slot , model in pairs(self.AttachmentModels or {}) do
+            changeBodyGroup(model,_group,_sub )
+        end
+    end
+
+
 end
-  
+
+function changeBodyGroup(model,submodel,sub)
+    if not IsValid(model) then return end 
+    local _modelId = model:FindBodygroupByName(submodel)
+    if _modelId and _modelId > -1 then
+        model:SetBodygroup(_modelId,sub)
+    end
+    --print("change")
+end
+
+function SWEP:ApplyViewModelChange()
+    local vm = self:GetViewModel()
+    if not IsValid(vm) then return false end
+
+    for bodygroup , sub in pairs(self.m_BodyGroupCache) do
+        changeBodyGroup(vm,bodygroup,sub)
+        for slot , model in pairs(self.AttachmentModels or {}) do
+            changeBodyGroup(model,bodygroup,sub )
+        end
+    end
+
+    vm:SetWeaponModel(self.m_ViewModelCache || self.ViewModel,self)
+    vm:SetSkin(self.m_SkinCache || 0)
+
+end
 
 
 function SWEP:ChangeWeaponStats()
-    if CLIENT  then return end
-    -- 只重置属性表，不重置 m_Spread
-    self:DeepObjectCopy(self.m_OriginalStat, self)
-    
-    for slot, attClass in pairs(self.CurrentAttachments or {}) do
-        if BASE_TRM_ATTS[attClass].ChangeWeaponStats then 
-            BASE_TRM_ATTS[attClass]:ChangeWeaponStats(self)
+
+
+    if SERVER  then 
+        self:DeepObjectCopy(    self.m_OriginalStat    , self)
+        
+        for slot, attClass in pairs(self.CurrentAttachments or {}) do
+            if BASE_TRM_ATTS[attClass].ChangeWeaponStats then 
+                BASE_TRM_ATTS[attClass]:ChangeWeaponStats(self)
+            end
         end
-    end
-    
-    self:ApplyModelChanged()
-    if self:Clip1() > self.Primary.ClipSize then
-        self:SetClip1(self.Primary.ClipSize)
-    end
-    if self:Clip2() > self.Secondary.ClipSize then
-        self:SetClip2(self.Secondary.ClipSize)
+
+        
+        if self:Clip1() > self.Primary.ClipSize then
+            self:SetClip1(self.Primary.ClipSize)
+        end
+        if self:Clip2() > self.Secondary.ClipSize then
+            self:SetClip2(self.Secondary.ClipSize)
+        end
+
+        self:SetSpread(self.Spread.Base)
+        self:SetSpreadVertical(self.Spread.Vertical)
+        self:SetSpreadHorizonal(self.Spread.Horizontal)
+    else 
+
     end
 
-    self:SetSpread(self.Spread.Base)
-    self:SetSpreadVertical(self.Spread.Vertical)
-    self:SetSpreadHorizonal(self.Spread.Horizontal)
 end
 
 function SWEP:DeepObjectCopy(original, holder)
     for index, value in pairs(original) do 
+        if index == "ModelBodyGroup" then continue end  -- 跳过
         if istable(value) then
             holder[index] = {}
-            
             self:DeepObjectCopy(value, holder[index])
         elseif isvector(value) then
-            holder[index] = Vector(0, 0, 0)
-            holder[index]:Set(value)
-        elseif (isangle(value)) then
-            holder[index] = Angle(0, 0, 0)
-            holder[index].p = value.p
-            holder[index].y = value.y
-            holder[index].r = value.r
+            holder[index] = Vector(value.x, value.y, value.z)
+        elseif isangle(value) then
+            holder[index] = Angle(value.p, value.y, value.r)
         else
-            if index == "LoadSpawnPreset" then
-                continue
-            end
-
             holder[index] = value
         end
     end
-end 
+end
 
 function SWEP:GetOriginStat()
     local template = weapons.Get(self:GetClass())
@@ -327,8 +373,6 @@ function SWEP:UnEquipAttachment(slot)
     print("Unequipped:", slot, self.CurrentAttachments[slot] or "None")
 end
 
---- 创建 / 更新所有配件的客户端模型
---- TFA 风格：RENDERGROUP_OTHER + SetNoDraw(true)，在 ViewModelDrawn 里手动 DrawModel
 function SWEP:BuildCustomizedGun()
     if SERVER then return end
 
@@ -337,6 +381,7 @@ function SWEP:BuildCustomizedGun()
 
     self.m_Sight = nil 
 
+    self:ReParentAttachmentModel() 
 
     -- 初始化模型缓存表
     if not self.AttachmentModels then
@@ -373,14 +418,14 @@ function SWEP:BuildCustomizedGun()
             -- TFA 方式创建：SetNoDraw(true)，在 ViewModelDrawn 手动 DrawModel
             local slotData = self.Attachments and self.Attachments[tonumber(slotKey)]
             local model = ClientsideModel(attData.Model, RENDERGROUP_VIEWMODEL)
-            local parent = vm
+            local parent = slotData.Bone and self:GetBoneData(slotData.Bone) and  self:GetBoneData(slotData.Bone).Ent or vm
             model._attID = attID
             model._slotKey = slotKey
 
             model:SetNoDraw(true)
             model:SetNotSolid(true)
             model:SetMoveType(MOVETYPE_NONE) 
-            model:SetOwner(vm)
+            model:SetOwner(parent)
 
 
             if attData.Bonemerge == true then
@@ -421,8 +466,8 @@ function SWEP:BuildCustomizedGun()
                 self.TpAttachmentModels[slotKey]:Remove()
                 self.TpAttachmentModels[slotKey] = nil
             end
-        elseif IsValid(self.TpAttachmentModels[slotKey])
-            and self.TpAttachmentModels[slotKey]._attID == attID then
+        elseif IsValid(self.TpAttachmentModels[slotKey]) and self.TpAttachmentModels[slotKey]._attID == attID then
+            
             -- TP 模型已是最新，跳过
         else
             -- 移除旧 TP 模型
@@ -454,9 +499,12 @@ function SWEP:BuildCustomizedGun()
             self.TpAttachmentModels[slotKey] = tpModel
         end
     end
-    self:ReParentAttachmentModel() 
 
     -- 必须在模型创建完后才计算瞄具偏移（否则模型还不存在）
+    self:PrecacheViewModel()
+    self:PrepareViewModel()
+    self:ApplyViewModelChange()
+
     self:GenerateAimOffset()
 
     -- 清除已卸载配件的模型（VM + TP）
@@ -505,6 +553,7 @@ function SWEP:GenerateAimOffset()
 
                 model:InvalidateBoneCache()
                 model:SetupBones() --shaky otherwise
+                
                 model:GetParent():InvalidateBoneCache()
                 model:GetParent():SetupBones()
 
@@ -582,19 +631,3 @@ end)
 
 
   
----concommad
--- 查看当前武器装备的所有配件
-
-concommand.Add("trm_debug_spread", function(ply)
-    local wep = ply:GetActiveWeapon()
-    if not IsValid(wep) then return end
-    
-    print("=== Spread Debug ===")
-    print("SWEP.Spread.Base:", wep.Spread.Base)
-    print("GetSpread():", wep:GetSpread())
-    print("CurrentAttachments:", wep.CurrentAttachments)
-    
-    -- 强制刷新一次
-    wep:ChangeWeaponStats()
-    print("After ChangeWeaponStats - GetSpread():", wep:GetSpread())
-end)

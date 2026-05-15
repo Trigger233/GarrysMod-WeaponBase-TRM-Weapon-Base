@@ -445,24 +445,33 @@ function SWEP:Initialize()
     self.Attachments = self.Attachments or {}
     self.AttachmentModels = {}
 
-     
+    self:EquipDefaultAttachments()
+    self:PrecacheViewModel() 
 
 end
 
 SWEP.Attachments = {}
+function SWEP:GetViewModel(index)
+    return  self:GetOwner():GetViewModel(index || 0) or false
+end
 
 function SWEP:Deploy()
 	self:GetOwner():SetSaveValue("m_flNextAttack", 0)
-    self:PrepareViewModel()
-
     self:SetNextAnimationTime(0)
     self:SetCurrentTask("Deploy")
+    
+    self:PrepareViewModel()
+    --elf:ApplyViewModelChange()
 
     self:SyncAllAttachments()
     if CLIENT then
         self:BuildCustomizedGun() 
+    else
+        self:CallOnClient("BuildCustomizedGun")
     end
-
+    
+    self:ApplyViewModelChange()
+ 
 
 end
 
@@ -512,6 +521,7 @@ function SWEP:OnReloaded()
 end
 
 function SWEP:OnRestore()
+    self:OnReloaded()
     self:ChangeWeaponStats()
     --self:SpreadInit()
     self:SetNextRecoil(0)
@@ -557,9 +567,7 @@ function SWEP:Reload()
     
 end
 
-function SWEP:GetViewModel(index)
-    return  self:GetOwner() and self:GetOwner():GetViewModel(index || 0) or false 
-end
+
 
 function SWEP:IsEmpty()
     return (self:Clip1() <= 0) 
@@ -617,12 +625,12 @@ end
 function SWEP:NPCShoot_Primary(pos , dir)
     self:FirePrimaryBullet() 
 end
-
+local cvar_attachment = CreateConVar("trmbase_load_attachment_on_pickup",1)
 function SWEP:Equip()
     self:SetFirstDeployed(true)
 
         -- 服务端同步配件给客户端
-    if SERVER then
+    if SERVER and cvar_attachment:GetBool() then
         -- 先加载保存的配件配置
         self:LoadAttachmentPreset()
         self:SyncAllAttachments()
