@@ -51,6 +51,7 @@ SWEP.PrintName = "TRM Base Weapon"
 SWEP.Author = "TriggerMiku"
 SWEP.Purpose = "A base weapon for TRM weapons."
 
+SWEP.AutoSwitchTo = true 
 SWEP.DrawCrosshair = false
 
 SWEP.DrawCrossHairIS = false
@@ -193,6 +194,8 @@ SWEP.Spread = {
 	Increase = 0.12,
 	Recover = 0.3,
 	Delay = 0.3 ,
+    MoveMultiplier = 2.6 ,
+    AirMultiplier = 5 ,
     
     
 }
@@ -452,34 +455,44 @@ function SWEP:Initialize()
     end
 
     self:EquipDefaultAttachments()
+
+    -- 武器初始化时就加载预设（保证无论 Deploy 触不触发都能恢复配件）
+    if SERVER then
+        self:LoadAttachmentPreset()
+    end
+
     self:PrecacheViewModel() 
+    self:BuildCustomizedGun()
 
     
 end
 
 SWEP.Attachments = {}
 function SWEP:GetViewModel(index)
-    return  self:GetOwner():GetViewModel(index || 0) or false
+    local owner = self:GetOwner()
+    if not IsValid(owner) or not owner:IsPlayer() then return nil end
+    return owner:GetViewModel(index or 0) or false
 end
 
 function SWEP:Deploy()
 	self:GetOwner():SetSaveValue("m_flNextAttack", 0)
     self:SetNextAnimationTime(0)
     self:SetCurrentTask("Deploy")
+
+    self:BuildCustomizedGun()
     
     self:PrepareViewModel()
     --elf:ApplyViewModelChange()
 
     self:SyncAllAttachments()
    
-    self:BuildCustomizedGun()
- 
+
  
 
 end
 
 function SWEP:OnDrop(owner)
-   owner:SetActiveWeapon(NULL)
+   --owner:SetActiveWeapon(NULL)
    
    if IsValid(TRM_AttachMenu_Instance) then
         TRM_AttachMenu_Instance:Close()
@@ -490,7 +503,7 @@ end
 function SWEP:OnReloaded()
     self:GetOriginStat()
     self:ChangeWeaponStats()
-    --self:SpreadInit()
+    self:SpreadInit()
 
 
     -- 只在客户端执行热加载
@@ -618,11 +631,11 @@ function SWEP:GetNPCBulletSpread()
 end
 
 function SWEP:GetNPCBurstSettings()
-    return 1 , 5 , (60 /self.Primary.RPM)
+    return 1 , (self.Primary.ClipSize or 5) , (60 /self.Primary.RPM)
 end
 
 function SWEP:GetNPCRestTimes()
-    return 0.3 , 0.6
+    return 0.0 , 0.0
 end
 
 function SWEP:NPCShoot_Primary(pos , dir)
@@ -701,5 +714,9 @@ function SWEP:GetPlayerMoveMult(ply)
     return runMult, walkMult
 end
 
--- 原有的 ApplyMoveSpeed 可以删掉了
+function SWEP:GetTracerOrigin()
+    local att = self:GetAttachmentData(self.Effects.Muzzle.attachment)
+    local muzzle =  att.Ent:GetAttachment(att.id)
 
+    return muzzle.Pos
+end

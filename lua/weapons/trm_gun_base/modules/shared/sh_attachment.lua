@@ -396,14 +396,9 @@ function SWEP:BuildCustomizedGun()
     if SERVER then return end
 
     local vm = self:GetViewModel()
-    if not IsValid(vm) then return end
+    local hasVM = IsValid(vm)
 
-    -- 确保骨骼数据已刷新（否则 GetBoneMatrix 返回零矩阵，
-    -- 导致 FollowBone 配件挂到原点、附件点偏移错误）
-    vm:InvalidateBoneCache()
-    vm:SetupBones()
-
-    self.m_Sight = nil 
+    self.m_Sight = nil
 
     local currentSlotKeys = {}
 
@@ -415,39 +410,81 @@ function SWEP:BuildCustomizedGun()
         if not attData then continue end
 
         -- ========== 第一人称模型（挂 ViewModel） ==========
-        if IsValid(entry.m_Model) then
-            -- 已有模型，跳过
-        else
-            if not attData.Model then continue end
-            local model = ClientsideModel(attData.Model, RENDERGROUP_VIEWMODEL)
+        -- 只在 vm 有效时创建/更新
+        if hasVM then
+            if not IsValid(entry.m_Model) and attData.Model then
+                local model = ClientsideModel(attData.Model, RENDERGROUP_VIEWMODEL)
+                model:SetNoDraw(true)
+                model:SetNotSolid(true)
+                model:SetMoveType(MOVETYPE_NONE)
+                model:SetOwner(vm)
+                entry.m_Model = model
+            end
+        end
 
-            model:SetNoDraw(true)
-            model:SetNotSolid(true)
-            model:SetMoveType(MOVETYPE_NONE)
-            model:SetOwner(vm)
-
-            entry.m_Model = model
+        -- ========== 第三人称模型（挂武器实体，引擎自动渲染） ==========
+        if attData.Bonemerge == true and attData.Model then
+            if not IsValid(entry.m_TpModel) then
+                local tpModel = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
+                tpModel:SetNotSolid(true)
+                tpModel:SetMoveType(MOVETYPE_NONE)
+                tpModel:SetNoDraw(true)
+                tpModel:SetParent(self)
+                tpModel:AddEffects(EF_BONEMERGE)
+                tpModel:AddEffects(EF_BONEMERGE_FASTCULL)
+                entry.m_TpModel = tpModel
+            end
+        elseif IsValid(entry.m_TpModel) then
+            entry.m_TpModel:Remove()
+            entry.m_TpModel = nil
         end
     end
 
     -- 清除已卸载配件的模型
     for slotKey, entry in pairs(self.CurrentAttachments or {}) do
-        if not currentSlotKeys[slotKey] and entry and IsValid(entry.m_Model) then
-            entry.m_Model:Remove()
-            entry.m_Model = nil
+        if not currentSlotKeys[slotKey] and entry then
+            if IsValid(entry.m_Model) then
+                entry.m_Model:Remove()
+                entry.m_Model = nil
+            end
+            if IsValid(entry.m_TpModel) then
+                entry.m_TpModel:Remove()
+                entry.m_TpModel = nil
+            end
         end
     end
 
-    -- 必须在模型创建完后才计算瞄具偏移（否则模型还不存在）
-    self:PrecacheViewModel()
-    self:PrepareViewModel()
-    self:ApplyViewModelChange()
+    -- VM 相关操作只在 vm 有效时执行
+    if hasVM then
+        -- 确保骨骼数据已刷新
+        vm:InvalidateBoneCache()
+        vm:SetupBones()
 
-    self:BuildViewModelData()
+        self:PrecacheViewModel()
+        self:PrepareViewModel()
+        self:ApplyViewModelChange()
+        self:BuildViewModelData()
+        self:ApplyAttachmentModels()
+        self:GenerateAimOffset()
+    end
 
-    self:ApplyAttachmentModels()
+    -- TP 模型偏移始终需要计算（挂在武器实体上，不依赖 vm）
+    for slotKey, entry in pairs(self.CurrentAttachments or {}) do
+        if not entry or not entry.Class then continue end
+        local tpModel = entry.m_TpModel
+        if not IsValid(tpModel) then continue end
 
-    self:GenerateAimOffset()
+        local slotData = self.Attachments and self.Attachments[tonumber(slotKey)]
+        local attData = BASE_TRM_ATTS[entry.Class]
+
+        local tpPos = slotData and Vector(slotData.Pos) or Vector(0, 0, 0)
+        local tpAng = slotData and Angle(slotData.Ang) or Angle(0, 0, 0)
+        if attData and attData.Pos and isvector(attData.Pos) then tpPos:Add(attData.Pos) end
+        if attData and attData.Angles and isangle(attData.Angles) then tpAng:Add(attData.Angles) end
+
+        tpModel:SetLocalPos(tpPos)
+        tpModel:SetLocalAngles(tpAng)
+    end
 end
 
 function SWEP:ApplyAttachmentModels()
@@ -560,9 +597,7 @@ end
 function SWEP:SyncAllAttachments()
     if not SERVER then return end
 
-    local owner = self:GetOwner()
-    if not IsValid(owner) or not owner:IsPlayer() then return end
-
+    -- 地面武器没有 owner 也能同步（用于第三人称模型）
     net.Start("TRMBase_SyncAllAttachments")
         net.WriteEntity(self)
         local count = 0
@@ -574,7 +609,7 @@ function SWEP:SyncAllAttachments()
             net.WriteString(slot)
             net.WriteString(entry.Class)
         end
-    net.Send(owner)
+    net.SendPVS(self:GetPos())
 end
 
 net.Receive("TRMBase_Attachment", function()

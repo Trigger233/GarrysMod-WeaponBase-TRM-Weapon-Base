@@ -300,23 +300,23 @@ end
 function SWEP:ViewModelDrawn(vm)
     if not IsValid(vm) then return end
 
-    -- 防护：拾取/切换武器时，旧武器的 ViewModelDrawn 可能仍跑最后一帧
-    -- 不响应，防止旧武器的 Attachments、模型数据污染当前武器的渲染
     if self ~= (IsValid(LocalPlayer()) and LocalPlayer():GetActiveWeapon()) then return end
-
+    vm:InvalidateBoneCache()
     vm:SetupBones()
-    --self:BuildCustomizedGun()
+    --self:BuildViewModelData()
+    -- 仅在第一帧需要时重建（net sync 早到但 vm 还没就绪的情况）
+    if self.m_NeedsBuild then
+        self:BuildCustomizedGun()
+        self.m_NeedsBuild = false
 
-        -- 逐个调用配件的 Render（用 pcall 包住，防止激光等配件崩了卡死后面的瞄准镜）
+    end
+    
+    -- 逐个调用配件的 Render（用 pcall 包住，防止激光等配件崩了卡死后面的瞄准镜）
     for slot, entry in pairs(self.CurrentAttachments) do
         if not entry or not entry.Class then continue end
         local data = BASE_TRM_ATTS[entry.Class]
         local model = entry.m_Model
         if data.Render and IsValid(model) then
-            -- local ok, err = pcall(data.Render, data, self, model)
-            -- if not ok then
-            --     -- 静默处理
-            -- end
             data:Render(self,model)
         end
     end 

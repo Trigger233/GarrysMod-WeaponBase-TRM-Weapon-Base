@@ -7,8 +7,13 @@ hook.Add("PopulateToolMenu","TRM_weapon_base_q_menu",function()
         panel:CheckBox("Auto Reload","trmbase_autoreload")
         panel:CheckBox("FireInteruptReload","trmbase_fire_interupt_reload")
         panel:CheckBox("SprintReload","trmbase_allow_sprintreload")
-        panel:CheckBox("Load ATT on Pickup","trmbase_load_attachment_on_pickup")
+        panel:CheckBox("Load ATT on Pickup还没做好QAQ","trmbase_load_attachment_on_pickup")
 
+        
+    end)
+    spawnmenu.AddToolMenuOption("TriggerMiku_Work","WeaponBase","trmbase_npc","NPC","","",function(panel)
+        panel:ClearControls()
+        panel:CheckBox("Replace NPC Weapon","trmbase_replace_npc")
         
     end)
     spawnmenu.AddToolMenuOption("TriggerMiku_Work","WeaponBase","trmbase_client","Client","","",function(panel)

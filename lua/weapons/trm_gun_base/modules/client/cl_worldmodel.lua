@@ -36,10 +36,10 @@ function SWEP:DrawWorldModel(flags)
     end
     
     self:DrawModel(flags)
-    if self.TpAttachmentModels then
-        for _, model in pairs(self.TpAttachmentModels) do
-            if IsValid(model) then
-                model:DrawModel()
+    if self.CurrentAttachments then
+        for _, entry in pairs(self.CurrentAttachments) do
+            if IsValid(entry.m_TpModel) then
+                entry.m_TpModel:DrawModel()
             end
         end
     end
@@ -54,12 +54,12 @@ end
 -- 清理 TP 配件模型（武器移除时子实体不会自动移除）
 -- =============================================
 function SWEP:OnRemove()
-    if self.TpAttachmentModels then
-        for _, model in pairs(self.TpAttachmentModels) do
-            if IsValid(model) then
-                model:Remove()
+    if self.CurrentAttachments then
+        for _, entry in pairs(self.CurrentAttachments) do
+            if IsValid(entry.m_TpModel) then
+                entry.m_TpModel:Remove()
+                entry.m_TpModel = nil
             end
         end
-        self.TpAttachmentModels = nil
     end
 end

@@ -26,9 +26,15 @@ function SWEP:Holster(weapon)
         self.m_NeedsBuild = true
         if self.CurrentAttachments then
             for _, entry in pairs(self.CurrentAttachments) do
-                if entry and IsValid(entry.m_Model) then
-                    entry.m_Model:Remove()
-                    entry.m_Model = nil
+                if entry then
+                    if IsValid(entry.m_Model) then
+                        entry.m_Model:Remove()
+                        entry.m_Model = nil
+                    end
+                    if IsValid(entry.m_TpModel) then
+                        entry.m_TpModel:Remove()
+                        entry.m_TpModel = nil
+                    end
                 end
             end
         end

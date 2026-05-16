@@ -464,6 +464,10 @@ vgui.Register("TRM_AttachMenu", PANEL, "DFrame")
 -- concommand 开关
 -- =============================================
 
+-- =============================================
+-- concommand 开关
+-- =============================================
+
 concommand.Add("+trmbase_customize", function(ply)
     if not  IsValid(TRM_AttachMenu_Instance) then
         local weapon = ply:GetActiveWeapon()
@@ -512,6 +516,7 @@ net.Receive("TRMBase_SyncAttachment", function()
     if wep.BuildCustomizedGun then
         wep:BuildCustomizedGun()
     end
+    wep.m_NeedsBuild = true
 
     if IsValid(TRM_AttachMenu_Instance) then
         TRM_AttachMenu_Instance:RefreshAttList()
@@ -536,6 +541,7 @@ net.Receive("TRMBase_SyncAllAttachments", function()
     if wep.BuildCustomizedGun then
         wep:BuildCustomizedGun()
     end
+    wep.m_NeedsBuild = true
 end)
 
 -- =============================================

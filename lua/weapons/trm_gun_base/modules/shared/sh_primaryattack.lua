@@ -31,6 +31,7 @@ function SWEP:Task_PrimaryFire()
 	end
 	
 	
+	
 
 	
 	
@@ -49,7 +50,6 @@ function SWEP:DoFireSound()
 	end
 
 end
-
 
 
 
@@ -89,7 +89,7 @@ function SWEP:FirePrimaryBullet()
         Dir = aimDir,
         Distance = self.Primary.Range,
         Spread = spread ,
-        Tracer = 0,
+        Tracer = 1,
         Force = self.Primary.Force  ,
         Damage = self.Primary.Damage * self.Primary.NumBullets,
         AmmoType = self.Primary.Ammo ,
@@ -101,9 +101,9 @@ function SWEP:FirePrimaryBullet()
 		bullet.Spread =  0.0
 		bullet.Damage = bullet.Damage * 1
 	end
-	-- if SERVER then
+	if SERVER and IsFirstTimePredicted() then
 	owner:FireBullets(bullet  )
-	-- end
+	end
 	
 	self:DoVisualRecoil()
 	self:DoRecoil()
@@ -352,24 +352,31 @@ function SWEP:DoSpread()
 	self:SetSpread(base)
 end
 
--- 在 sh_primaryattack.lua 或 shared.lua 中添加
 function SWEP:GetCurrentSpread()
-    local baseSpread = self:GetSpread()
-    local aimDelta = self:GetAimDelta()
+	local baseSpread = self:GetSpread()
+	local aimDelta = self:GetAimDelta()
+	local owner = self:GetOwner()
+	if not IsValid(owner) then return baseSpread end
+
+	-- 移动扩散
+	local vel = owner:GetVelocity():Length2D() / 200
+	local moveMult = 1.0
 	
-	if not self:GetOwner():IsOnGround() then 
-		baseSpread = baseSpread * 1.45 
-	end
+	moveMult = math.max(self.Spread.MoveMultiplier* vel or 1.0  , 1) 
+	
+	baseSpread = baseSpread * moveMult
+
+	-- 跳跃扩散（平滑过渡）
+	local targetMult = owner:IsOnGround() and 1.0 or (self.Spread.AirMultiplier or 1.0)
+	self.m_AirMult = self.m_AirMult or 1.0
+	self.m_AirMult = Lerp(FrameTime() * 5, self.m_AirMult, targetMult)
+	baseSpread = baseSpread * self.m_AirMult
 
 	if self.Aim.SpreadFollowPrimary then
-		baseSpread = baseSpread * Lerp(aimDelta,1, self.Aim.Spread / self.Spread.Base  )
+		baseSpread = baseSpread * Lerp(aimDelta,1, self.Aim.Spread / self.Spread.Base)
 	else
-		baseSpread = Lerp(aimDelta,baseSpread, self.Aim.Spread  )
+		baseSpread = Lerp(aimDelta,baseSpread, self.Aim.Spread)
 	end
-	  
-	
 
-    
-    
-    return baseSpread
+	return baseSpread
 end
