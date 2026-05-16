@@ -23,7 +23,7 @@ function SWEP:AimIn()
 end
 
 function SWEP:AimOut()
-    self.m_AimDelta = math.Approach(self.m_AimDelta,0,FrameTime()/self.m_AimTime) 
+    self.m_AimDelta = math.Approach(self.m_AimDelta,0,FrameTime()/self.Aim.Time) 
 
     local seq = self.m_CurrentSequence or self:GetPlayingSequence()
     if seq == "Iron_Idle" and self.Animations.Idle then
@@ -58,8 +58,6 @@ function SWEP:AimThink()
 
     if SERVER and IsFirstTimePredicted() then
         self:AimLogic()
-    else
-        self:AimStat()
     end
     
 

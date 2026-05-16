@@ -6,10 +6,10 @@ ATTACHMENT.Selectable = true
 ATTACHMENT.Angles  = Angle(-90,0,90)
 
 ATTACHMENT.Sight = {
-    Pos = Vector(0,0, -0.95 ) ,
+    Pos = Vector(0.00,0, -0.95 ) ,
     Align = "reticle" ,
     Material = Material("models/weapons/tfa_ins2/optics/eotech_reticule") ,
-    Size = 512 , 
+    Size = 5.12 , 
     Color = Color(255,0,0),
     HideMaterial = {2} , --Material Index
 }

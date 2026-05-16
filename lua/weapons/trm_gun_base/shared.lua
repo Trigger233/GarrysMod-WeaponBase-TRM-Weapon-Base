@@ -443,7 +443,13 @@ function SWEP:Initialize()
     
     self.CurrentAttachments = self.CurrentAttachments or {}
     self.Attachments = self.Attachments or {}
-    self.AttachmentModels = {}
+
+    -- 迁移旧格式：CurrentAttachments 存字符串 → 改存 {Class=...}
+    for k, v in pairs(self.CurrentAttachments) do
+        if type(v) == "string" then
+            self.CurrentAttachments[k] = {Class = v}
+        end
+    end
 
     self:EquipDefaultAttachments()
     self:PrecacheViewModel() 

@@ -47,7 +47,7 @@ function ATTACHMENT:RenderReticle(weapon, model)
     render.SetStencilCompareFunction(STENCIL_LESSEQUAL)
     
     -- 渲染红点
-    local size = (ret.Size or 512) * 0.01
+    local size = ret.Size or 5.12
     local color = ret.Color or Color(255, 0, 0, 255)
     render.SetMaterial(ret.Material)
     

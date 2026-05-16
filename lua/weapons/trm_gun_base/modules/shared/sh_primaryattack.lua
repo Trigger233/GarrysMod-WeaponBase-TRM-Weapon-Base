@@ -81,15 +81,15 @@ function SWEP:FirePrimaryBullet()
 	end 
 
 	local spread =  Vector(self:GetSpreadHorizonal()  ,self:GetSpreadVertical() , 0 ) * self:GetCurrentSpread()
-
+	local muzzle = self:GetAttachmentData("muzzle")
 	local bullet = {
 		Attacker = self:GetOwner(),
 		Num = self.Primary.NumBullets ,
-        Src = owner:GetShootPos() ,
+        Src =  owner:GetShootPos() ,
         Dir = aimDir,
         Distance = self.Primary.Range,
         Spread = spread ,
-        Tracer = 1,
+        Tracer = 0,
         Force = self.Primary.Force  ,
         Damage = self.Primary.Damage * self.Primary.NumBullets,
         AmmoType = self.Primary.Ammo ,
@@ -136,9 +136,9 @@ function SWEP:ImpactEffects(tr,type)
 	if not self.CurrentAttachments then
 		self.CurrentAttachments = {}
 	end
-	for slot , attClass in pairs(self.CurrentAttachments) do 
-		if BASE_TRM_ATTS[attClass].DoImpactEffect then
-			BASE_TRM_ATTS[attClass]:DoImpactEffect(ty,type)    
+	for slot, entry in pairs(self.CurrentAttachments) do 
+		if entry and entry.Class and BASE_TRM_ATTS[entry.Class].DoImpactEffect then
+			BASE_TRM_ATTS[entry.Class]:DoImpactEffect(ty,type)    
 		end    
 	end
 end 

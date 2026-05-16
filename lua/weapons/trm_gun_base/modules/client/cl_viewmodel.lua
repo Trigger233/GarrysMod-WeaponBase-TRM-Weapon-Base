@@ -252,7 +252,7 @@ function SWEP:CalcViewModelView(vm ,pos , angles , poss , angless )
     if self:GetSight() then
         local sight = self:GetSight()
         local boneAng = sight.AimBoneAng or angles
-        local sightPos = (boneAng:Right() * sight.AimPos.x + boneAng:Forward() * sight.AimPos.y + boneAng:Up() * sight.AimPos.z) * aimdelta
+        local sightPos = (angles:Right() * sight.AimPos.x + angles:Forward() * sight.AimPos.y + angles:Up() * sight.AimPos.z) * aimdelta
         pos:Add(sightPos)
         local applyAng = sight.AimAng * aimdelta
         angles:Add(applyAng)
@@ -305,12 +305,13 @@ function SWEP:ViewModelDrawn(vm)
     if self ~= (IsValid(LocalPlayer()) and LocalPlayer():GetActiveWeapon()) then return end
 
     vm:SetupBones()
-
+    --self:BuildCustomizedGun()
 
         -- 逐个调用配件的 Render（用 pcall 包住，防止激光等配件崩了卡死后面的瞄准镜）
-    for slot, att in pairs(self.CurrentAttachments) do
-        local data = BASE_TRM_ATTS[att]
-        local model = self.AttachmentModels[slot]
+    for slot, entry in pairs(self.CurrentAttachments) do
+        if not entry or not entry.Class then continue end
+        local data = BASE_TRM_ATTS[entry.Class]
+        local model = entry.m_Model
         if data.Render and IsValid(model) then
             -- local ok, err = pcall(data.Render, data, self, model)
             -- if not ok then

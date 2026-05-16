@@ -183,8 +183,9 @@ function PANEL:Init()
         end
 
         -- 应用已装备配件
-        for _, attClass in pairs(wep.CurrentAttachments or {}) do
-            local attData = BASE_TRM_ATTS[attClass]
+        for _, entry in pairs(wep.CurrentAttachments or {}) do
+            if not entry or not entry.Class then continue end
+            local attData = BASE_TRM_ATTS[entry.Class]
             if attData and attData.ChangeWeaponStats then
                 pcall(attData.ChangeWeaponStats, attData, sim)
             end
@@ -340,7 +341,8 @@ function PANEL:RefreshAttList()
     if not slot then return end
 
     local slotKey = tostring(self.m_Slot)
-    local currentAtt = self.m_Weapon.CurrentAttachments and self.m_Weapon.CurrentAttachments[slotKey]
+    local currentEntry = self.m_Weapon.CurrentAttachments and self.m_Weapon.CurrentAttachments[slotKey]
+    local currentAtt = currentEntry and currentEntry.Class  -- nil = 无, string = 配件类名
     local atts = GetAttachmentsForSlot(slot)
 
     -- 检查此槽位是否被已装备的配件排除（如 DG56 的激光槽会被特定枪管排除）
@@ -438,7 +440,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded)
             if not weapon.CurrentAttachments then
                 weapon.CurrentAttachments = {}
             end
-            weapon.CurrentAttachments[slotKey] = (id ~= "None") and id or nil
+            weapon.CurrentAttachments[slotKey] = (id ~= "None") and {Class = id} or nil
             weapon:SendAttachmentToServer(slotKey, id)
             surface.PlaySound("weapons/ar2/ar2_empty.wav")
             self:RefreshAttList()
@@ -502,7 +504,7 @@ net.Receive("TRMBase_SyncAttachment", function()
     if attClass == "None" then
         wep.CurrentAttachments[slot] = nil
     else
-        wep.CurrentAttachments[slot] = attClass
+        wep.CurrentAttachments[slot] = {Class = attClass}
     end
 
     print("[TRMBase] Synced:", slot, attClass or "None")
@@ -526,17 +528,10 @@ net.Receive("TRMBase_SyncAllAttachments", function()
     for i = 1, count do
         local slot = net.ReadString()
         local attClass = net.ReadString()
-        wep.CurrentAttachments[slot] = attClass
+        wep.CurrentAttachments[slot] = {Class = attClass}
     end
 
     print("[TRMBase] SyncAllAttachments: received", count, "attachments")
-
-    if wep.AttachmentModels then
-        for _, model in pairs(wep.AttachmentModels) do
-            if IsValid(model) then model:Remove() end
-        end
-        wep.AttachmentModels = {}
-    end
 
     if wep.BuildCustomizedGun then
         wep:BuildCustomizedGun()
@@ -561,11 +556,13 @@ concommand.Add("trmbase_rebuild_attach", function(ply)
     local weapon = ply:GetActiveWeapon()
     if not IsValid(weapon) or not util.IsTRMBase(weapon) then return end
 
-    if weapon.AttachmentModels then
-        for _, model in pairs(weapon.AttachmentModels) do
-            if IsValid(model) then model:Remove() end
+    if weapon.CurrentAttachments then
+        for _, entry in pairs(weapon.CurrentAttachments) do
+            if entry and IsValid(entry.m_Model) then
+                entry.m_Model:Remove()
+                entry.m_Model = nil
+            end
         end
-        weapon.AttachmentModels = {}
     end
     print("[TRMBase] 所有配件模型已强制重建")
 end)

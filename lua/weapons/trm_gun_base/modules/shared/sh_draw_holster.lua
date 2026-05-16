@@ -16,8 +16,7 @@ function SWEP:Task_Deploy(cycle)
 end
 
 function SWEP:Holster(weapon)
-    -- 收起武器时清理第三人称配件模型（否则换武器后模型仍显示）
-    -- 设重建标记，下次 Deploy 时触发 BuildCustomizedGun
+
     if CLIENT then
             if IsValid(TRM_AttachMenu_Instance) then
                 TRM_AttachMenu_Instance:Close()
@@ -25,21 +24,13 @@ function SWEP:Holster(weapon)
             
         
         self.m_NeedsBuild = true
-        if self.TpAttachmentModels then
-            for _, model in pairs(self.TpAttachmentModels) do
-                if IsValid(model) then
-                    model:Remove()
+        if self.CurrentAttachments then
+            for _, entry in pairs(self.CurrentAttachments) do
+                if entry and IsValid(entry.m_Model) then
+                    entry.m_Model:Remove()
+                    entry.m_Model = nil
                 end
             end
-            self.TpAttachmentModels = {}
-        end
-        if self.AttachmentModels then
-            for _, model in pairs(self.AttachmentModels) do
-                if IsValid(model) then
-                    model:Remove()
-                end
-            end
-            self.AttachmentModels = {}
         end
         
     end

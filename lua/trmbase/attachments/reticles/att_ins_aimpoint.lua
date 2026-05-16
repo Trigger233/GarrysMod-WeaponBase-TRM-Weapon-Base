@@ -6,10 +6,10 @@ ATTACHMENT.Selectable = true
 ATTACHMENT.Angles  = Angle(-90,0,90)
 
 ATTACHMENT.Sight = {
-    Pos = Vector(0,0, -0.95 ) ,
+    Pos = Vector(0.00,0, -0.95 ) ,
     Align = "reticle" ,
     Material = Material("models/weapons/tfa_ins2/optics/aimpoint_reticule") ,
-    Size = 20480 , 
+    Size = 128 , 
     Color = Color(255,255,255),
     HideMaterial = {2} , --Material Index
 }

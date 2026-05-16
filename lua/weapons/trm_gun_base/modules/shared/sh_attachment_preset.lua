@@ -19,14 +19,13 @@ function SWEP:EquipDefaultAttachments()
     for i, slot in ipairs(self.Attachments) do
         if slot.Default and BASE_TRM_ATTS[slot.Default] then
             local slotKey = tostring(i)
-                self.CurrentAttachments[slotKey] = slot.Default
+                self.CurrentAttachments[slotKey] = {Class = slot.Default}
                 changed = true
         end
     end
 
     if changed then
-        self:ChangeWeaponStats()
-        print("[TRMBase] Default attachments applied")
+ 
     end
 end
 
@@ -42,7 +41,8 @@ function SWEP:SaveAttachmentPreset()
     if self.Attachments then
         for i = 1, #self.Attachments do
             local slotKey = tostring(i)
-            data[slotKey] = self.CurrentAttachments and self.CurrentAttachments[slotKey] or "None"
+            local entry = self.CurrentAttachments and self.CurrentAttachments[slotKey]
+            data[slotKey] = entry and entry.Class or "None"
         end
     end
 
@@ -102,7 +102,7 @@ function SWEP:LoadAttachmentPreset()
                         end
                     end
                     if match then
-                        self.CurrentAttachments[slotKey] = attClass
+                        self.CurrentAttachments[slotKey] = {Class = attClass}
                     end
                 end
             end
@@ -117,15 +117,13 @@ function SWEP:LoadAttachmentPreset()
             -- 在保存的数据里查找这个 Default 配件
             for _, savedAttClass in pairs(data) do
                 if savedAttClass == slot.Default then
-                    self.CurrentAttachments[slotKey] = slot.Default
+                    self.CurrentAttachments[slotKey] = {Class = slot.Default}
                     break
                 end
             end
         end
     end
 
-    -- 修改武器属性
-    self:ChangeWeaponStats()
 
     -- 利用已有的 SyncAllAttachments 同步给客户端
     if self.GetOwner and IsValid(self:GetOwner()) and self:GetOwner():IsPlayer() then

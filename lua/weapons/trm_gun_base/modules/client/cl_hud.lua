@@ -157,8 +157,9 @@ function DrawDebugHUD(ply, wep)
     local text = wep.m_duckPose
     draw.SimpleText(text, "Default", x, y, Color(255, 255, 255), TEXT_ALIGN_BOTTOM, TEXT_ALIGN_BOTTOM)
     local y = ScrH() * 0.8
-    for slot, att in pairs(wep.CurrentAttachments) do
-        draw.SimpleText(slot .. "  " .. att, "Default", x, y + 30, Color(255, 255, 255), TEXT_ALIGN_BOTTOM, TEXT_ALIGN_BOTTOM)
+    for slot, entry in pairs(wep.CurrentAttachments) do
+        local attName = entry and entry.Class or "?"
+        draw.SimpleText(slot .. "  " .. attName, "Default", x, y + 30, Color(255, 255, 255), TEXT_ALIGN_BOTTOM, TEXT_ALIGN_BOTTOM)
         y = y + 20
     end
 end
