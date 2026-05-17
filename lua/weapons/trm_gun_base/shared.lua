@@ -473,20 +473,27 @@ function SWEP:GetViewModel(index)
     if not IsValid(owner) or not owner:IsPlayer() then return nil end
     return owner:GetViewModel(index or 0) or false
 end
+local cvar_attachment = CreateConVar("trmbase_load_attachment_on_pickup",1)
+function SWEP:Equip()
+    self:SetFirstDeployed(true)
+        -- 服务端同步配件给客户端
+    if SERVER and cvar_attachment:GetBool()  then
+        -- 先加载保存的配件配置
+        self:LoadAttachmentPreset()
+        self:SyncAllAttachments()
+    end
 
+end
 function SWEP:Deploy()
 	self:GetOwner():SetSaveValue("m_flNextAttack", 0)
     self:SetNextAnimationTime(0)
     self:SetCurrentTask("Deploy")
 
+   
+
     self:BuildCustomizedGun()
     
     self:PrepareViewModel()
-    --elf:ApplyViewModelChange()
-
-    self:SyncAllAttachments()
-   
-
  
 
 end
@@ -540,8 +547,11 @@ function SWEP:OnRestore()
     self:OnReloaded()
     self:ChangeWeaponStats()
     --self:SpreadInit()
-    self:SetNextRecoil(0)
     self:SetCurrentTask("Finished")
+
+    self:BuildCustomizedGun()
+    
+    self:SetNextRecoil(0)
     
 end
 
@@ -641,17 +651,7 @@ end
 function SWEP:NPCShoot_Primary(pos , dir)
     self:FirePrimaryBullet() 
 end
-local cvar_attachment = CreateConVar("trmbase_load_attachment_on_pickup",1)
-function SWEP:Equip()
-    self:SetFirstDeployed(true)
 
-        -- 服务端同步配件给客户端
-    if SERVER and cvar_attachment:GetBool() then
-        -- 先加载保存的配件配置
-        self:LoadAttachmentPreset()
-        self:SyncAllAttachments()
-    end
-end
 
 function SWEP:FireAnimationEvent(pos,ang,event,option,source)
     if event > 5000 and event < 6000 then

@@ -538,9 +538,9 @@ net.Receive("TRMBase_SyncAllAttachments", function()
 
     print("[TRMBase] SyncAllAttachments: received", count, "attachments")
 
-    if wep.BuildCustomizedGun then
-        wep:BuildCustomizedGun()
-    end
+    -- if wep.BuildCustomizedGun then
+    --     wep:BuildCustomizedGun()
+    -- end
     wep.m_NeedsBuild = true
 end)
 

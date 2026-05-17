@@ -312,9 +312,10 @@ end
 
 ---CustomizeSystem
 function SWEP:OnAttachmentChanged()
-
+ 
     self:ChangeWeaponStats()
     self:BuildCustomizedGun()
+    self:SaveAttachmentPreset()
 end
 function SWEP:EquipAttachment(slot, attClass)
 
@@ -359,7 +360,7 @@ function SWEP:EquipAttachment(slot, attClass)
         end
     end
 
-    self:SaveAttachmentPreset()
+    s--elf:SaveAttachmentPreset()
 
     self:OnAttachmentChanged()
 
@@ -387,7 +388,7 @@ function SWEP:UnEquipAttachment(slot)
     net.SendPVS(self:GetPos())
 
     self:OnAttachmentChanged()
-    self:SaveAttachmentPreset()
+    --self:SaveAttachmentPreset()
 
     print("Unequipped:", slot, self.CurrentAttachments[slot] or "None")
 end
@@ -455,7 +456,7 @@ function SWEP:BuildCustomizedGun()
     end
 
     -- VM 相关操作只在 vm 有效时执行
-    if hasVM then
+    if hasVM and self:GetOwner() and self:GetOwner():GetActiveWeapon() == self then
         -- 确保骨骼数据已刷新
         vm:InvalidateBoneCache()
         vm:SetupBones()

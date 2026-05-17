@@ -6,6 +6,8 @@ function SWEP:CanSprint()
     local seq = self:GetPlayingSequence() 
     local cycle = vm:GetCycle()
     local task = self:GetCurrentTask()
+
+    if self:GetNextAnimationTime() < CurTime() then return true end
     
     if (string.find(seq,"Reload") or string.find(task,"Reload")  ) and cvar_sprint_reload:GetBool() then
         return false

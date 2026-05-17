@@ -219,8 +219,8 @@ function SWEP:CalcViewModelView(vm ,pos , angles , poss , angless )
     angles:Add(CacheAngle* Lerp(aimdelta ,1 , 0.2 ))
     --Bob
     local BobPos , BobAngle = self:CustomBob()
-    local ApplyBobPos = Vector( angles:Right() * BobPos.x , angles:Forward() * BobPos.y , angles:Up() * BobPos.z   ) * ( 1 - aimdelta )
-    BobAngle:Mul(1 - aimdelta * 0.2 )
+    local ApplyBobPos = Vector( angles:Right() * BobPos.x , angles:Forward() * BobPos.y , angles:Up() * BobPos.z   ) * ( 1 - aimdelta  )
+    BobAngle:Mul(1 - aimdelta * 0.8 )
     pos:Add(ApplyBobPos)
     angles:Add(BobAngle)
     --Duck Pose
