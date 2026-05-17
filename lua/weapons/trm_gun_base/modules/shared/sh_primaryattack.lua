@@ -91,7 +91,7 @@ function SWEP:FirePrimaryBullet()
         Distance = self.Primary.Range,
         Spread = spread ,
         Tracer = 1,
-        Force = self.Primary.Force  ,
+        Force = self.Primary.Force / self.Primary.NumBullets ,
         Damage = self.Primary.Damage * self.Primary.NumBullets,
         AmmoType = self.Primary.Ammo ,
         Callback = function(attacker, tr, dmginfo)	
@@ -100,7 +100,7 @@ function SWEP:FirePrimaryBullet()
 	}
 	if not  owner:IsPlayer() then
 		bullet.Spread = bullet.Spread * self.Aim.Spread
-		bullet.Damage = bullet.Damage * 1
+		bullet.Damage = bullet.Damage * 0.5
 	end
 	if SERVER and IsFirstTimePredicted() then
 	owner:FireBullets(bullet  )

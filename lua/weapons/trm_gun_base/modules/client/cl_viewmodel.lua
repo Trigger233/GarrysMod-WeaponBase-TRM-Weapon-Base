@@ -132,7 +132,7 @@ function SWEP:GetDucking()
     self.m_DuckDelta = self.m_DuckDelta or 0
     if IsValid(owner) then
         local target = ( trm_weapon_base_util.IsDucking(owner) and owner:OnGround() ) and 1 or 0
-        self.m_DuckDelta = Lerp(FrameTime() * 10, self.m_DuckDelta, target)
+        self.m_DuckDelta = Lerp(RealFrameTime() * 2, self.m_DuckDelta, target)
     else
         self.m_DuckDelta = 0
     end
@@ -233,7 +233,7 @@ function SWEP:CalcViewModelView(vm ,pos , angles , poss , angless )
     angles:Add(DuckAngle)
     --Sprint Pose
 
-    local sprintDelta = self:GetSprintDelta()
+    local sprintDelta = self:GetSprintDelta() * (self:CanSprint() and 1 or 0)
     local sprintPos = (angles:Right() * self.VMOffset.Sprint.Pos.x +  
     angles:Forward() * self.VMOffset.Sprint.Pos.y + 
     angles:Up() * self.VMOffset.Sprint.Pos.z) * sprintDelta    

@@ -33,6 +33,25 @@ TRMBase.Language.cn = {
     ["TRMBase_Stat_Spread"] = "散布",
     ["TRMBase_Stat_AimSpeed"] = "开镜时间",
     ["TRMBase_Stat_Recoil"] = "后坐力",
+
+    -- 菜单选项
+    ["TRMBase_InfiniteAmmo"] = "无限备弹",
+    ["TRMBase_AutoReload"] = "自动换弹",
+    ["TRMBase_FireInteruptReload"] = "开火打断换弹",
+    ["TRMBase_SprintReload"] = "冲刺换弹",
+    ["TRMBase_LoadAttOnPickup"] = "拾取时加载配件",
+    ["TRMBase_ReplaceNPC"] = "替换 NPC 武器",
+    ["TRMBase_ReplaceWeapon"] = "替换生成武器",
+    ["TRMBase_ReplaceChance"] = "替换概率",
+    ["TRMBase_RandomAttach"] = "随机配件",
+    ["TRMBase_MeleeKey"] = "近战",
+    ["TRMBase_InspectKey"] = "检视",
+    ["TRMBase_CustomizeKey"] = "自定义",
+    ["TRMBase_Crosshair"] = "准星",
+    ["TRMBase_CrosshairColor"] = "准星颜色",
+    ["TRMBase_CrosshairStyle"] = "准星样式",
+    ["TRMBase_CrosshairDot"] = "准星中心点",
+    ["TRMBase_HideHUDInspect"] = "检视时隐藏 HUD",
 }
 
 -- 英文
@@ -58,12 +77,30 @@ TRMBase.Language.en = {
     ["TRMBase_Stat_Spread"] = "Spread",
     ["TRMBase_Stat_AimSpeed"] = "Aim Time",
     ["TRMBase_Stat_Recoil"] = "Recoil",
+
+    -- 菜单选项
+    ["TRMBase_InfiniteAmmo"] = "Infinite Reserve Ammo",
+    ["TRMBase_AutoReload"] = "Auto Reload",
+    ["TRMBase_FireInteruptReload"] = "Fire Interrupt Reload",
+    ["TRMBase_SprintReload"] = "Sprint Reload",
+    ["TRMBase_LoadAttOnPickup"] = "Load Attachments on Pickup",
+    ["TRMBase_ReplaceNPC"] = "Replace NPC Weapon",
+    ["TRMBase_ReplaceWeapon"] = "Replace Spawned Weapon",
+    ["TRMBase_ReplaceChance"] = "Replace Chance",
+    ["TRMBase_RandomAttach"] = "Random Attachments",
+    ["TRMBase_MeleeKey"] = "Melee",
+    ["TRMBase_InspectKey"] = "Inspect",
+    ["TRMBase_CustomizeKey"] = "Customize",
+    ["TRMBase_Crosshair"] = "Crosshair",
+    ["TRMBase_CrosshairColor"] = "Crosshair Color",
+    ["TRMBase_CrosshairStyle"] = "Crosshair Style",
+    ["TRMBase_CrosshairDot"] = "Crosshair Dot",
+    ["TRMBase_HideHUDInspect"] = "Hide HUD When Inspect",
 }
 
 -- 获取当前语言
 function TRMBase.GetLanguage()
     local lang = GetConVar("gmod_language"):GetString()
-    -- 兼容大小写
     lang = string.lower(lang)
     if lang == "zh-cn" or lang == "zh-tw" then
         return TRMBase.Language.cn
