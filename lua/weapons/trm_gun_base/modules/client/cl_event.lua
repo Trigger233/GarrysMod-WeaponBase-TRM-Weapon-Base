@@ -1,13 +1,14 @@
 if not CLIENT then return end
 
-function SWEP:ShootEffects()
+function SWEP:ShootEffects(slience)
+    
 	if SERVER then return end
 	local ejectDelay = self.m_EjectDelay or 0
 
 	local vm = self:GetOwner():ShouldDrawLocalPlayer()
     if not vm then 
-        
- 	    self:DoMuzzleEffect()           
+ 	        self:DoMuzzleEffect()     
+           
         
         if self.Effects.Shell.Primary then
             self:DoShell() 
@@ -32,7 +33,7 @@ function SWEP:DoMuzzleEffect()
     effect:SetAngles(   att.Ang )
     effect:SetEntity(   data.Ent )   
     effect:SetAttachment(   data.id  )
-    effect:SetScale( 1 )
+    effect:SetScale( 5 )
     effect:SetFlags(2 )
  
    --print(effect:GetEntity())

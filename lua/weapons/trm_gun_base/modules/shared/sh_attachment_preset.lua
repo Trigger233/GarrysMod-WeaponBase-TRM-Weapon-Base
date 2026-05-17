@@ -39,6 +39,7 @@ function SWEP:SaveAttachmentPreset()
     local path = PRESET_ROOT .. class .. "/save.json"
     file.CreateDir(PRESET_ROOT .. class)
     file.Write(path, util.TableToJSON(data))
+    print("[TRMBase] Preset saved:", class, "(" .. tostring(table.Count(data)) .. " slots)")
 end
 
 --- 从 JSON 加载配件配置并应用到武器
@@ -66,7 +67,7 @@ function SWEP:LoadAttachmentPreset()
                 local slotCat = self.Attachments[slotIndex].Category
                 local attCat = BASE_TRM_ATTS[attClass].Category
                 if slotCat and attCat then
-                    for _, cat in ipairs(istable(slotCat) and slotCat or {slotCat}) do
+                    for _, cat in pairs(istable(slotCat) and slotCat or {slotCat}) do
                         if cat == attCat then
                             self.CurrentAttachments[slotKey] = {Class = attClass}
                             break
@@ -80,7 +81,7 @@ function SWEP:LoadAttachmentPreset()
     -- 空槽位补默认
     for i, slot in ipairs(self.Attachments) do
         local slotKey = tostring(i)
-        if not self.CurrentAttachments[slotKey] and slot.Default and BASE_TRM_ATTS[slot.Default] then
+        if (not self.CurrentAttachments[slotKey]  or not self.CurrentAttachments[slotKey].Class)  and slot.Default and BASE_TRM_ATTS[slot.Default] then
             self.CurrentAttachments[slotKey] = {Class = slot.Default}
         end
     end

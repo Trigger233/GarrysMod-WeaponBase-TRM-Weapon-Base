@@ -1,9 +1,10 @@
 -- =============================================
 -- Pose 参数更新（合并四合一，减少重复 GetViewModel / GetVelocity）
 -- =============================================
-
 function SWEP:UpdatePoseParameters()
     if SERVER  then return end
+
+
     local vm = self:GetViewModel()
     if not IsValid(vm) then return end
 
@@ -26,7 +27,8 @@ function SWEP:UpdatePoseParameters()
         local sprintVal = self:CanSprint() and speed > walkSpeed and self:GetSprintDelta()  or 0
         self.m_SprintPose = Lerp( dt * 10  , self.m_SprintPose or 0, sprintVal) or 0
         for _, Pose in pairs(self.BasePoseParameter.Sprint) do
-            vm:SetPoseParameter(Pose, self.m_SprintPose ) 
+            local _ ,max = vm:GetPoseParameterRange(Pose)
+            vm:SetPoseParameter(Pose, self.m_SprintPose * max ) 
         end
     end
 

@@ -23,7 +23,7 @@ local function FindTRMByAmmo(ammoType)
     return nil
 end
 
-local function DoReplace(npc)
+local function DoNPCReplace(npc)
     if not IsValid(npc) or not npc:IsNPC() then return end
     local cv = GetConVar("trmbase_replace_npc")
     if not cv or not cv:GetBool() then return end
@@ -32,7 +32,7 @@ local function DoReplace(npc)
     if not IsValid(wep) then return end
 
     -- 读武器弹药类型，没有就按 NPC 类型推断
-    local ammoType = wep.Primary and wep.Primary.Ammo
+    local ammoType =game.GetAmmoName( wep:GetPrimaryAmmoType())
     if not ammoType or ammoType == "" then
         local ammoMap = {
             npc_combine_s = "ar2",
@@ -52,12 +52,22 @@ local function DoReplace(npc)
     if IsValid(wep) then wep:Remove() end
     npc:Give(newClass)
     local nw = npc:GetWeapon(newClass)
-    if IsValid(nw) then npc:SetActiveWeapon(nw) end
+    --print(nw)
+    --if IsValid(nw) then npc:SetActiveWeapon(nw) end
 end
 
 -- 玩家从菜单生成 NPC
-hook.Add("PlayerSpawnedNPC", "TRMBase_NPCReplace", function(ply, npc)
-    if not IsValid(npc) then return end
-    print("[TRMBase] PlayerSpawnedNPC: " .. npc:GetClass())
-    timer.Simple(0.3, function() DoReplace(npc) end)
+-- hook.Add("PlayerSpawnedNPC", "TRMBase_NPCReplace", function(ply, npc)
+--     if not IsValid(npc) then return end
+--     print("[TRMBase] PlayerSpawnedNPC: " .. npc:GetClass())
+--     timer.Simple(0.3, function() DoReplace(npc) end)
+-- end)
+
+hook.Add("OnEntityCreated","TRMBase_Replace",function(ent )
+    if ent:IsNPC() then
+        timer.Simple(FrameTime()*3,function()
+            DoNPCReplace(ent)
+        end)
+    end
+    
 end)

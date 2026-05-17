@@ -45,6 +45,7 @@ function ATTACHMENT:RenderScope(wep, model)
                 fov = 10,  -- 4.5 倍放大
                 drawviewmodel = false ,
                 drawhud = false,
+                znear = 250 ,
             })
         end
         

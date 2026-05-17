@@ -29,8 +29,8 @@ function SWEP:bDownThink()
         self:SetCurrentTask("ReloadEnd")
     end
 
-    if self.BoltAction and self.Animations.Rechamber and self:GetChamberAmmo() <= 0 and self:CanRechamber() then
-        self:SetCurrentTask("Rechamber")
+    if self.BoltAction and self.Animations.Rechamber and self:GetChamberAmmo() <= 0 and self:CanRechamber() and not self:IsReloading() then
+        self:SetCurrentTask("Rechamber") 
     end
 
 end

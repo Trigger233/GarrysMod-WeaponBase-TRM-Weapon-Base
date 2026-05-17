@@ -21,7 +21,7 @@ local function ShouldHideCrosshair(sequence)
     return false
 end
 
--- TraceLine 每 2 帧做一次（物理查询开销大）
+-- TraceLine 模块变量（已废弃，保留为空避免旧引用出错）
 local _lastTraceFrame = 0
 local _lastScreenPos = {x = 0, y = 0}
 
@@ -102,7 +102,8 @@ function DrawCustomCrosshair(ply, wep)
     local spreadSizeY = spread * math.tan(spreadV)
     local sequence = wep.m_CurrentSequence or wep:GetPlayingSequence()
     
-    if (not wep.DrawCrossHairIS and not ply:ShouldDrawLocalPlayer() and wep:GetAimDelta() > 0.5 and (cv_debug:GetInt() == 0)) then
+    -- ADS 时隐藏准星（只对 DrawCrossHairIS=true 的武器显示，或开启调试时强制显示）
+    if wep.DrawCrossHairIS ~= true and wep:GetAimDelta() > 0.5 and cv_debug:GetInt() == 0 then
         alpha = 0
     end
 
@@ -114,24 +115,33 @@ function DrawCustomCrosshair(ply, wep)
 
     local width = 2.5
     local length = 16
+    if wep.Primary.NumBullets > 1 then
+        local temp = width
+        width = length
+        length =  temp
+    end
 
     if style == 1 then
-        local gapX = spreadSizeX
-        local gapY = spreadSizeY
-        if wep.Primary.Automatic then
-            surface.DrawRect(x - width, y - gapY - length, width, length)
+    local gapX = math.max(spreadSizeX, 4)
+    local gapY = math.max(spreadSizeY, 4)
+        if wep.Primary.Automatic or   wep.Primary.NumBullets > 1 then
+            surface.DrawRect(x - width/2, y - gapY - length, width, length)
         end
-        surface.DrawRect(x - width, y + gapY, width, length)
-        surface.DrawRect(x - gapX - length, y - width * 0.5, length, width)
-        surface.DrawRect(x + gapX, y - width * 0.5, length, width)
-        if cv_crosshair_dot:GetInt() == 1 then
+        
+        surface.DrawRect(x - width/2, y + gapY, width, length)
+        
+        surface.DrawRect(x - gapX - length  , y - width * 0.5, length, width)
+        
+        surface.DrawRect(x + gapX , y - width * 0.5, length, width)
+       
+        if cv_crosshair_dot:GetInt() == 1   then
             surface.DrawRect(x - 1, y - 1, 2, 2)
         end
     elseif style == 2 then
         surface.DrawRect(x - 2.5, y - 2.5, 5, 5)
         surface.SetDrawColor(r, g, b, alpha / 2)
         local spreadAvg = (spreadSizeX + spreadSizeY) / 2
-        surface.DrawCircle(x, y, spreadAvg + 5, r, g, b, alpha, x, y, spreadAvg, r, g, b, alpha)
+        surface.DrawCircle(x, y, spreadAvg + 5, 32)
     elseif style == 3 then
         local size = 10
         local gap = 4

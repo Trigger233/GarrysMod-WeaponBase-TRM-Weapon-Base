@@ -423,8 +423,8 @@ function SWEP:Initialize()
     self.m_SprintDeltaLerp = 0
     self.m_SprintPose = 0
     
-    self:GetOriginStat()
-    self:ChangeWeaponStats()
+    if self.GetOriginStat then self:GetOriginStat() end
+    if self.ChangeWeaponStats then self:ChangeWeaponStats() end
     --self:SpreadInit()  
     self.m_MoveSpeed = self.MoveSpeed
     self.m_Spread = self.Spread.Base
@@ -456,13 +456,18 @@ function SWEP:Initialize()
 
     self:EquipDefaultAttachments()
 
-    -- 武器初始化时就加载预设（保证无论 Deploy 触不触发都能恢复配件）
+    -- 从 JSON 恢复保存的配件（覆盖默认值）
+    if SERVER and self.LoadAttachmentPreset then
+        --self:LoadAttachmentPreset()
+    end
+
+    -- 地面/NPC 武器需要广播配件数据给客户端，让第三人称模型能显示
     if SERVER then
-        self:LoadAttachmentPreset()
+        self:SyncAllAttachments()
     end
 
     self:PrecacheViewModel() 
-    self:BuildCustomizedGun()
+    if self.BuildCustomizedGun then self:BuildCustomizedGun() end
 
     
 end
@@ -473,7 +478,9 @@ function SWEP:GetViewModel(index)
     if not IsValid(owner) or not owner:IsPlayer() then return nil end
     return owner:GetViewModel(index or 0) or false
 end
+
 local cvar_attachment = CreateConVar("trmbase_load_attachment_on_pickup",1)
+
 function SWEP:Equip()
     self:SetFirstDeployed(true)
         -- 服务端同步配件给客户端
@@ -489,13 +496,22 @@ function SWEP:Deploy()
     self:SetNextAnimationTime(0)
     self:SetCurrentTask("Deploy")
 
-   
+    if self.BuildCustomizedGun then self:BuildCustomizedGun() end
 
-    self:BuildCustomizedGun()
+    -- 确保客户端知道当前配件（预设由初始化 / Equip / Restore 加载）
+    if SERVER and self.SyncAllAttachments then
+        self:SyncAllAttachments()
+    end
     
-    self:PrepareViewModel()
- 
+    
+end
 
+-- 读档后恢复配件数据
+function SWEP:Restore()
+    if SERVER then
+        if self.EquipDefaultAttachments then self:EquipDefaultAttachments() end
+        if self.LoadAttachmentPreset then self:LoadAttachmentPreset() end
+    end
 end
 
 function SWEP:OnDrop(owner)
@@ -508,9 +524,15 @@ function SWEP:OnDrop(owner)
 end
 
 function SWEP:OnReloaded()
-    self:GetOriginStat()
-    self:ChangeWeaponStats()
-    self:SpreadInit()
+    if self.GetOriginStat then self:GetOriginStat() end
+    if self.ChangeWeaponStats then self:ChangeWeaponStats() end
+    if self.SpreadInit then self:SpreadInit() end
+    if self.BuildCustomizedGun then self:BuildCustomizedGun() end
+
+    -- 确保客户端一定有同步（LoadAttachmentPreset 内部同步可能因没有文件而跳过）
+    if SERVER and self.SyncAllAttachments then
+        self:SyncAllAttachments()
+    end
 
 
     -- 只在客户端执行热加载
@@ -548,8 +570,14 @@ function SWEP:OnRestore()
     self:ChangeWeaponStats()
     --self:SpreadInit()
     self:SetCurrentTask("Finished")
+    if SERVER and cvar_attachment:GetBool()  then
+        -- 先加载保存的配件配置
+        self:LoadAttachmentPreset()
+    end
 
-    self:BuildCustomizedGun()
+        self:SyncAllAttachments()
+
+    if self.BuildCustomizedGun then self:BuildCustomizedGun() end
     
     self:SetNextRecoil(0)
     
@@ -649,7 +677,10 @@ function SWEP:GetNPCRestTimes()
 end
 
 function SWEP:NPCShoot_Primary(pos , dir)
-    self:FirePrimaryBullet() 
+    if CurTime() > self:GetNextPrimaryFire() then
+            self:FirePrimaryBullet() 
+            self:SetNextFireTime( 60 / self.Primary.RPM ) 
+    end
 end
 
 
@@ -715,8 +746,21 @@ function SWEP:GetPlayerMoveMult(ply)
 end
 
 function SWEP:GetTracerOrigin()
-    local att = self:GetAttachmentData(self.Effects.Muzzle.attachment)
-    local muzzle =  att.Ent:GetAttachment(att.id)
+    -- 非第一人称 / NPC 不干涉，让引擎自己处理
+    local owner = self:GetOwner()
+    if not IsValid(owner) or not owner:IsPlayer() then return end
+    local vm = self:GetViewModel()
+    if not IsValid(vm) or  owner:ShouldDrawLocalPlayer() then return end
 
-    return muzzle.Pos
+    -- 第一人称：从 ViewModel 取枪口位置
+    local name = self.Effects and self.Effects.Muzzle and self.Effects.Muzzle.attachment or "muzzle"
+    local attData = self:GetAttachmentData(name)
+    if attData and attData.Ent and IsValid(attData.Ent) then
+        local muzzle = attData.Ent:GetAttachment(attData.id)
+        if muzzle then return muzzle.Pos end
+    end
+end
+
+function SWEP:ShouldDropOnDie(arguments)
+    return true
 end

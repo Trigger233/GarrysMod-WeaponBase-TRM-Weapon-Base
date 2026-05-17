@@ -316,7 +316,9 @@ function SWEP:OnAttachmentChanged()
     self:ChangeWeaponStats()
     self:BuildCustomizedGun()
     self:SaveAttachmentPreset()
+    
 end
+
 function SWEP:EquipAttachment(slot, attClass)
 
     -- 检查此槽位是否被排除（防止绕过 VGUI 直接发 net 消息）
@@ -360,7 +362,6 @@ function SWEP:EquipAttachment(slot, attClass)
         end
     end
 
-    s--elf:SaveAttachmentPreset()
 
     self:OnAttachmentChanged()
 
@@ -388,7 +389,7 @@ function SWEP:UnEquipAttachment(slot)
     net.SendPVS(self:GetPos())
 
     self:OnAttachmentChanged()
-    --self:SaveAttachmentPreset()
+    self:SaveAttachmentPreset()
 
     print("Unequipped:", slot, self.CurrentAttachments[slot] or "None")
 end

@@ -17,7 +17,7 @@ end
 function SWEP:CanRechamber()
     local seq = self.m_CurrentSequence or self:GetPlayingSequence()
     local task = self:GetCurrentTask()
-    if string.find(seq,"Idle") then return true end
+    if string.find(seq,"Idle") or string.find(task,"Sprint")or string.find(seq,"Sprint") then return true end
 
     return false 
 end

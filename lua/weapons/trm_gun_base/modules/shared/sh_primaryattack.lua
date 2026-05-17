@@ -39,14 +39,15 @@ end
 
 function SWEP:DoFireSound()
 	local slience = self.Primary.Slienced or false
+	local chan = CHAN_STATIC
 	if slience and self.Primary.SliencedSound then
-		self:EmitSound(self.Primary.SliencedSound,140,100,1,CHAN_WEAPON)
+		self:EmitSound(self.Primary.SliencedSound,140,100,1,chan)
 	elseif self.Primary.Sound then
-		self:EmitSound(self.Primary.Sound,140,100,1,CHAN_WEAPON)
+		self:EmitSound(self.Primary.Sound,140,100,1,chan)
 	end
 
 	if self:Clip1() == 1 then
-		self:EmitSound("weapons/pistol/pistol_empty.wav")
+		self:EmitSound("weapons/pistol/pistol_empty.wav",66,100,1,CHAN_ITEM )
 	end
 
 end
@@ -98,7 +99,7 @@ function SWEP:FirePrimaryBullet()
 		end,
 	}
 	if not  owner:IsPlayer() then
-		bullet.Spread =  0.0
+		bullet.Spread = bullet.Spread * self.Aim.Spread
 		bullet.Damage = bullet.Damage * 1
 	end
 	if SERVER and IsFirstTimePredicted() then
@@ -118,7 +119,7 @@ function SWEP:FirePrimaryBullet()
 		
 	end
 	self:SetCurrentTask("Finished")
-	if CLIENT or owner:IsNPC() then
+	if CLIENT  then
 		self:ShootEffects()
     elseif SERVER && game.SinglePlayer() then 
         self:CallOnClient("ShootEffects")

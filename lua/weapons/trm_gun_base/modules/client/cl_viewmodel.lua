@@ -249,7 +249,7 @@ function SWEP:CalcViewModelView(vm ,pos , angles , poss , angless )
     angles:Add(AimOffsetAngle * aimdelta)
 
     -- 配件瞄具偏移（用骨骼自身 axis 变换，与 GenerateAimOffset 的 WorldToLocal 坐标空间一致）
-    if self:GetSight() then
+    if self.GetSight and self:GetSight() then
         local sight = self:GetSight()
         local boneAng = sight.AimBoneAng or angles
         local sightPos = (angles:Right() * sight.AimPos.x + angles:Forward() * sight.AimPos.y + angles:Up() * sight.AimPos.z) * aimdelta
@@ -305,14 +305,14 @@ function SWEP:ViewModelDrawn(vm)
     vm:SetupBones()
     --self:BuildViewModelData()
     -- 仅在第一帧需要时重建（net sync 早到但 vm 还没就绪的情况）
-    if self.m_NeedsBuild then
+    if self.m_NeedsBuild and self.BuildCustomizedGun then
         self:BuildCustomizedGun()
         self.m_NeedsBuild = false
 
     end
     
     -- 逐个调用配件的 Render（用 pcall 包住，防止激光等配件崩了卡死后面的瞄准镜）
-    for slot, entry in pairs(self.CurrentAttachments) do
+    for slot, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
         local data = BASE_TRM_ATTS[entry.Class]
         local model = entry.m_Model
