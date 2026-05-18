@@ -48,10 +48,7 @@ end
 
 LoadAttachments("trmbase/attachments")
 
-hook.Add("OnReloaded","TRMBASE_ATT_RELOAD",function()
-    LoadAttachments("trmbase/attachments")
-    finishAttachments()
-end)
+
 
 local function inherit(current, base)
     for k, v in pairs(base) do
@@ -90,7 +87,10 @@ end
 finishAttachments()
 
 
-
+hook.Add("OnReloaded","TRMBASE_ATT_RELOAD",function()
+    LoadAttachments("trmbase/attachments")
+    finishAttachments()   
+end) 
 
 -- 查看所有已加载配件
 concommand.Add("trm_list_atts", function()
@@ -114,19 +114,7 @@ end)
 
 -- 重新加载所有配件（开发用）
 concommand.Add("trm_reload_atts", function()
-    -- 清空现有数据
-    BASE_TRM_ATTS = {}
-    ATTACHMENT = nil
     
-    -- 重新加载
     LoadAttachments("trmbase/attachments")
-    
-    -- 重新执行继承
-    for name, att in pairs(BASE_TRM_ATTS) do
-        if att.Base then
-            BASE_TRM_ATTS.Inherit(att)
-        end
-    end
-    
-    print("Attachments reloaded!")
+    finishAttachments() 
 end)

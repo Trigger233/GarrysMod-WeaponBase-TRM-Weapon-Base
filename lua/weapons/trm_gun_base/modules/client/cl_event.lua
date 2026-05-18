@@ -2,7 +2,7 @@ if not CLIENT then return end
 
 function SWEP:ShootEffects(slience)
     
-	if SERVER then return end
+	if SERVER  then return end
 	local ejectDelay = self.m_EjectDelay or 0
 
 	local vm = self:GetOwner():ShouldDrawLocalPlayer()
@@ -10,7 +10,7 @@ function SWEP:ShootEffects(slience)
  	        self:DoMuzzleEffect()     
            
         
-        if self.Effects.Shell.Primary then
+        if self.Effects.Shell.Primary  then
             self:DoShell() 
         end
     end 
@@ -55,7 +55,7 @@ end
 
 
 function SWEP:DoShell()
-    if SERVER then return end
+    if not (CLIENT ) then return end
     local vm = self:GetViewModel()
     if not IsValid(vm) then return end
     local effect = EffectData()

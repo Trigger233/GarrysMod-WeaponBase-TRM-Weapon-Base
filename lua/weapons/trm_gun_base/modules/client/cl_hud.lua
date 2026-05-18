@@ -11,8 +11,8 @@ local cv_crosshair_alpha = CreateClientConVar("trmbase_crosshair_alpha", 200)
 local cv_crosshair_dot = CreateClientConVar("trmbase_crosshair_dot", 1)
 
 -- 模块级：避免每帧创建闭包
-local HIDE_SEQUENCES = {"Reload", "Inspect", "Melee", "Sprint", "Holster", "Draw"}
-local function ShouldHideCrosshair(sequence)
+local HIDE_SEQUENCES = {"Reload", "Inspect", "Melee", "Holster", "Draw"}
+local function ShouldHideCrosshair(wep,sequence)
     for _, seq in ipairs(HIDE_SEQUENCES) do
         if string.find(sequence, seq) then
             return true
@@ -107,7 +107,7 @@ function DrawCustomCrosshair(ply, wep)
         alpha = 0
     end
 
-    if (ply:IsSprinting() and wep:CanSprint() ) or ShouldHideCrosshair(sequence) then
+    if (wep:GetSprintDelta() > 0.5 and wep:CanSprint() ) or ShouldHideCrosshair(wep,sequence) then
         alpha = 0
     end
 
@@ -152,6 +152,9 @@ function DrawCustomCrosshair(ply, wep)
         surface.DrawOutlinedRect(x - 3, y - 3, 6, 6)
     end
 end
+
+
+
 
 
 concommand.Add("trmbase_wep_updateIcon", function(ply)

@@ -26,7 +26,6 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration )
     vm:SetCycle(0)
 
 
-    local currentLength = 1 
     if animData.events then  -- 修复3：从 animData 取 events
         for _, event in pairs(animData.events) do
             event.Triggered = false
@@ -36,7 +35,7 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration )
     vm:SetPlaybackRate(speed)
 
     if  useInternalDuration then
-        local nexttime = (animData.RealLength or currentLength )*  (  animData.Length or 1 )*  duration  / speed
+        local nexttime = (animData.RealLength or duration )*  (  animData.Length or 1 )  / speed
         self:SetNextAnimationTime( CurTime() + nexttime )
         self:SetNextFireTime(  nexttime )
     end

@@ -74,9 +74,9 @@ function SWEP:Sway()
     -- dx = math.Clamp(dx, -10, 10)
     -- dy = math.Clamp(dy, -20, 20)
     
-    local maxSway = 10
+    local maxSway = 2
     local force = 0.1
-    local smooth = 15  -- 稍微降低，减少抖动
+    local smooth = 12  -- 稍微降低，减少抖动
     
     self.m_SwayAngle.yaw = math.Clamp(self.m_SwayAngle.yaw - dx * force, -maxSway, maxSway)
     self.m_SwayAngle.pitch = math.Clamp(self.m_SwayAngle.pitch - dy * force, -maxSway, maxSway)
@@ -84,7 +84,7 @@ function SWEP:Sway()
     -- 归位
     self.m_SwayAngle.yaw = Lerp(ft * smooth, self.m_SwayAngle.yaw, 0)
     self.m_SwayAngle.pitch = Lerp(ft * smooth, self.m_SwayAngle.pitch, 0)
-    
+    self.m_SwayAngle.roll = self.m_SwayAngle.yaw * 1
     -- 位置派生
     local posSway = Vector(0, 0, 0)
     posSway.x = self.m_SwayAngle.yaw * -1
@@ -303,12 +303,20 @@ function SWEP:ViewModelDrawn(vm)
     if self ~= (IsValid(LocalPlayer()) and LocalPlayer():GetActiveWeapon()) then return end
     vm:InvalidateBoneCache()
     vm:SetupBones()
-    --self:BuildViewModelData()
-    -- 仅在第一帧需要时重建（net sync 早到但 vm 还没就绪的情况）
+
+    -- 检测配件模型是否缺失（换关后 ClientsideModel 被销毁需要重建）
+    if not self.m_NeedsBuild then
+        for _, entry in pairs(self.CurrentAttachments or {}) do
+            if entry.Class and not IsValid(entry.m_Model) then
+                self.m_NeedsBuild = true
+                break
+            end
+        end
+    end
+
     if self.m_NeedsBuild and self.BuildCustomizedGun then
         self:BuildCustomizedGun()
         self.m_NeedsBuild = false
-
     end
     
     -- 逐个调用配件的 Render（用 pcall 包住，防止激光等配件崩了卡死后面的瞄准镜）

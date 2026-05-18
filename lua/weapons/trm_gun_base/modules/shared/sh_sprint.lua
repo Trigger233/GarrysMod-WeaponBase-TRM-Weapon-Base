@@ -1,27 +1,44 @@
-local cvar_sprint_reload = CreateConVar("trmbase_allow_sprintreload",0,{FCVAR_ARCHIVE})
+local cvar_sprint_reload = CreateConVar("trmbase_allow_sprintreload", 0, {FCVAR_ARCHIVE})
+
 function SWEP:CanSprint()
-    local vm = self:GetViewModel(self)
-    if not vm then return end
-    local owner = self:GetOwner()
-    local seq = self:GetPlayingSequence() 
-    local cycle = vm:GetCycle()
-    local task = self:GetCurrentTask()
-
-    --if self:GetNextAnimationTime() < CurTime() then return true end
+    local vm = self:GetViewModel(0)
+    if not IsValid(vm) then return false end
     
-    if (string.find(seq,"Reload") or string.find(task,"Reload")  ) and (cvar_sprint_reload:GetBool() ) then
-        return false
+    local owner = self:GetOwner()
+    if not IsValid(owner) then return false end
+    
+    local seq = self:GetPlayingSequence() or ""
+    local task = self:GetCurrentTask() or ""
+    
+    -- 动画是否播放完毕
+    local animFinished = self:GetNextAnimationTime() <= CurTime()
+    
+    -- 如果动画没播完，有些动作不能冲刺
+    if not animFinished then
+        -- 换弹动画未完成时，根据 cvar 决定
+        if string.find(seq, "Reload") or string.find(task, "Reload") then
+            return cvar_sprint_reload:GetBool()
+        end
+        
+        -- 这些动画未完成时绝对不能冲刺
+        local forbidAnims = {"Deploy", "Holster", "Inspect", "Melee", "Draw"}
+        for _, v in ipairs(forbidAnims) do
+            if string.find(seq, v) or string.find(task, v) then
+                return false
+            end
+        end
     end
-
-    if    string.find(task,"Deploy") or string.find(task,"Holster")  or string.find(task,"Inspect")   then
-        return false
+    
+    -- 动画播完后，额外检查一些状态（防止残留）
+    local blacklist = {"Deploy","Rechamber", "Holster", "Reload", "Inspect", "Melee", "Draw"}
+    for _, v in ipairs(blacklist) do
+        if string.find(task, v) or string.find(seq, v) then
+            return false
+        end
     end
-
-    if  string.find(seq,"Inspect")  or string.find(seq,"Melee") or string.find(seq,"Draw") or string.find(seq,"Holster") then return false end 
-
-    -- if cycle < self.Animations[seq].Length then return false end
+    
     return true
-end 
+end
 
 function SWEP:Task_SprintIn(cycle)
     self:SetNextAnimationTime(0)

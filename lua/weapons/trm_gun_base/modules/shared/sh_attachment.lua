@@ -105,8 +105,10 @@ function SWEP:ApplyViewModelChange()
         end
     end
 
-    vm:SetWeaponModel(self.m_ViewModelCache || self.ViewModel,self)
+    vm:SetModel(self.m_ViewmodelCache || self.ViewModel)
     vm:SetSkin(self.m_SkinCache || 0)
+  
+
 
 end
 
@@ -114,6 +116,7 @@ end
 function SWEP:ChangeWeaponStats()
 
     if SERVER  then 
+        self:GetOriginStat()
         self:DeepObjectCopy(    self.m_OriginalStat    , self)
         
         for _, entry in pairs(self.CurrentAttachments or {}) do
@@ -191,8 +194,9 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
     elseif group == HITGROUP_LEFTLEG or group == HITGROUP_RIGHTLEG then
         scale = self.DamageScale.Legs or 0.6
     end
-    
-    dmginfo:ScaleDamage(scale)
+    if attacker:IsPlayer() then 
+        dmginfo:ScaleDamage(scale)
+    end
 
     if not self.CurrentAttachments then
         self.CurrentAttachments = {}
@@ -365,7 +369,7 @@ function SWEP:EquipAttachment(slot, attClass)
 
     self:OnAttachmentChanged()
 
-    print("Equipped:", slot, attClass)
+    --print("Equipped:", slot, attClass)
 end
 
 function SWEP:UnEquipAttachment(slot)
@@ -391,7 +395,7 @@ function SWEP:UnEquipAttachment(slot)
     self:OnAttachmentChanged()
     self:SaveAttachmentPreset()
 
-    print("Unequipped:", slot, self.CurrentAttachments[slot] or "None")
+    --print("Unequipped:", slot, self.CurrentAttachments[slot] or "None")
 end
 
 function SWEP:BuildCustomizedGun()
@@ -624,6 +628,12 @@ net.Receive("TRMBase_Attachment", function()
         weapon:EquipAttachment(slot, attClass)
     end
 end)
+
+ 
+
+
+
+------------------------------------------------------
 
 
   

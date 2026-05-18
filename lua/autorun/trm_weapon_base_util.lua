@@ -9,6 +9,7 @@ function trm_weapon_base_util.IsDucking(ply)
     return height <= 32 or ply:KeyDown(IN_DUCK)
 end
 
+CreateConVar("trmbase_load_attachment_on_pickup",1,{FCVAR_ARCHIVE})
 if (CLIENT) then
     -- local FullUpdate = {}
     -- --PrintTable(FullUpdate)

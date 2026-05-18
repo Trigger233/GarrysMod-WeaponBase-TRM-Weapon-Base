@@ -479,7 +479,7 @@ function SWEP:GetViewModel(index)
     return owner:GetViewModel(index or 0) or false
 end
 
-local cvar_attachment = CreateConVar("trmbase_load_attachment_on_pickup",1)
+local cvar_attachment = GetConVar("trmbase_load_attachment_on_pickup")
 
 function SWEP:Equip()
     self:SetFirstDeployed(true)
@@ -512,6 +512,7 @@ function SWEP:Restore()
         if self.EquipDefaultAttachments then self:EquipDefaultAttachments() end
         if self.LoadAttachmentPreset then self:LoadAttachmentPreset() end
     end
+    --PrintTable(self.CurrentAttachments)
 end
 
 function SWEP:OnDrop(owner)
@@ -587,7 +588,7 @@ function SWEP:CanPrimaryAttack()
     
 end
 
-local cvar = CreateConVar("trmbase_autoreload",1)
+local cvar = CreateConVar("trmbase_autoreload",1,FCVAR_ARCHIVE)
 function SWEP:PrimaryAttack()
     
 

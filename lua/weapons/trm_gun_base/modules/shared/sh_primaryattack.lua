@@ -56,7 +56,21 @@ end
 
 
 function SWEP:FirePrimaryBullet()
+
+	if CLIENT then
+		-- 枪焰：总是播（确保每次开火都有）
+		self:DoMuzzleEffect()
+		-- 弹壳：只在预测帧播（防重复）
+		if self.Effects.Shell.Primary and IsFirstTimePredicted() then
+			self:DoShell()
+		end
+    elseif SERVER && game.SinglePlayer() then
+        self:CallOnClient("ShootEffects")
+    end
+
 	if (not IsFirstTimePredicted()) then return end
+
+
 	self:DoFireSound()
 	local owner = self:GetOwner()
 	local eyeAng = owner:EyeAngles()
@@ -100,7 +114,7 @@ function SWEP:FirePrimaryBullet()
 	}
 	if not  owner:IsPlayer() then
 		bullet.Spread = bullet.Spread * self.Aim.Spread
-		bullet.Damage = bullet.Damage * 0.5
+		bullet.Damage = bullet.Damage / bullet.Num
 	end
 	if SERVER and IsFirstTimePredicted() then
 	owner:FireBullets(bullet  )
@@ -119,11 +133,6 @@ function SWEP:FirePrimaryBullet()
 		
 	end
 	self:SetCurrentTask("Finished")
-	if CLIENT  then
-		self:ShootEffects()
-    elseif SERVER && game.SinglePlayer() then 
-        self:CallOnClient("ShootEffects")
-    end
 
 end
 
@@ -311,6 +320,7 @@ function SWEP:DoCameraRecoil()
     
     local nextRecoil = self:GetNextRecoil()
     if CurTime() > nextRecoil then return end
+
     
     local delay = 60 / self.Primary.RPM  
     local elapsed = delay - (nextRecoil - CurTime())

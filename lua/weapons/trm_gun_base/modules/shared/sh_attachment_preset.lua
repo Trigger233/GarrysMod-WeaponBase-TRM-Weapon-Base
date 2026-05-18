@@ -39,7 +39,7 @@ function SWEP:SaveAttachmentPreset()
     local path = PRESET_ROOT .. class .. "/save.json"
     file.CreateDir(PRESET_ROOT .. class)
     file.Write(path, util.TableToJSON(data))
-    print("[TRMBase] Preset saved:", class, "(" .. tostring(table.Count(data)) .. " slots)")
+    --print("[TRMBase] Preset saved:", class, "(" .. tostring(table.Count(data)) .. " slots)")
 end
 
 --- 从 JSON 加载配件配置并应用到武器

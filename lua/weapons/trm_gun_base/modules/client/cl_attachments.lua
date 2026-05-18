@@ -14,7 +14,7 @@ function SWEP:SendAttachmentToServer(slotKey, attID)
     net.WriteString(attID)
     net.SendToServer()
 
-    print("[TRMBase] Send attachment:", slotKey, attID)
+    --print("[TRMBase] Send attachment:", slotKey, attID)
 end
 
 
@@ -119,6 +119,13 @@ function PANEL:Init()
     self.m_AttList:Dock(TOP)
     self.m_AttList:SetTall(0)
     self.m_AttList.Paint = function() end
+
+    -- 右侧配件列表面板（透明背景，距主面板 5 像素）
+    self.m_AttInfo = vgui.Create("DPanel", self)
+    self.m_AttInfo:SetSize(200 * globalScale, 800 * globalScale)
+    self.m_AttInfo:AlignLeft(self.m_MainPanel:GetWide() + 5)
+    self.m_AttInfo:AlignTop(200 * globalScale)
+    self.m_AttInfo.Paint = function() end  -- 全透明
 
     -- 底部提示
     self.m_HintLabel = vgui.Create("DLabel", self.m_Container)
@@ -234,11 +241,15 @@ function PANEL:Init()
             return _total
         end
 
+        local function getDamage(weapon)
+            return weapon.Primary.Damage * weapon.Primary.NumBullets
+        end
+
         local stats = { --PrintName , sim , def , sortType
-            { language.GetPhrase("#TRMBase_Stat_Damage") ,sim.Primary.Damage , def.Primary.Damage ,true , 100 } ,
+            { language.GetPhrase("#TRMBase_Stat_Damage") ,getDamage(sim) , getDamage(def) ,true , 100 } ,
             { language.GetPhrase("#TRMBase_Stat_ClipSize") ,sim.Primary.ClipSize , def.Primary.ClipSize ,true , 150 } ,
             { language.GetPhrase("#TRMBase_Stat_RPM") ,sim.Primary.RPM , def.Primary.RPM ,true , 1500 } ,
-            { language.GetPhrase("#TRMBase_Stat_Spread") ,sim.Spread.Base , def.Spread.Base ,false , 0.05  } ,
+            { language.GetPhrase("#TRMBase_Stat_Spread") ,sim.Spread.Base , def.Spread.Base ,false , 0.1  } ,
             { language.GetPhrase("#TRMBase_Stat_AimSpeed") ,sim.Aim.Time , def.Aim.Time ,false , 1  } ,
             { language.GetPhrase("#TRMBase_Stat_Recoil") ,getRecoil(sim) , getRecoil(def)  ,false , 10  } ,
         }
@@ -330,6 +341,7 @@ function PANEL:SetWeapon(weapon)
     self.m_Slot = 1
     self.m_SlotCombo:ChooseOptionID(1)
     self:RefreshAttList()
+    self:RefreshAttInfo()
 end
 
 function PANEL:RefreshAttList()
@@ -444,7 +456,45 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded)
             weapon:SendAttachmentToServer(slotKey, id)
             surface.PlaySound("weapons/ar2/ar2_empty.wav")
             self:RefreshAttList()
+            self:RefreshAttInfo()
         end
+    end
+end
+
+-- 更新右侧配件信息面板
+function PANEL:RefreshAttInfo()
+    if not IsValid(self.m_AttInfo) then return end
+    self.m_AttInfo:Clear()
+
+    local wep = self.m_Weapon
+    if not IsValid(wep) or not wep.Attachments then return end
+
+    local y = 5
+    local lineH = 50
+
+    for i, slot in ipairs(wep.Attachments) do
+        local entry = wep.CurrentAttachments and wep.CurrentAttachments[tostring(i)]
+        if not entry or not entry.Class then continue end
+        if slot.Default and entry.Class == slot.Default then continue end
+
+        local attData = BASE_TRM_ATTS[entry.Class]
+        local name = attData and attData.Name or entry.Class
+
+        local lbl = vgui.Create("DLabel", self.m_AttInfo)
+        lbl:SetPos(5, y)
+        lbl:Dock(TOP)
+        lbl:DockMargin(2,2,2,2)
+        lbl:DockPadding(10,2,10,2)        
+        lbl.Paint = function(self2, w, h)
+            surface.SetDrawColor(255,255,255,255)
+            surface.DrawOutlinedRect(0,0,w,h,2)
+        end
+        name = " "..name
+        lbl:SetText(name)
+        lbl:SetFont("DermaLarge")
+        lbl:SizeToContents()
+        lbl:SetTextColor(Color(255, 255, 255, 220))
+        y = y + lineH
     end
 end
 
@@ -455,7 +505,7 @@ function PANEL:Close()
 end
 
 function PANEL:Paint(w, h)
-    surface.SetDrawColor(0, 0, 0, 180)
+    surface.SetDrawColor(0, 0, 0, 90)
     surface.DrawRect(0, 0, w, h)
 end
 vgui.Register("TRM_AttachMenu", PANEL, "DFrame")
@@ -482,7 +532,7 @@ concommand.Add("+trmbase_customize", function(ply)
         frame:SetWeapon(weapon)
 
         TRM_AttachMenu_Instance = frame
-
+          
 
     else
         TRM_AttachMenu_Instance:Close()
@@ -511,7 +561,7 @@ net.Receive("TRMBase_SyncAttachment", function()
         wep.CurrentAttachments[slot] = {Class = attClass}
     end
 
-    print("[TRMBase] Synced:", slot, attClass or "None")
+   -- print("[TRMBase] Synced:", slot, attClass or "None")
 
     if wep.BuildCustomizedGun then
         wep:BuildCustomizedGun()
@@ -536,7 +586,7 @@ net.Receive("TRMBase_SyncAllAttachments", function()
         wep.CurrentAttachments[slot] = {Class = attClass}
     end
 
-    print("[TRMBase] SyncAllAttachments: received", count, "attachments")
+    -- print("[TRMBase] SyncAllAttachments: received", count, "attachments")
 
     if wep.BuildCustomizedGun then
         wep:BuildCustomizedGun()
@@ -630,7 +680,7 @@ concommand.Add("trmbase_debug_slots", function(ply)
     print("========================================")
 end)
 -----------------------------------------
-local cvar_hide = CreateClientConVar("trmbase_hidehud_inspect",1)
+local cvar_hide = CreateClientConVar("trmbase_hidehud_inspect",1,FCVAR_ARCHIVE)
 hook.Add("HUDShouldDraw","HideWhileCustomizing",function(name)
     if IsValid(TRM_AttachMenu_Instance) then
         return false

@@ -37,9 +37,10 @@ end
 
 function SWEP:OwnerStatThink()
     self.m_SprintDelta = self.m_SprintDelta or 0
-    self.m_SprintDelta = Lerp(FrameTime() * 10, self.m_SprintDelta, self:GetOwner():IsSprinting() and 1 or 0)
+    local owner = self:GetOwner()
+    self.m_SprintDelta = Lerp(FrameTime() * 10, self.m_SprintDelta, owner:IsSprinting() and owner:GetVelocity():Length2D() > owner:GetWalkSpeed() and 1 or 0)
     self:SetSprintDelta(self.m_SprintDelta)
-
+ 
 end
 
 

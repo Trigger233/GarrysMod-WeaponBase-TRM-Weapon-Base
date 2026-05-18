@@ -29,14 +29,12 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
     -- 路径 A：有独立按键 → 只认该按键
     if custKey > 0 then
         if input.WasKeyPressed(custKey) then
-            weapon:SetCurrentTask("Customize")
             RunConsoleCommand("+trmbase_customize")
             return true
         end
     -- 路径 B：无独立按键 → 回退到 +menu_context（右键菜单）
     else
         if bind == "+menu_context" and pressed and not ply:KeyDown(IN_USE) then
-            weapon:SetCurrentTask("Customize")
             RunConsoleCommand("+trmbase_customize")
             return true
         end

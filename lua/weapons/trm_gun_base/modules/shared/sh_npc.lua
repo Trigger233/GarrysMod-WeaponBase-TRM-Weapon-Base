@@ -7,11 +7,11 @@ function SWEP:GetNPCBulletSpread()
 end
 
 function SWEP:GetNPCBurstSettings()
-    return 1 , (self.Primary.ClipSize or 5) , (60 /self.Primary.RPM)
+    return 1 , 5 , (60 /self.Primary.RPM)
 end
 
 function SWEP:GetNPCRestTimes()
-    return 0.0 , 0.0
+    return 0.3 , 0.6
 end
 
 function SWEP:NPCShoot_Primary(pos , dir)
