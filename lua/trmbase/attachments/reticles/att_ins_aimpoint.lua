@@ -9,7 +9,7 @@ ATTACHMENT.Sight = {
     Pos = Vector(0.00,0, -0.95 ) ,
     Align = "reticle" ,
     Material = Material("models/weapons/tfa_ins2/optics/aimpoint_reticule") ,
-    Size = 128 , 
+    Size = 64 , 
     Color = Color(255,255,255),
     HideMaterial = {2} , --Material Index
 }

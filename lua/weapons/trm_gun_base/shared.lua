@@ -215,6 +215,7 @@ SWEP.Recoil = {
     AdsMultiplier = 0.7 , 
     KickDown = 0.4,
     Shake = 0.1 ,
+    Recover = 0.25 ,
     Functional = {
         Increase = 0.2 ,
         Recover = 0.4,
@@ -457,9 +458,9 @@ function SWEP:Initialize()
     self:EquipDefaultAttachments()
 
     -- 从 JSON 恢复保存的配件（覆盖默认值）
-    if SERVER and self.LoadAttachmentPreset then
-        --self:LoadAttachmentPreset()
-    end
+    -- if SERVER and self.LoadAttachmentPreset then
+    --     self:LoadAttachmentPreset()
+    -- end
 
     -- 地面/NPC 武器需要广播配件数据给客户端，让第三人称模型能显示
     if SERVER then

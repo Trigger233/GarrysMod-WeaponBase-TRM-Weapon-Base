@@ -91,23 +91,85 @@ function PANEL:Init()
     self.m_TitleLabel:SetContentAlignment(5)
     self.m_TitleLabel:SetTall(40)
 
-    -- 槽位下拉选择
-    self.m_SlotCombo = vgui.Create("DComboBox", self.m_Container)
-    self.m_SlotCombo:Dock(TOP)
-    self.m_SlotCombo:SetTall(50)
-    self.m_SlotCombo:DockMargin(0, 2, 0, 2)
-    self.m_SlotCombo:SetFont("DermaLarge")
-    self.m_SlotCombo:SetText("")
-    self.m_SlotCombo.Paint = function(s2,w2,h2)
-        surface.SetDrawColor(255,255,255,200)
-        surface.DrawRect(0,0,w2,h2)
-        surface.SetDrawColor(0,0,0)
-        surface.DrawOutlinedRect(0,0,w2,h2,3)
+    -- 槽位选择按钮（自定义按钮 + 弹出面板，匹配配件按钮样式）
+    self.m_SlotButton = vgui.Create("DButton", self.m_Container)
+    self.m_SlotButton:Dock(TOP)
+    self.m_SlotButton:SetTall(50)
+    self.m_SlotButton:DockMargin(0, 2, 0, 2)
+    self.m_SlotButton:SetFont("DermaLarge")
+    self.m_SlotButton:SetText("")
+    self.m_SlotButton.Paint = function(s, w, h)
+        surface.SetDrawColor(255, 255, 255, 200)
+        surface.DrawRect(0, 0, w, h)
+        local slot = self.m_Weapon and self.m_Weapon.Attachments and self.m_Weapon.Attachments[self.m_Slot]
+        local name = slot and (TranslateSlotName(slot.Name) .. "  ▾") or "Select Slot  ▾"
+        draw.SimpleText(name, "DermaLarge", w / 2, h / 2, Color(0, 0, 0), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     end
-    self.m_SlotCombo.OnSelect = function(_, _, _, data)
-        self.m_Slot = data
-        self:RefreshAttList()
+    self.m_SlotPopup = nil
+    self.m_SlotButton.DoClick = function()
+        if IsValid(self.m_SlotPopup) then
+            self.m_SlotPopup:Remove()
+            self.m_SlotPopup = nil
+            return
+        end
+        -- 创建弹出面板（匹配配件列表风格）
+        local popup = vgui.Create("DPanel", self)
+        local slotCount = #(self.m_Weapon and self.m_Weapon.Attachments or {})
+        local btnH = 50
+        local margin = 2
+        local totalH = slotCount * (btnH + margin)
+        popup:SetSize(self.m_SlotButton:GetWide(), totalH)
+        local bx, by = self.m_SlotButton:GetPos()
+        popup:SetPos(bx + 550, by + self.m_SlotButton:GetTall() + 2)
+        popup.Paint = function(_, w, h)
+            surface.SetDrawColor(30, 30, 30, 240)
+            surface.DrawRect(0, 0, w, h)
+            surface.SetDrawColor(255, 255, 255, 100)
+            surface.DrawOutlinedRect(0, 0, w, h)
+        end
+        self.m_SlotPopup = popup
+
+        for i, slot in ipairs(self.m_Weapon and self.m_Weapon.Attachments or {}) do
+            local name = TranslateSlotName(slot.Name)
+            local idx = i
+            local btn = vgui.Create("DButton", popup)
+            btn:SetText("")
+            btn:SetPos(0, (i - 1) * (btnH + margin))
+            btn:SetSize(popup:GetWide(), btnH)
+            btn.Paint = function(b, w, h)
+                if idx == self.m_Slot  then
+                    surface.SetDrawColor(40, 120, 60, 200)
+                elseif b:IsHovered() then
+                    surface.SetDrawColor(200,200,200,200)
+                else
+                    surface.SetDrawColor(50, 50, 50, 200)
+                end
+                surface.DrawRect(0, 0, w, h)
+                draw.SimpleText(name, "DermaLarge", w / 2, h / 2, Color(160, 241, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+            end
+            btn.DoClick = function()
+                self.m_Slot = idx
+                self:RefreshAttList()
+                surface.PlaySound("weapons/ar2/ar2_empty.wav")
+                if IsValid(self.m_SlotPopup) then
+                    self.m_SlotPopup:Remove()
+                    self.m_SlotPopup = nil
+                end
+            end
+        end
+
+        -- 点击面板外部自动关闭
+        popup.OnMousePressed = function(_, code)
+            if code ~= MOUSE_LEFT then return end
+            popup:Remove()
+            self.m_SlotPopup = nil
+        end
+
+        popup.OnRemove = function()
+            self.m_SlotPopup = nil
+        end
     end
+
     self.m_SlotButtons = {}
 
     -- 配件列表滚动区域
@@ -331,15 +393,7 @@ function PANEL:SetWeapon(weapon)
 
     local panel = self
 
-    -- 填充下拉列表
-    self.m_SlotCombo:Clear()
-    for i, slot in ipairs(weapon.Attachments) do
-        local name = TranslateSlotName(slot.Name)
-        self.m_SlotCombo:AddChoice(name, i)
-    end
-
     self.m_Slot = 1
-    self.m_SlotCombo:ChooseOptionID(1)
     self:RefreshAttList()
     self:RefreshAttInfo()
 end
@@ -394,7 +448,7 @@ function PANEL:RefreshAttList()
 
     local totalH = 0
     for _, child in ipairs(self.m_AttList:GetChildren()) do
-        totalH = totalH + child:GetTall() + 4
+        totalH = totalH + child:GetTall() + 5
     end
     if totalH > 0 then totalH = totalH - 4 end
     self.m_AttList:SetTall(math.max(totalH, 1))

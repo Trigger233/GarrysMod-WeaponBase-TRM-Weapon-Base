@@ -224,7 +224,7 @@ function SWEP:DoVisualRecoil()
         self.m_VRecoilBack = 0
     end
     
-    local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2]) * AdsScale
+    local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2]) 
     self.m_VRecoilBack = self.m_VRecoilBack + baseBack + progBack
     
     -- 限制最大值
@@ -282,6 +282,9 @@ function SWEP:DoRecoil()
 	end
 	local delay = 60 / self.Primary.RPM
 	-- delay = 0.1
+
+	
+
 	self.m_Recoil = self:GetRecoil()
 	local AdsScale = Lerp(self:GetAimDelta() , 1 , self.Recoil.AdsMultiplier ) * 1
 	
@@ -317,51 +320,69 @@ end
 
 
 function SWEP:DoCameraRecoil()
-	if not (SERVER and IsFirstTimePredicted())  then return end
+    if not (SERVER and IsFirstTimePredicted()) then return end
     local owner = self:GetOwner()
     if not IsValid(owner) then return end
+    local eyeAngles = owner:EyeAngles()
     
     local nextRecoil = self:GetNextRecoil()
+    local isFiring = CurTime() < nextRecoil
+    
+    -- ==========================================
+    -- 停火恢复逻辑
+    -- ==========================================
+	local recoverSpeed = self.Recoil.Recover or 1
+    if not isFiring and self.recoil_firstangle  then
+        local currentPitch = eyeAngles.pitch
+        local targetPitch = self.recoil_firstangle
+        local diff = targetPitch - currentPitch
+        
+        -- 已经接近目标，直接归位并清空记录
+        if diff < 0.01 or  CurTime() - nextRecoil > 2 then
+            eyeAngles.pitch = targetPitch
+            self.recoil_firstangle = nil
+        else
+            -- 每帧恢复 30% 的差值（快速但平滑）
+            eyeAngles.pitch = currentPitch + diff * 0.02 * recoverSpeed
+            owner:SetEyeAngles(eyeAngles)
+        end
+        return
+    end
+    
+    -- ==========================================
+    -- 开火中，正常处理后坐力
+    -- ==========================================
     if CurTime() > nextRecoil then return end
-
-
-
     
     local delay = 60 / self.Primary.RPM  
     local elapsed = delay - (nextRecoil - CurTime())
     local t = math.Clamp((elapsed / delay) ^ 0.5, 0, 1)
     
     local recoilAngle = self:GetRecoil()
-    local kickDown =( self.Recoil.KickDown  or 0) * delay * 5 
+    local kickDown = (self.Recoil.KickDown or 0) * delay * 5 
     
-    -- 简单的三段曲线：上升 → 下降 → 归零
     local strength
     if t < 0.3 then
-        -- 阶段1：快速下降到 0 (t=0.3 时 strength=0)
         strength = 1 - (t / 0.3)
     elseif t < 0.8 then
-        -- 阶段2：继续下降到负数 (t=0.6 时 strength=-kickDown)
-        local t2 = (t - 0.3) / 0.5  -- 0→1
+        local t2 = (t - 0.3) / 0.5
         strength = -kickDown * t2
     else
-        -- 阶段3：回到 0 (t=1 时 strength=0)
-        local t3 = (t - 0.8) / 0.2  -- 0→1
+        local t3 = (t - 0.8) / 0.2
         strength = -kickDown * (1 - t3)
     end
     
     local current = Angle(
         recoilAngle.pitch * strength,
-        recoilAngle.yaw * strength ,
-        recoilAngle.roll * strength 
+        recoilAngle.yaw * strength,
+        recoilAngle.roll * strength
     )
     
-    local eyeAngles = owner:EyeAngles()
-
-	if not self.recoil_firstangle then
-		self.recoil_firstangle = eyeAngles.pitch
-	end
-
-
+    -- 记录第一次开火时的俯仰角
+    if not self.recoil_firstangle then
+        self.recoil_firstangle = eyeAngles.pitch
+    end
+    
     eyeAngles.pitch = eyeAngles.pitch + current.pitch
     eyeAngles.yaw = eyeAngles.yaw + current.yaw
     eyeAngles.roll = eyeAngles.roll + current.roll

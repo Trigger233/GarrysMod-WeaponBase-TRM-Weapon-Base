@@ -616,6 +616,7 @@ function SWEP:SyncAllAttachments()
         end
         net.WriteUInt(count, 8)
         for slot, entry in pairs(self.CurrentAttachments or {}) do
+            if not entry.Class then continue end
             net.WriteString(slot)
             net.WriteString(entry.Class)
         end

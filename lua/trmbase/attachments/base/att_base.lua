@@ -26,6 +26,7 @@ function ATTACHMENT:PostProcess(weapon)
 end
 
 function ATTACHMENT:ScaleTableValue(tableData, mul)
+    if not tableData then return end
     for key, val in pairs(tableData) do
         if istable(val) then
             self:ScaleTableValue(val, mul)

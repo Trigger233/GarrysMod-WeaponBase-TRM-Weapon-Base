@@ -1,10 +1,11 @@
 ATTACHMENT.Base = "att_base"
 ATTACHMENT.Name = "att_reticle"
 ATTACHMENT.Description = "The Base for Weapon"
+ATTACHMENT.Selectable = false 
 
 function ATTACHMENT:Render(wep , model)
     if wep:IsCarriedByLocalPlayer() then 
-        self:RenderScope(wep , model )
+        --self:RenderScope(wep , model )
     else
         BASE_TRM_ATTS[self.Base]:Render(wep,model)
     end
@@ -39,14 +40,16 @@ function ATTACHMENT:RenderScope(wep, model)
         render.Clear(0, 0, 0, 255)  -- 黑色背景，不透明
         render.SetAmbientLight(1, 1, 1)  -- 提高亮度
         if wep:GetAimDelta() > 0.1 then
+            local old = DisableClipping(true)
             render.RenderView({
                 origin = wep:GetOwner():GetShootPos(),
                 angles = wep:GetOwner():EyeAngles() + wep:GetVisualRecoil() ,
                 fov = 10,  -- 4.5 倍放大
                 drawviewmodel = false ,
                 drawhud = false,
-                znear = 250 ,
+                znear = 25 ,
             })
+            DisableClipping(old)
         end
         
         -- 可选：叠加红点
@@ -89,3 +92,4 @@ function ATTACHMENT:RenderScope(wep, model)
 
 
 end
+
