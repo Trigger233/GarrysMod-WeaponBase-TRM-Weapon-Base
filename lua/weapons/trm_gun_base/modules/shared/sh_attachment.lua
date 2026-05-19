@@ -46,9 +46,7 @@ function SWEP:PrecacheViewModel()
                 self.m_BodyGroupCache[_model] = _submodel
             end
         elseif _att.poseParameter then
-            for _ ,Posename in pairs(_att.poseParameter) do
-                self.m_PoseParameter[Posename] = true 
-            end
+                self.m_PoseParameter = _att.poseParameter 
         end
     end
 

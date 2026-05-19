@@ -1,10 +1,14 @@
-function SWEP:Think()
-    self:SetWeaponHoldType(self.HoldType)
 
-    -- 缓存当前播放序列，供 bDownThink / CanAim / CanSprint 等复用
+
+function SWEP:Think()
+
+    -- 原有逻辑...
+    self:SetWeaponHoldType(self.HoldType)
     self.m_CurrentSequence = self:GetPlayingSequence()
 
-    if self:GetOwner() and self:GetOwner():IsPlayer() then
+    local owner = self:GetOwner()
+    if IsValid(owner) and owner:IsPlayer() then
+        self:UpdatePoseParameters()
         self:AimThink()
         self:TaskThink()
         self:bDownThink()
@@ -12,9 +16,7 @@ function SWEP:Think()
         self:OwnerStatThink()
         self:DoCameraRecoil()
         self:Recover()
-        self:UpdatePoseParameters()
     end
-
 end
 
 

@@ -20,7 +20,7 @@ end
 
 function SWEP:DoMuzzleEffect()
 
-    if SERVER  then return end
+    if SERVER or self.Primary.Slienced then return end
    
     local effect = EffectData()
     local data = self:GetAttachmentData(self.Effects.Muzzle.attachment)

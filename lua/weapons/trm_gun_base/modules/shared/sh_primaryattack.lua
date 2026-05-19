@@ -270,6 +270,9 @@ function SWEP:Recover()
 		spread = math.Clamp(spread - self.Spread.Recover * FrameTime() , self.Spread.Base , self.Spread.Max )
 		self:SetSpread(spread)
 	end
+
+	
+
 end
 
 function SWEP:DoRecoil()
@@ -321,6 +324,8 @@ function SWEP:DoCameraRecoil()
     local nextRecoil = self:GetNextRecoil()
     if CurTime() > nextRecoil then return end
 
+
+
     
     local delay = 60 / self.Primary.RPM  
     local elapsed = delay - (nextRecoil - CurTime())
@@ -351,6 +356,12 @@ function SWEP:DoCameraRecoil()
     )
     
     local eyeAngles = owner:EyeAngles()
+
+	if not self.recoil_firstangle then
+		self.recoil_firstangle = eyeAngles.pitch
+	end
+
+
     eyeAngles.pitch = eyeAngles.pitch + current.pitch
     eyeAngles.yaw = eyeAngles.yaw + current.yaw
     eyeAngles.roll = eyeAngles.roll + current.roll

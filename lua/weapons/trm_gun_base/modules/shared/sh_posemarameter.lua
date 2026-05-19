@@ -69,7 +69,7 @@ function SWEP:UpdatePoseParameters()
 
     if self.m_PoseParameter then
         self.m_grippose = Lerp( dt * 10 , self.m_grippose or 0 , (self:GetGrip1() and 1 or 0) ) 
-        for poseName , _ in pairs(self.m_PoseParameter) do
+        for _ , poseName in pairs(self.m_PoseParameter) do
             vm:SetPoseParameter(poseName,   self:LookupRangeCache(poseName) *  self.m_grippose )
         end
     end

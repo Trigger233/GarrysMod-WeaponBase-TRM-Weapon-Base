@@ -16,6 +16,8 @@ TRMBase.Language.cn = {
     ["Barrel"] = "枪管" ,
     ["Stock"] = "枪托" ,
     ["Grip"] = "前握把" ,
+    ["UnderBarrel"] = "下挂" ,
+    ["Misc"] = "杂项" ,
 
     -- VGUI
     ["TRMBase_Default"] = "默认配件",
@@ -39,7 +41,7 @@ TRMBase.Language.cn = {
     ["TRMBase_AutoReload"] = "自动换弹",
     ["TRMBase_FireInteruptReload"] = "开火打断换弹",
     ["TRMBase_SprintReload"] = "冲刺换弹",
-    ["TRMBase_LoadAttOnPickup"] = "拾取时加载配件",
+    ["TRMBase_LoadAttOnPickup"] = "拾取时加载配件（还没完善好）",
     ["TRMBase_ReplaceNPC"] = "替换 NPC 武器",
     ["TRMBase_ReplaceWeapon"] = "替换生成武器",
     ["TRMBase_ReplaceChance"] = "替换概率",

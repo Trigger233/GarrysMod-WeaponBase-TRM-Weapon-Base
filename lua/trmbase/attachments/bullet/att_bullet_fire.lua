@@ -15,7 +15,7 @@ function ATTACHMENT:ChangeWeaponStats(weapon)
 end
 
 function ATTACHMENT:DoImpactEffect(tr,type)
-    if not tr.HitPos then return end
+    if  not tr or not tr.HitPos then return end
     local effect = EffectData()
     effect:SetOrigin(tr.HitPos)
     effect:SetMagnitude(10)
