@@ -4,7 +4,7 @@ ATTACHMENT.Category = "att_bullet"
 
 function ATTACHMENT:BulletCallback(attacker, tr, dmginfo)
     dmginfo:SetDamageType(DMG_BLAST)
-    if tr and tr.Entity.Ignite then
+    if tr and tr.Entity and tr.Entity.Ignite then
         tr.Entity:Ignite(5,1)
     end
 end
@@ -15,6 +15,7 @@ function ATTACHMENT:ChangeWeaponStats(weapon)
 end
 
 function ATTACHMENT:DoImpactEffect(tr,type)
+    if not tr.HitPos then return end
     local effect = EffectData()
     effect:SetOrigin(tr.HitPos)
     effect:SetMagnitude(10)

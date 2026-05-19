@@ -140,6 +140,7 @@ local function DoWeaponReplace(ent)
 
     local pos = ent:GetPos()
     local ang = ent:GetAngles()
+    local velocity = ent:GetVelocity()
     local isPlayerGen = IsPlayerSpawned(ent)
 
     print("[TRMBase] World weapon: " .. ent:GetClass() .. " → " .. newClass .. (isPlayerGen and " (player)" or " (world)"))
@@ -149,6 +150,7 @@ local function DoWeaponReplace(ent)
     if IsValid(newEnt) then
         newEnt:SetPos(pos)
         newEnt:SetAngles(ang)
+        newEnt:SetVelocity(velocity)
         newEnt:Spawn()
 
         -- 不是玩家生成的武器 → 随机装点配件
@@ -173,5 +175,15 @@ hook.Add("OnEntityCreated", "TRMBase_Replace", function(ent)
                 DoWeaponReplace(ent)
             end
         end
+    end)
+end)
+
+hook.Add("PlayerDroppedWeapon","TRMBASE_ReplaceDrop",function(owner , ent)
+    timer.Simple(FrameTime() * 3, function()
+            local cv = GetConVar("trmbase_replace_weapon")
+            if cv and cv:GetBool() then
+                DoWeaponReplace(ent)
+            end
+            
     end)
 end)

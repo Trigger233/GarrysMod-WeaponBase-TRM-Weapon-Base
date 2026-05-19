@@ -1,6 +1,21 @@
 -- =============================================
 -- Pose 参数更新（合并四合一，减少重复 GetViewModel / GetVelocity）
 -- =============================================
+
+function SWEP:LookupRangeCache(name)
+    if not self.vm_PoseParameterRangeCache then
+        self.vm_PoseParameterRangeCache =  {}
+    end
+    if not self.vm_PoseParameterRangeCache[name] then
+        local vm = self:GetViewModel()
+        local min, max = vm:GetPoseParameterRange(vm:LookupPoseParameter(name))
+        self.vm_PoseParameterRangeCache[name] = max 
+    else
+        return self.vm_PoseParameterRangeCache[name]
+    end
+
+end
+
 function SWEP:UpdatePoseParameters()
     if SERVER  then return end
 
@@ -14,6 +29,7 @@ function SWEP:UpdatePoseParameters()
     local runSpeed = IsValid(owner) and owner:GetRunSpeed() or 1
     local walkSpeed = IsValid(owner) and owner:GetWalkSpeed() or 1
     local dt = FrameTime() * 1
+
     -- Aim Pose
     if self.Sight and self.Sight.PoseParameter then
         self.m_AimPose = Lerp(  dt * 20, self.m_AimPose or 0, self:GetAimDelta()) or 0
@@ -27,8 +43,8 @@ function SWEP:UpdatePoseParameters()
         local sprintVal = self:CanSprint() and speed > walkSpeed and self:GetSprintDelta()  or 0
         self.m_SprintPose = Lerp( dt * 10  , self.m_SprintPose or 0, sprintVal) or 0
         for _, Pose in pairs(self.BasePoseParameter.Sprint) do
-            local _ ,max = vm:GetPoseParameterRange(Pose)
-            vm:SetPoseParameter(Pose, self.m_SprintPose * max ) 
+            local max = self:LookupRangeCache(Pose)
+            vm:SetPoseParameter(Pose, self.m_SprintPose * max  ) 
         end
     end
 

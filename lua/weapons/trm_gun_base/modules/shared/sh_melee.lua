@@ -70,7 +70,7 @@ function SWEP:DealMeleeDamage()
 
     if IsValid(ent) and ent.TakeDamageInfo then
         ent:TakeDamageInfo(dmginfo)
-        self:ImpactEffects(tr,type)
+        --self:ImpactEffects(tr,type)
     end
 
     local phys

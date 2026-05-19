@@ -202,6 +202,11 @@ local AimOffset , AimOffsetAngle
 function SWEP:CalcViewModelView(vm ,pos , angles , poss , angless )
     if not CLIENT then return end
 
+    -- 冻结 VM 调试
+    if self.m_VMFrozen and self.m_VMFreezePos and self.m_VMFreezeAng then
+        return self.m_VMFreezePos, self.m_VMFreezeAng
+    end
+
 
     local aimdelta = self:GetClientAimDelta()
     --Idle Offset
@@ -304,22 +309,23 @@ function SWEP:ViewModelDrawn(vm)
     vm:InvalidateBoneCache()
     vm:SetupBones()
 
-    -- 检测配件模型是否缺失（换关后 ClientsideModel 被销毁需要重建）
-    if not self.m_NeedsBuild then
-        for _, entry in pairs(self.CurrentAttachments or {}) do
-            if entry.Class and not IsValid(entry.m_Model) then
-                self.m_NeedsBuild = true
-                break
-            end
-        end
-    end
+    -- -- 检测配件模型是否缺失（换关后 ClientsideModel 被销毁需要重建）
+    -- if not self.m_NeedsBuild then
+    --     for _, entry in pairs(self.CurrentAttachments or {}) do
+    --         if entry.Class and BASE_TRM_ATTS[entry.Class].Model and not IsValid(entry.m_Model) then
+    --             self.m_NeedsBuild = true
+    --             break
+    --         end
+    --     end
+    -- end
 
     if self.m_NeedsBuild and self.BuildCustomizedGun then
+        print(CurTime())
         self:BuildCustomizedGun()
         self.m_NeedsBuild = false
     end
     
-    -- 逐个调用配件的 Render（用 pcall 包住，防止激光等配件崩了卡死后面的瞄准镜）
+    -- 逐个调用配件的 Render
     for slot, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
         local data = BASE_TRM_ATTS[entry.Class]
@@ -356,6 +362,9 @@ concommand.Add("trm_clear_test_model", function(ply)
     end
 end)
 
+-- 调试 ConVar
+CreateClientConVar("trmbase_freeze_vm", 0)
+
 -- =============================================
 -- 调试：冻结 viewmodel 位置/角度
 -- =============================================
@@ -368,9 +377,9 @@ concommand.Add("trmbase_freeze_vm", function(ply, cmd, args)
     end
 
     wep.m_VMFrozen = not wep.m_VMFrozen
+    GetConVar("trmbase_freeze_vm"):SetInt(wep.m_VMFrozen and 1 or 0)
 
     if wep.m_VMFrozen then
-        -- 记录当前 viewmodel 的位置和角度
         local vm = wep:GetViewModel(0)
         if IsValid(vm) then
             wep.m_VMFreezePos = vm:GetPos()
@@ -382,6 +391,17 @@ concommand.Add("trmbase_freeze_vm", function(ply, cmd, args)
         print("  再次执行 trmbase_freeze_vm 解冻")
     else
         print("[TRMBase] Viewmodel 已解冻")
+    end
+end)
+
+-- ConVar 回调：勾选菜单时触发冻结/解冻
+cvars.AddChangeCallback("trmbase_freeze_vm", function(name, old, new)
+    local wep = LocalPlayer() and LocalPlayer():GetActiveWeapon()
+    if not IsValid(wep) then return end
+    if new == "1" and not wep.m_VMFrozen then
+        RunConsoleCommand("trmbase_freeze_vm")
+    elseif new == "0" and wep.m_VMFrozen then
+        RunConsoleCommand("trmbase_freeze_vm")
     end
 end)
 

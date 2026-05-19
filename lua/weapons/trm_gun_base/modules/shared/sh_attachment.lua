@@ -405,7 +405,7 @@ function SWEP:BuildCustomizedGun()
     local hasVM = IsValid(vm)
 
     self.m_Sight = nil
-
+    print("call rebuild!")
     local currentSlotKeys = {}
 
     for slotKey, entry in pairs(self.CurrentAttachments or {}) do

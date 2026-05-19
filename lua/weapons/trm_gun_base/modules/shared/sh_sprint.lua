@@ -6,7 +6,6 @@ function SWEP:CanSprint()
     
     local owner = self:GetOwner()
     if not IsValid(owner) then return false end
-    
     local seq = self:GetPlayingSequence() or ""
     local task = self:GetCurrentTask() or ""
     
@@ -43,9 +42,9 @@ end
 function SWEP:Task_SprintIn(cycle)
     self:SetNextAnimationTime(0)
     if self:IsEmpty() and self.Animations.SprintIn_Empty then
-        self:PlayAnimation("SprintIn_Empty" , true )
+        self:PlayAnimation("SprintIn_Empty"  )
     elseif self.Animations.SprintIn then
-        self:PlayAnimation("SprintIn" ,true )
+        self:PlayAnimation("SprintIn"  )
     end
     
     self:SetCurrentTask("Sprint")
@@ -74,13 +73,13 @@ end
 
 function SWEP:Task_SprintOut(cycle)
     self:SetNextAnimationTime(0)
+    self:SetNextFireTime(0.0)
     if self:IsEmpty() and self.Animations.SprintOut_Empty then
-        self:PlayAnimation("SprintOut_Empty" ,true)
+        self:PlayAnimation("SprintOut_Empty" )
     elseif self.Animations.SprintOut then
-        self:PlayAnimation("SprintOut",true)
+        self:PlayAnimation("SprintOut")
     else
         self:Task_Idle()
-        self:SetNextFireTime(0.5)
     end
     self:SetCurrentTask("Finished")
     
