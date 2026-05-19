@@ -21,7 +21,10 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration )
     self:SetPlayingSequence(sequenceClass)
     
     vm:SendViewModelMatchingSequence(vm:LookupSequence(sequencePlay))
-    local duration = self:SequenceDuration(vm:LookupSequence(sequencePlay))
+
+    self:SetGrip1(true)
+    self:SetGrip2(true)
+    local duration = vm:SequenceDuration(vm:LookupSequence(sequencePlay))
     
     vm:SetCycle(0)
 

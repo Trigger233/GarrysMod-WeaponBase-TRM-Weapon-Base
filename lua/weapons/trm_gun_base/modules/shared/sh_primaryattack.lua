@@ -331,16 +331,16 @@ function SWEP:DoCameraRecoil()
     
     -- 简单的三段曲线：上升 → 下降 → 归零
     local strength
-    if t < 0.5 then
+    if t < 0.3 then
         -- 阶段1：快速下降到 0 (t=0.3 时 strength=0)
-        strength = 1 - (t / 0.5)
-    elseif t < 0.7 then
+        strength = 1 - (t / 0.3)
+    elseif t < 0.8 then
         -- 阶段2：继续下降到负数 (t=0.6 时 strength=-kickDown)
-        local t2 = (t - 0.2) / 0.2  -- 0→1
+        local t2 = (t - 0.3) / 0.5  -- 0→1
         strength = -kickDown * t2
     else
         -- 阶段3：回到 0 (t=1 时 strength=0)
-        local t3 = (t - 0.7) / 0.3  -- 0→1
+        local t3 = (t - 0.8) / 0.2  -- 0→1
         strength = -kickDown * (1 - t3)
     end
     

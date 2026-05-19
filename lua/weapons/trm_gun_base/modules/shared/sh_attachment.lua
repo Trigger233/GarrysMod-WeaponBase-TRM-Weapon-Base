@@ -31,6 +31,7 @@ function SWEP:PrecacheViewModel()
     self.m_ViewmodelCache = nil
     self.m_SkinCache = nil 
     self.m_BodyGroupCache = {}
+    self.m_PoseParameter = {}
 
     for _, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
@@ -43,6 +44,10 @@ function SWEP:PrecacheViewModel()
         elseif _att.BodyGroup then 
             for _model , _submodel in pairs(_att.BodyGroup) do
                 self.m_BodyGroupCache[_model] = _submodel
+            end
+        elseif _att.poseParameter then
+            for _ ,Posename in pairs(_att.poseParameter) do
+                self.m_PoseParameter[Posename] = true 
             end
         end
     end
@@ -114,8 +119,7 @@ end
 
 
 function SWEP:ChangeWeaponStats()
-
-    if SERVER  then 
+    
         self:GetOriginStat()
         self:DeepObjectCopy(    self.m_OriginalStat    , self)
         
@@ -126,20 +130,19 @@ function SWEP:ChangeWeaponStats()
         end
 
         
-        if self:Clip1() > self.Primary.ClipSize then
-            self:SetClip1(self.Primary.ClipSize)
+        if SERVER then
+            if self:Clip1() > self.Primary.ClipSize then
+                self:SetClip1(self.Primary.ClipSize)
+            end
+            if self:Clip2() > self.Secondary.ClipSize then
+                self:SetClip2(self.Secondary.ClipSize)
+            end
+            self:SetSpread(self.Spread.Base)
+            self:SetSpreadVertical(self.Spread.Vertical)
+            self:SetSpreadHorizonal(self.Spread.Horizontal)
         end
-        if self:Clip2() > self.Secondary.ClipSize then
-            self:SetClip2(self.Secondary.ClipSize)
-        end
-
-        self:SetSpread(self.Spread.Base)
-        self:SetSpreadVertical(self.Spread.Vertical)
-        self:SetSpreadHorizonal(self.Spread.Horizontal)
-    else 
-
-    end
-
+    self:CallOnClient("ChangeWeaponStats")
+  
 end
 
 function SWEP:DeepObjectCopy(original, holder)
@@ -159,9 +162,9 @@ function SWEP:DeepObjectCopy(original, holder)
 end
 
 function SWEP:GetOriginStat()
-    local template = weapons.Get(self:GetClass())
-    self.m_OriginalStat = {}
-    self:DeepObjectCopy(template, self.m_OriginalStat)
+ 
+    self.m_OriginalStat = weapons.Get(self:GetClass()) 
+    
 end
 
 function SWEP:SpreadInit()
@@ -405,7 +408,7 @@ function SWEP:BuildCustomizedGun()
     local hasVM = IsValid(vm)
 
     self.m_Sight = nil
-    print("call rebuild!")
+    --print("call rebuild!")
     local currentSlotKeys = {}
 
     for slotKey, entry in pairs(self.CurrentAttachments or {}) do
@@ -532,6 +535,9 @@ function SWEP:ApplyAttachmentModels()
 
             model:SetLocalPos(finalPos)
             model:SetLocalAngles(finalAng)
+            if AttachmentData.Scale then
+                model:SetModelScale(AttachmentData.Scale)
+            end
         end
     end
 end

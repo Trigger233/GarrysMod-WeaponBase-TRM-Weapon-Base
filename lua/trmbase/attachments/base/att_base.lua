@@ -24,4 +24,14 @@ end
 function ATTACHMENT:PostProcess(weapon)
     
 end
+
+function ATTACHMENT:ScaleTableValue(tableData, mul)
+    for key, val in pairs(tableData) do
+        if istable(val) then
+            self:ScaleTableValue(val, mul)
+        else
+            tableData[key] = val * mul  -- ✅ 直接修改原表的值
+        end
+    end
+end
 --

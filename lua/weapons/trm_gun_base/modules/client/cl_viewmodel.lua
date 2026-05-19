@@ -320,7 +320,7 @@ function SWEP:ViewModelDrawn(vm)
     -- end
 
     if self.m_NeedsBuild and self.BuildCustomizedGun then
-        print(CurTime())
+       -- print(CurTime())
         self:BuildCustomizedGun()
         self.m_NeedsBuild = false
     end

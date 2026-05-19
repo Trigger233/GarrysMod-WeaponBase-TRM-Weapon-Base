@@ -13,7 +13,7 @@ function SWEP:LookupRangeCache(name)
     else
         return self.vm_PoseParameterRangeCache[name]
     end
-
+    return 1
 end
 
 function SWEP:UpdatePoseParameters()
@@ -43,7 +43,7 @@ function SWEP:UpdatePoseParameters()
         local sprintVal = self:CanSprint() and speed > walkSpeed and self:GetSprintDelta()  or 0
         self.m_SprintPose = Lerp( dt * 10  , self.m_SprintPose or 0, sprintVal) or 0
         for _, Pose in pairs(self.BasePoseParameter.Sprint) do
-            local max = self:LookupRangeCache(Pose)
+            local max = self:LookupRangeCache(Pose) or 1  
             vm:SetPoseParameter(Pose, self.m_SprintPose * max  ) 
         end
     end
@@ -63,5 +63,14 @@ function SWEP:UpdatePoseParameters()
         for _, Pose in pairs(self.BasePoseParameter.Walk) do
             vm:SetPoseParameter(Pose, self.m_WalkPose)
         end 
+    end
+    
+    --PrintTable(self.m_PoseParameter) 
+
+    if self.m_PoseParameter then
+        self.m_grippose = Lerp( dt * 10 , self.m_grippose or 0 , (self:GetGrip1() and 1 or 0) ) 
+        for poseName , _ in pairs(self.m_PoseParameter) do
+            vm:SetPoseParameter(poseName,   self:LookupRangeCache(poseName) *  self.m_grippose )
+        end
     end
 end
