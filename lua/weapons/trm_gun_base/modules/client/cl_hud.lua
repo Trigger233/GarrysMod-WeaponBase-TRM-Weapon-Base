@@ -80,7 +80,7 @@ function DrawCustomCrosshair(ply, wep)
 
     -- TraceLine 每 2 帧做一次（物理查询开销大，准星不需要每帧重新追踪）
     local frame = FrameNumber()
-    if frame ~= _lastTraceFrame and (frame % 2) == 0 then
+    if frame ~= _lastTraceFrame and (frame % 10) == 0 then
         _lastTraceFrame = frame
         local tr = util.TraceLine({
             start = aimpos,
@@ -103,7 +103,7 @@ function DrawCustomCrosshair(ply, wep)
     local sequence = wep.m_CurrentSequence or wep:GetPlayingSequence()
     
     -- ADS 时隐藏准星（只对 DrawCrossHairIS=true 的武器显示，或开启调试时强制显示）
-    if wep.DrawCrossHairIS ~= true and wep:GetAimDelta() > 0.5 and cv_debug:GetInt() == 0 then
+    if not ply:ShouldDrawLocalPlayer() and wep.DrawCrossHairIS ~= true and wep:GetAimDelta() > 0.5 and cv_debug:GetInt() == 0 then
         alpha = 0
     end
 

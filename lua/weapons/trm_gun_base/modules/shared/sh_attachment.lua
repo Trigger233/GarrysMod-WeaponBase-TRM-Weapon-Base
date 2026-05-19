@@ -619,7 +619,7 @@ function SWEP:SyncAllAttachments()
             net.WriteString(slot)
             net.WriteString(entry.Class)
         end
-    net.SendPVS(self:GetPos())
+    net.Broadcast()
 end
 
 net.Receive("TRMBase_Attachment", function()

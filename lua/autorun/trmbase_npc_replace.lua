@@ -40,6 +40,42 @@ local function RollChance()
     local chance = cv and cv:GetInt() or 100
     return math.random(0, 99) < chance
 end
+local function RandomizeAttachments(ent)
+    if not IsValid(ent) then return end
+    if not ent.Attachments or #ent.Attachments == 0 then return end
+    if not ent.EquipAttachment then return end
+
+    local cv = GetConVar("trmbase_random_attachments")
+    if not cv or not cv:GetBool() then return end
+
+    for i, slot in ipairs(ent.Attachments) do
+        if not slot.Category then continue end
+
+        -- 找到该槽位可用的配件
+        local available = {}
+        for attClass, attData in pairs(BASE_TRM_ATTS) do
+            if type(attData) ~= "table" then continue end
+            if not attData.Category then continue end
+            for _, cat in ipairs(istable(slot.Category) and slot.Category or {slot.Category}) do
+                if attData.Category == cat then
+                    table.insert(available, attClass)
+                    break
+                end
+            end
+        end
+
+        if #available == 0 then continue end
+
+        -- 每个槽 60% 概率装一个随机配件（不装默认）
+        if math.random() < 0.6 then
+            local chosen = available[math.random(#available)]
+            if chosen ~= slot.Default then
+                ent:EquipAttachment(tostring(i), chosen)
+                --print("[TRMBase] Random attach slot " .. i .. ": " .. chosen)
+            end
+        end
+    end
+end
 
 -- ===== NPC 武器替换 =====
 local function DoNPCReplace(npc)
@@ -72,45 +108,14 @@ local function DoNPCReplace(npc)
     print("[TRMBase] NPC " .. npc:GetClass() .. ": " .. wep:GetClass() .. " → " .. newClass .. " (random from " .. #candidates .. ")")
     if IsValid(wep) then wep:Remove() end
     npc:Give(newClass)
+    timer.Simple(FrameTime()*3 ,function()
+        local wep = npc:GetActiveWeapon() 
+        if not IsValid(wep) then return end
+        RandomizeAttachments(npc:GetActiveWeapon())
+    end)
 end
 
 -- 随机装上配件
-local function RandomizeAttachments(ent)
-    if not IsValid(ent) then return end
-    if not ent.Attachments or #ent.Attachments == 0 then return end
-    if not ent.EquipAttachment then return end
-
-    local cv = GetConVar("trmbase_random_attachments")
-    if not cv or not cv:GetBool() then return end
-
-    for i, slot in ipairs(ent.Attachments) do
-        if not slot.Category then continue end
-
-        -- 找到该槽位可用的配件
-        local available = {}
-        for attClass, attData in pairs(BASE_TRM_ATTS) do
-            if type(attData) ~= "table" then continue end
-            if not attData.Category then continue end
-            for _, cat in ipairs(istable(slot.Category) and slot.Category or {slot.Category}) do
-                if attData.Category == cat then
-                    table.insert(available, attClass)
-                    break
-                end
-            end
-        end
-
-        if #available == 0 then continue end
-
-        -- 每个槽 60% 概率装一个随机配件（不装默认）
-        if math.random() < 0.6 then
-            local chosen = available[math.random(#available)]
-            if chosen ~= slot.Default then
-                ent:EquipAttachment(tostring(i), chosen)
-                print("[TRMBase] Random attach slot " .. i .. ": " .. chosen)
-            end
-        end
-    end
-end
 
 -- 是否由玩家生成的实体？通过 Source 和 SpawnFlags 判断
 -- 世界/脚本生成的武器没有玩家创建者

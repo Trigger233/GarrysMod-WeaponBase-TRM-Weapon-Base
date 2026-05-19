@@ -1,6 +1,6 @@
 function SWEP:CanAim()
     local seq = self.m_CurrentSequence or self:GetPlayingSequence()
-    if self:GetSprintDelta() > 0.8 or ( self.IronsightReload == false and self:IsReloading() ) or string.find(seq,"Holster") or string.find(seq,"Inspect")or string.find(seq,"Draw") then return false end  
+    if self:GetSprintDelta() > 0.8 or ( self.IronsightReload == false and self:IsReloading() ) or string.find(seq,"Holster")or string.find(seq,"Draw") then return false end  
     return true 
 end
 
