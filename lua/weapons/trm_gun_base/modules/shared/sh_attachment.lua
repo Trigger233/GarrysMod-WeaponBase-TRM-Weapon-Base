@@ -80,7 +80,7 @@ function SWEP:PrepareViewModel()
             if IsValid(entry.m_Model) then
                 changeBodyGroup(entry.m_Model, _group, _sub)
             end
-        end
+        end 
     end
 
 
@@ -98,6 +98,8 @@ end
 function SWEP:ApplyViewModelChange()
     local vm = self:GetViewModel()
     if not IsValid(vm) then return false end
+    vm:SetModel(self.m_ViewmodelCache || self.ViewModel)
+    vm:SetSkin(self.m_SkinCache || 0)
 
     for bodygroup , sub in pairs(self.m_BodyGroupCache) do
         changeBodyGroup(vm,bodygroup,sub)
@@ -107,10 +109,6 @@ function SWEP:ApplyViewModelChange()
             end
         end
     end
-
-    vm:SetModel(self.m_ViewmodelCache || self.ViewModel)
-    vm:SetSkin(self.m_SkinCache || 0)
-  
 
 
 end
@@ -400,7 +398,11 @@ function SWEP:UnEquipAttachment(slot)
 end
 
 function SWEP:BuildCustomizedGun()
-    if SERVER then return end
+    if SERVER then
+    
+        self:CallOnClient("BuildCustomizedGun")
+        
+    return end
 
     local vm = self:GetViewModel()
     local hasVM = IsValid(vm)

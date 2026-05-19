@@ -338,7 +338,7 @@ function SWEP:DoCameraRecoil()
         local diff = targetPitch - currentPitch
         
         -- 已经接近目标，直接归位并清空记录
-        if diff < 0.01 or  CurTime() - nextRecoil > 2 then
+        if diff < 0.0 or  CurTime() - nextRecoil > 5 then
             eyeAngles.pitch = targetPitch
             self.recoil_firstangle = nil
         else
