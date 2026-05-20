@@ -224,8 +224,8 @@ function SWEP:DoVisualRecoil()
         self.m_VRecoilBack = 0
     end
     
-    local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2]) 
-    self.m_VRecoilBack = self.m_VRecoilBack + baseBack + progBack
+    local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2]) * AdsScale
+    self.m_VRecoilBack = self.m_VRecoilBack + baseBack + progBack 
     
     -- 限制最大值
     if self.VisualRecoil.Backward[3] and self.m_VRecoilBack > self.VisualRecoil.Backward[3] then
@@ -238,6 +238,7 @@ end
 function SWEP:Recover() 
 	if CLIENT then return end
 	local last = self:GetLastFireTime()
+	local delay = 60/self.Primary.RPM -- second
 	--VRecoil(Angle)
 	if CurTime() - last > (self.VisualRecoil.RecoverDelay or 0)  then
 		self.m_VRecoil = self:GetVisualRecoil()
@@ -245,7 +246,7 @@ function SWEP:Recover()
 		self:SetVisualRecoil(self.m_VRecoil)
 		--VRecoil(Vector)
 		self.m_VRecoilBack = self:GetVisualRecoilBackward()
-		self.m_VRecoilBack = math.Approach(self.m_VRecoilBack , 0 , self.VisualRecoil.RecoverSpeed )
+		self.m_VRecoilBack = math.Approach(self.m_VRecoilBack , 0 , 1/delay )
 		self:SetVisualRecoilBackward(self.m_VRecoilBack)
 	end
 	
@@ -331,23 +332,23 @@ function SWEP:DoCameraRecoil()
     -- ==========================================
     -- 停火恢复逻辑
     -- ==========================================
-	local recoverSpeed = self.Recoil.Recover or 1
-    if not isFiring and self.recoil_firstangle  then
-        local currentPitch = eyeAngles.pitch
-        local targetPitch = self.recoil_firstangle
-        local diff = targetPitch - currentPitch
+	-- local recoverSpeed = self.Recoil.Recover or 1
+    -- if not isFiring and self.recoil_firstangle  then
+    --     local currentPitch = eyeAngles.pitch
+    --     local targetPitch = self.recoil_firstangle
+    --     local diff = targetPitch - currentPitch
         
-        -- 已经接近目标，直接归位并清空记录
-        if diff < 0.0 or  CurTime() - nextRecoil > 5 then
-            eyeAngles.pitch = targetPitch
-            self.recoil_firstangle = nil
-        else
-            -- 每帧恢复 30% 的差值（快速但平滑）
-            eyeAngles.pitch = currentPitch + diff * 0.02 * recoverSpeed
-            owner:SetEyeAngles(eyeAngles)
-        end
-        return
-    end
+    --     -- 已经接近目标，直接归位并清空记录
+    --     if diff < 0.0 or  CurTime() - nextRecoil > 1 then
+    --         eyeAngles.pitch = targetPitch
+    --         self.recoil_firstangle = nil
+    --     else
+    --         -- 每帧恢复 30% 的差值（快速但平滑）
+    --         eyeAngles.pitch = currentPitch + math.min(diff, 1) * 0.45 * recoverSpeed
+    --         owner:SetEyeAngles(eyeAngles)
+    --     end
+    --     return
+    -- end
     
     -- ==========================================
     -- 开火中，正常处理后坐力
@@ -362,13 +363,13 @@ function SWEP:DoCameraRecoil()
     local kickDown = (self.Recoil.KickDown or 0) * delay * 5 
     
     local strength
-    if t < 0.3 then
-        strength = 1 - (t / 0.3)
+    if t < 0.2 then
+        strength = 1 - (t / 0.2)
     elseif t < 0.8 then
-        local t2 = (t - 0.3) / 0.5
+        local t2 = (t - 0.2) / 0.6
         strength = -kickDown * t2
     else
-        local t3 = (t - 0.8) / 0.2
+        local t3 = (t - 0.8) / 0.3
         strength = -kickDown * (1 - t3)
     end
     

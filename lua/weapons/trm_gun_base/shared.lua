@@ -488,8 +488,8 @@ function SWEP:Equip()
     if SERVER and cvar_attachment:GetBool()  then
         -- 先加载保存的配件配置
         self:LoadAttachmentPreset()
-        self:SyncAllAttachments()
     end
+        self:SyncAllAttachments()
 
 end
 function SWEP:Deploy()

@@ -28,7 +28,7 @@ function SWEP:UpdatePoseParameters()
     local speed = IsValid(owner) and owner:GetVelocity():Length2D() or 0
     local runSpeed = IsValid(owner) and owner:GetRunSpeed() or 1
     local walkSpeed = IsValid(owner) and owner:GetWalkSpeed() or 1
-    local dt = FrameTime() * 1
+    local dt = engine.TickInterval() * 0.5
 
     -- Aim Pose
     if self.Sight and self.Sight.PoseParameter then
