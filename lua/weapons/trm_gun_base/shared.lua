@@ -462,15 +462,19 @@ function SWEP:Initialize()
     --     self:LoadAttachmentPreset()
     -- end
 
-    -- 地面/NPC 武器需要广播配件数据给客户端，让第三人称模型能显示
+    -- 地面/NPC 武器延后广播，确保客户端实体已就绪
     if SERVER then
-        self:SyncAllAttachments()
+        timer.Simple(FrameTime() * 2, function()
+            if not IsValid(self) then return end
+            self:SyncAllAttachments()
+        end)
     end
-
-    self:PrecacheViewModel()
+    if self.GetOriginStat then self:GetOriginStat() end
+    if self.ChangeWeaponStats then self:ChangeWeaponStats() end
+    if self.SpreadInit then self:SpreadInit() end
     if self.BuildCustomizedGun then self:BuildCustomizedGun() end
-end
 
+end
 SWEP.Attachments = {}
 function SWEP:GetViewModel(index)
     local owner = self:GetOwner()
@@ -483,14 +487,16 @@ local cvar_attachment = GetConVar("trmbase_load_attachment_on_pickup")
 function SWEP:Equip()
     self:SetFirstDeployed(true)
     -- 服务端同步配件给客户端
-    if SERVER then
+    
         -- 先加载保存的配件配置
-        if cvar_attachment:GetBool() then
-            self:LoadAttachmentPreset()
-        end
+    if cvar_attachment:GetBool() then
+        self:LoadAttachmentPreset()
     end
+   
     self:OnAttachmentChanged()
     self:SyncAllAttachments()
+
+    
 end
 
 function SWEP:Deploy()

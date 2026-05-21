@@ -7,7 +7,6 @@ function SWEP:CanPrimaryFire()
 end
 
 function SWEP:Task_PrimaryFire()
-	self:SetNextFireTime(60 / self.Primary.RPM)
 	local aim = self:GetAimDelta() > 0.5 and true or false
 
 	if self:Clip1() == 1 and self.Animations.Fire_Last then
@@ -18,9 +17,9 @@ function SWEP:Task_PrimaryFire()
 		end
 	elseif self.Animations.Fire then
 		if aim and self.Animations.Iron_Fire then
-			self:PlayAnimation("Iron_Fire")
+			self:PlayAnimation("Iron_Fire",false)
 		else
-			self:PlayAnimation("Fire")
+			self:PlayAnimation("Fire",false)
 		end
 	end
 
@@ -29,6 +28,9 @@ function SWEP:Task_PrimaryFire()
 	else
 		self:FireProjectile()
 	end
+
+	self:SetNextFireTime(60 / self.Primary.RPM)
+
 end
 
 function SWEP:DoFireSound()
