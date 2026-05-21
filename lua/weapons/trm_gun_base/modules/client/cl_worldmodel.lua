@@ -56,9 +56,8 @@ end
 function SWEP:OnRemove()
     if self.CurrentAttachments then
         for _, entry in pairs(self.CurrentAttachments) do
-            if IsValid(entry.m_TpModel) then
-                entry.m_TpModel:Remove()
-                entry.m_TpModel = nil
+            if entry then
+                self:RemoveAttachmentModel(entry, true)
             end
         end
     end

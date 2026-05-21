@@ -11,3 +11,4 @@ function ATTACHMENT:ChangeWeaponStats(weapon)
     weapon.Recoil.AdsMultiplier = weapon.Recoil.AdsMultiplier * 0.5
 
 end
+

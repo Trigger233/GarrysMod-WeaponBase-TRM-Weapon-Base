@@ -18,9 +18,9 @@ local function LoadAttachmentStats(path, fileName)
         print("[TRMAtt] Failed to load:", fullPath)
         return
     end
-
+ 
     ATTACHMENT = {}
-    ATTACHMENT.ClassName = name
+    ATTACHMENT.ClassName = name 
     ATTACHMENT.Folder = path
 
     func()

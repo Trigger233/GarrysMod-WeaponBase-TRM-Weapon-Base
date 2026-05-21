@@ -15,7 +15,7 @@ function SWEP:MagzineReload()
     if Empty and self.Animations.Reload_Empty then
         self:PlayAnimation("Reload_Empty" ,true)
     else
-        self:PlayAnimation("Reload" ,true , 0.5 )
+        self:PlayAnimation("Reload" ,true)
     end
     self:SetCurrentTask("Finished")
 	if cvar_firebreakreload:GetInt() >= 1 then
@@ -52,7 +52,7 @@ function SWEP:Task_ReloadEnd(cycle)
 	self:SetNextAnimationTime(0)
 	local animTable = self.Animations
 	if self:GetChamberAmmo() <= 0 and animTable.Reload_End_Empty then
-		self:PlayAnimation("Reload_End_Empty")
+		self:PlayAnimation("Reload_End_Empty",true)
 	elseif animTable.Reload_End then
     	self:PlayAnimation( "Reload_End" ,true)
 	end

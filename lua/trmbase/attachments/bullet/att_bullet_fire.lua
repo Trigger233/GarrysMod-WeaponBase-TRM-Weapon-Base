@@ -13,6 +13,8 @@ function ATTACHMENT:ChangeWeaponStats(weapon)
     weapon.Recoil.Vertical[2] = weapon.Recoil.Vertical[2] * 1.5
     weapon.Primary.Damage = weapon.Primary.Damage * 0.55
     weapon.Spread.Base = weapon.Spread.Base * 1.5
+
+    weapon.PrintName = weapon.PrintName .. " FireBullets"
 end
 
 function ATTACHMENT:DoImpactEffect(tr,type)

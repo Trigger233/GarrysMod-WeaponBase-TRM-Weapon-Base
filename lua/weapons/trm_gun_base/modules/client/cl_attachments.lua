@@ -70,7 +70,7 @@ function PANEL:Init()
     self.m_MainPanel = vgui.Create("DPanel", self)
     self.m_MainPanel:SetSize(550 * globalScale, 1000 * globalScale)
     self.m_MainPanel:AlignLeft()
-    self.m_MainPanel:AlignTop(200 * globalScale )
+    self.m_MainPanel:AlignTop(200 * globalScale)
     self.m_MainPanel.Paint = function(s, w, h)
         surface.SetDrawColor(30, 30, 30, 50)
         surface.DrawRect(0, 0, w, h)
@@ -137,15 +137,16 @@ function PANEL:Init()
             btn:SetPos(0, (i - 1) * (btnH + margin))
             btn:SetSize(popup:GetWide(), btnH)
             btn.Paint = function(b, w, h)
-                if idx == self.m_Slot  then
+                if idx == self.m_Slot then
                     surface.SetDrawColor(40, 120, 60, 200)
                 elseif b:IsHovered() then
-                    surface.SetDrawColor(200,200,200,200)
+                    surface.SetDrawColor(200, 200, 200, 200)
                 else
                     surface.SetDrawColor(50, 50, 50, 200)
                 end
                 surface.DrawRect(0, 0, w, h)
-                draw.SimpleText(name, "DermaLarge", w / 2, h / 2, Color(160, 241, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                draw.SimpleText(name, "DermaLarge", w / 2, h / 2, Color(160, 241, 255), TEXT_ALIGN_CENTER,
+                    TEXT_ALIGN_CENTER)
             end
             btn.DoClick = function()
                 self.m_Slot = idx
@@ -187,7 +188,7 @@ function PANEL:Init()
     self.m_AttInfo:SetSize(200 * globalScale, 800 * globalScale)
     self.m_AttInfo:AlignLeft(self.m_MainPanel:GetWide() + 5)
     self.m_AttInfo:AlignTop(200 * globalScale)
-    self.m_AttInfo.Paint = function() end  -- 全透明
+    self.m_AttInfo.Paint = function() end -- 全透明
 
     -- 底部提示
     self.m_HintLabel = vgui.Create("DLabel", self.m_Container)
@@ -196,7 +197,7 @@ function PANEL:Init()
     self.m_HintLabel:SetTextColor(Color(180, 180, 180))
     self.m_HintLabel:SetContentAlignment(5)
     self.m_HintLabel:SetTall(25)
-    self.m_HintLabel:SetText(language.GetPhrase("#TRMBase_CloseHint")) 
+    self.m_HintLabel:SetText(language.GetPhrase("#TRMBase_CloseHint"))
 
     -- -- ESC 关闭（框架 + 所有子控件统一处理）
     -- self.OnKeyCodePressed = function(_, key)
@@ -247,7 +248,7 @@ function PANEL:Init()
             if not att.Default then continue end
             local attData = BASE_TRM_ATTS[att.Default]
             if attData and attData.ChangeWeaponStats then
-                pcall(attData.ChangeWeaponStats, attData, def)  -- 用 sim，不污染原始表
+                pcall(attData.ChangeWeaponStats, attData, def) -- 用 sim，不污染原始表
             end
         end
 
@@ -260,7 +261,7 @@ function PANEL:Init()
             end
         end
         local function avg(t, _max)
-            if type(t) ~= "table" then return t end  -- 如果不是表就当数字用
+            if type(t) ~= "table" then return t end -- 如果不是表就当数字用
             if not _max then _max = 100 end
             local total = 0
             local count = 0
@@ -280,26 +281,26 @@ function PANEL:Init()
 
         local function getRecoil(weapon)
             local _recoil = {
-                v = avg(weapon.Recoil.Vertical) ,
-                h = avg(weapon.Recoil.Horizonal) ,
-                s = weapon.Recoil.Shake + weapon.Recoil.KickDown ,
+                v = avg(weapon.Recoil.Vertical),
+                h = avg(weapon.Recoil.Horizonal),
+                s = weapon.Recoil.Shake + weapon.Recoil.KickDown,
             }
-            local _ads = avg( {weapon.Recoil.AdsMultiplier , 1 } )
-            
+            local _ads = avg({ weapon.Recoil.AdsMultiplier, 1 })
+
             local _total = avg(_recoil) * _ads
             local _table = weapon.VisualRecoil
             local _recoil = {
-                v = avg(_table.Vertical) ,
-                h = avg(_table.Horizonal) , 
-                b = avg(_table.Backward ) ,
-                r = avg({ - _table.RecoverSpeed , -_table.RecoverDelay  }),
+                v = avg(_table.Vertical),
+                h = avg(_table.Horizonal),
+                b = avg(_table.Backward),
+                r = avg({ -_table.RecoverSpeed, -_table.RecoverDelay }),
             }
-            _recoil = avg(_recoil) * avg({_table.AdsMulitplier , 1 } )
+            _recoil = avg(_recoil) * avg({ _table.AdsMulitplier, 1 })
 
             _total = _total + _recoil
 
 
-            _total = math.Round(_total , 3 )
+            _total = math.Round(_total, 3)
             return _total
         end
 
@@ -307,71 +308,71 @@ function PANEL:Init()
             return weapon.Primary.Damage * weapon.Primary.NumBullets
         end
 
-        local stats = { --PrintName , sim , def , sortType
-            { language.GetPhrase("#TRMBase_Stat_Damage") ,getDamage(sim) , getDamage(def) ,true , 100 } ,
-            { language.GetPhrase("#TRMBase_Stat_ClipSize") ,sim.Primary.ClipSize , def.Primary.ClipSize ,true , 150 } ,
-            { language.GetPhrase("#TRMBase_Stat_RPM") ,sim.Primary.RPM , def.Primary.RPM ,true , 1500 } ,
-            { language.GetPhrase("#TRMBase_Stat_Spread") ,sim.Spread.Base , def.Spread.Base ,false , 0.1  } ,
-            { language.GetPhrase("#TRMBase_Stat_AimSpeed") ,sim.Aim.Time , def.Aim.Time ,false , 1  } ,
-            { language.GetPhrase("#TRMBase_Stat_Recoil") ,getRecoil(sim) , getRecoil(def)  ,false , 10  } ,
+        local stats                     = { --PrintName , sim , def , sortType
+            { language.GetPhrase("#TRMBase_Stat_Damage"),    getDamage(sim),        getDamage(def),        true,   100 },
+            { language.GetPhrase("#TRMBase_Stat_ClipSize"),  sim.Primary.ClipSize,  def.Primary.ClipSize,  true,   150 },
+            { language.GetPhrase("#TRMBase_Stat_RPM"),       sim.Primary.RPM,       def.Primary.RPM,       true,   1500 },
+            { language.GetPhrase("#TRMBase_Stat_Spread"),    sim.Spread.Base,       def.Spread.Base,       false,  0.1 },
+            { language.GetPhrase("#TRMBase_Stat_AimSpeed"),  sim.Aim.Time,          def.Aim.Time,          false,  1 },
+            { language.GetPhrase("#TRMBase_Stat_Recoil"),    getRecoil(sim),        getRecoil(def),        false,  10 },
         }
-        local animationState = animationState or 0
-        local x , y ,_w , _h , _padding  = 20 , 150 , w -30 ,25 , 3
-        self.animationState = math.Approach(  self.animationState , 1,RealFrameTime()*1  )
-        
-        for key , stat in pairs(stats) do
+        local animationState            = animationState or 0
+        local x, y, _w, _h, _padding    = 20, 150, w - 30, 25, 3
+        self.animationState             = math.Approach(self.animationState, 1, RealFrameTime() * 1)
+
+        for key, stat in pairs(stats) do
             local _max = stat[5] or stat[3] * 2
-            local radio = math.Clamp( stat[2] / _max , 0 , 1) 
-            local ori_radio = math.Clamp( stat[3] / _max , 0 , 1)  
-            local delta = -(stat[3] - stat[2]) 
-            local _reserve = not stat[4] 
-            local _mainColor = Color(255,255,255)
+            local radio = math.Clamp(stat[2] / _max, 0, 1)
+            local ori_radio = math.Clamp(stat[3] / _max, 0, 1)
+            local delta = -(stat[3] - stat[2])
+            local _reserve = not stat[4]
+            local _mainColor = Color(255, 255, 255)
             local _color = _mainColor
-            
+
 
             if delta ~= 0 then
-                    if ( delta * (_reserve and -1 or 1 ))> 0 then
-                        _color = Color(69,255,140)
-                    else
-                        _color = Color(255,103,103)
-                    end
-                draw.SimpleText( (delta > 0 and "+" or "") .. string.format("%.4f",delta) , "Trebuchet24" , x + 300 , y , _color , TEXT_ALIGN_BOTTOM , TEXT_ALIGN_RIGHT )
-                local text = "x".. string.format("%.1f",100 * stat[2] / stat[3] ).." %"
-                draw.SimpleText( text , "CloseCaption_Normal" , w- 100 , y - 5 , _color , TEXT_ALIGN_BOTTOM , TEXT_ALIGN_RIGHT )
+                if (delta * (_reserve and -1 or 1)) > 0 then
+                    _color = Color(69, 255, 140)
+                else
+                    _color = Color(255, 103, 103)
+                end
+                draw.SimpleText((delta > 0 and "+" or "") .. string.format("%.4f", delta), "Trebuchet24", x + 300, y,
+                    _color, TEXT_ALIGN_BOTTOM, TEXT_ALIGN_RIGHT)
+                local text = "x" .. string.format("%.1f", 100 * stat[2] / stat[3]) .. " %"
+                draw.SimpleText(text, "CloseCaption_Normal", w - 100, y - 5, _color, TEXT_ALIGN_BOTTOM, TEXT_ALIGN_RIGHT)
             end
 
-            draw.SimpleText(string.upper(stat[1]).."      "..stat[2] , "Trebuchet18" , x , y , _mainColor , TEXT_ALIGN_BOTTOM , TEXT_ALIGN_LEFT )
+            draw.SimpleText(string.upper(stat[1]) .. "      " .. stat[2], "Trebuchet18", x, y, _mainColor,
+                TEXT_ALIGN_BOTTOM, TEXT_ALIGN_LEFT)
 
-            y= y + 20
+            y = y + 20
             --Bar Display
             --条的边框
             surface.SetDrawColor(_mainColor)
-            surface.DrawOutlinedRect(x,y ,_w , _h , _padding * 0.5 )
+            surface.DrawOutlinedRect(x, y, _w, _h, _padding * 0.5)
 
-            local _barLength = ( _w - 4 * _padding) * (self.animationState > 0.25 and self.animationState or 0 )
+            local _barLength = (_w - 4 * _padding) * (self.animationState > 0.25 and self.animationState or 0)
             --这里渲染普通条(长度比例为radio)
-            
-            --如果delta小于0且顺序 
-            if  _reserve then
+
+            --如果delta小于0且顺序
+            if _reserve then
                 radio = 1 - radio
-                ori_radio = 1 - ori_radio 
-                
+                ori_radio = 1 - ori_radio
             end
             if radio > ori_radio then
                 radio = ori_radio
             end
 
-            surface.SetDrawColor(_mainColor)            
-            surface.DrawRect(x + 2 * _padding , y + 2 * _padding  ,_barLength * radio   , _h - 4 * _padding )
+            surface.SetDrawColor(_mainColor)
+            surface.DrawRect(x + 2 * _padding, y + 2 * _padding, _barLength * radio, _h - 4 * _padding)
             --颜色的变化条（）
             local _Delta_Radio = math.abs(delta) / _max
-            surface.SetDrawColor(_color)            
-            surface.DrawRect(x + 2 * _padding + _barLength *radio , y + 2 * _padding  ,_barLength * _Delta_Radio  , _h - 4 * _padding )
+            surface.SetDrawColor(_color)
+            surface.DrawRect(x + 2 * _padding + _barLength * radio, y + 2 * _padding, _barLength * _Delta_Radio,
+                _h - 4 * _padding)
             --
-            y = y +40 
-
+            y = y + 40
         end
-
     end -- Paint
 end
 
@@ -380,7 +381,7 @@ function PANEL:SetWeapon(weapon)
 
     self.m_Weapon = weapon
     self.m_TitleLabel:SetText(weapon:GetPrintName() .. language.GetPhrase("#TRMBase_Customize"))
-     
+
     for _, btn in ipairs(self.m_SlotButtons) do
         if IsValid(btn) then btn:Remove() end
     end
@@ -408,7 +409,7 @@ function PANEL:RefreshAttList()
 
     local slotKey = tostring(self.m_Slot)
     local currentEntry = self.m_Weapon.CurrentAttachments and self.m_Weapon.CurrentAttachments[slotKey]
-    local currentAtt = currentEntry and currentEntry.Class  -- nil = 无, string = 配件类名
+    local currentAtt = currentEntry and currentEntry.Class -- nil = 无, string = 配件类名
     local atts = GetAttachmentsForSlot(slot)
 
     -- 检查此槽位是否被已装备的配件排除（如 DG56 的激光槽会被特定枪管排除）
@@ -421,14 +422,15 @@ function PANEL:RefreshAttList()
     if slot.Default and BASE_TRM_ATTS[slot.Default] then
         skipDefault = slot.Default
         local defName = language.GetPhrase(BASE_TRM_ATTS[slot.Default].Name) or skipDefault
-        self:AddAttButton(defName.."["..language.GetPhrase("#TRMBase_Default").."]", skipDefault, currentAtt == skipDefault, slotKey, false)
+        self:AddAttButton(defName .. "[" .. language.GetPhrase("#TRMBase_Default") .. "]", skipDefault,
+            currentAtt == skipDefault, slotKey, false)
     else
-        self:AddAttButton(language.GetPhrase("#TRMBase_None"), nil, currentAtt == nil or currentAtt == "None", slotKey, false)
-
+        self:AddAttButton(language.GetPhrase("#TRMBase_None"), nil, currentAtt == nil or currentAtt == "None", slotKey,
+            false)
     end
 
     for _, attClass in ipairs(atts) do
-        local attData = BASE_TRM_ATTS[attClass] 
+        local attData = BASE_TRM_ATTS[attClass]
         if not attData then continue end
 
         -- Default 配件已单独显示，跳过避免重复
@@ -446,7 +448,7 @@ function PANEL:RefreshAttList()
         self.m_HintLabel:SetText(language.GetPhrase("#TRMBase_CloseHint"))
     end
 
-    local totalH = 0
+    local totalH = 4  
     for _, child in ipairs(self.m_AttList:GetChildren()) do
         totalH = totalH + child:GetTall() + 5
     end
@@ -460,7 +462,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded)
     btn:SetText("")
     btn:Dock(TOP)
     btn:SetTall(70)
-    btn:DockMargin(0,5,0,0)
+    btn:DockMargin(0, 5, 0, 0)
 
     local weapon = self.m_Weapon
 
@@ -478,20 +480,22 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded)
         if not slotExcluded and self2:IsHovered() then
             surface.SetDrawColor(255, 255, 255, 30)
             surface.DrawRect(0, 0, w, h)
-            surface.SetDrawColor(255,255,255,255)
-            surface.DrawOutlinedRect(0,0,w,h)
+            surface.SetDrawColor(255, 255, 255, 255)
+            surface.DrawOutlinedRect(0, 0, w, h)
         elseif not slotExcluded then
-            surface.SetDrawColor(255,255,255,100)
-            surface.DrawOutlinedRect(0,0,w,h,3)
+            surface.SetDrawColor(255, 255, 255, 100)
+            surface.DrawOutlinedRect(0, 0, w, h, 3)
         end
 
         local textColor = (isActive or not slotExcluded) and Color(255, 255, 255) or Color(120, 120, 120)
         draw.SimpleText(name, "DermaLarge", 12, h / 2, textColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
         if isActive then
-            draw.SimpleText("[Selected]", "Trebuchet24", w - 15, h / 2, Color(100, 255, 100), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+            draw.SimpleText("[Selected]", "Trebuchet24", w - 15, h / 2, Color(100, 255, 100), TEXT_ALIGN_RIGHT,
+                TEXT_ALIGN_CENTER)
         elseif slotExcluded then
-            draw.SimpleText("[" .. language.GetPhrase("#TRMBase_Excluded") .. "]", "DermaDefault", w - 15, h / 2, Color(200, 100, 100), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+            draw.SimpleText("[" .. language.GetPhrase("#TRMBase_Excluded") .. "]", "DermaDefault", w - 15, h / 2,
+                Color(200, 100, 100), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
         end
     end
 
@@ -506,7 +510,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded)
             if not weapon.CurrentAttachments then
                 weapon.CurrentAttachments = {}
             end
-            weapon.CurrentAttachments[slotKey] = (id ~= "None") and {Class = id} or nil
+            weapon.CurrentAttachments[slotKey] = (id ~= "None") and { Class = id } or nil
             weapon:SendAttachmentToServer(slotKey, id)
             surface.PlaySound("weapons/ar2/ar2_empty.wav")
             self:RefreshAttList()
@@ -537,13 +541,13 @@ function PANEL:RefreshAttInfo()
         local lbl = vgui.Create("DLabel", self.m_AttInfo)
         lbl:SetPos(5, y)
         lbl:Dock(TOP)
-        lbl:DockMargin(2,2,2,2)
-        lbl:DockPadding(10,2,10,2)        
+        lbl:DockMargin(2, 2, 2, 2)
+        lbl:DockPadding(10, 2, 10, 2)
         lbl.Paint = function(self2, w, h)
-            surface.SetDrawColor(255,255,255,255)
-            surface.DrawOutlinedRect(0,0,w,h,2)
+            surface.SetDrawColor(255, 255, 255, 255)
+            surface.DrawOutlinedRect(0, 0, w, h, 2)
         end
-        name = " "..name
+        name = " " .. name
         lbl:SetText(name)
         lbl:SetFont("DermaLarge")
         lbl:SizeToContents()
@@ -562,6 +566,7 @@ function PANEL:Paint(w, h)
     surface.SetDrawColor(0, 0, 0, 90)
     surface.DrawRect(0, 0, w, h)
 end
+
 vgui.Register("TRM_AttachMenu", PANEL, "DFrame")
 
 -- =============================================
@@ -573,7 +578,7 @@ vgui.Register("TRM_AttachMenu", PANEL, "DFrame")
 -- =============================================
 
 concommand.Add("+trmbase_customize", function(ply)
-    if not  IsValid(TRM_AttachMenu_Instance) then
+    if not IsValid(TRM_AttachMenu_Instance) then
         local weapon = ply:GetActiveWeapon()
         if not IsValid(weapon) or not util.IsTRMBase(weapon) then
             print("[TRMBase] 当前武器不是 TRM Base 武器")
@@ -586,16 +591,12 @@ concommand.Add("+trmbase_customize", function(ply)
         frame:SetWeapon(weapon)
 
         TRM_AttachMenu_Instance = frame
-          
-
     else
         TRM_AttachMenu_Instance:Close()
-        
     end
-
 end)
 
- 
+
 -- =============================================
 -- 网络同步
 -- =============================================
@@ -612,10 +613,10 @@ net.Receive("TRMBase_SyncAttachment", function()
     if attClass == "None" then
         wep.CurrentAttachments[slot] = nil
     else
-        wep.CurrentAttachments[slot] = {Class = attClass}
+        wep.CurrentAttachments[slot] = { Class = attClass }
     end
 
-   -- print("[TRMBase] Synced:", slot, attClass or "None")
+    -- print("[TRMBase] Synced:", slot, attClass or "None")
 
     if wep.BuildCustomizedGun then
         wep:BuildCustomizedGun()
@@ -637,7 +638,7 @@ net.Receive("TRMBase_SyncAllAttachments", function()
     for i = 1, count do
         local slot = net.ReadString()
         local attClass = net.ReadString()
-        wep.CurrentAttachments[slot] = {Class = attClass}
+        wep.CurrentAttachments[slot] = { Class = attClass }
     end
 
     -- print("[TRMBase] SyncAllAttachments: received", count, "attachments")
@@ -668,9 +669,8 @@ concommand.Add("trmbase_rebuild_attach", function(ply)
 
     if weapon.CurrentAttachments then
         for _, entry in pairs(weapon.CurrentAttachments) do
-            if entry and IsValid(entry.m_Model) then
-                entry.m_Model:Remove()
-                entry.m_Model = nil
+            if entry then
+                weapon:RemoveAttachmentModel(entry)
             end
         end
     end
@@ -701,7 +701,8 @@ concommand.Add("trmbase_debug_slots", function(ply)
     print("--- All attachments with Category ---")
     for name, data in pairs(BASE_TRM_ATTS or {}) do
         if type(data) == "table" and data.Category then
-            print("  " .. name .. " -> Category: " .. tostring(data.Category) .. ", Selectable: " .. tostring(data.Selectable))
+            print("  " ..
+            name .. " -> Category: " .. tostring(data.Category) .. ", Selectable: " .. tostring(data.Selectable))
         end
     end
 
@@ -734,8 +735,8 @@ concommand.Add("trmbase_debug_slots", function(ply)
     print("========================================")
 end)
 -----------------------------------------
-local cvar_hide = CreateClientConVar("trmbase_hidehud_inspect",1,FCVAR_ARCHIVE)
-hook.Add("HUDShouldDraw","HideWhileCustomizing",function(name)
+local cvar_hide = CreateClientConVar("trmbase_hidehud_inspect", 1, FCVAR_ARCHIVE)
+hook.Add("HUDShouldDraw", "HideWhileCustomizing", function(name)
     if IsValid(TRM_AttachMenu_Instance) then
         return false
     end
@@ -745,6 +746,6 @@ hook.Add("HUDShouldDraw","HideWhileCustomizing",function(name)
     if util.IsTRMBase(wep) and IsValid(wep) then
         if wep:IsInspecting() and cvar_hide:GetBool() then
             return false
-        end 
+        end
     end
 end)

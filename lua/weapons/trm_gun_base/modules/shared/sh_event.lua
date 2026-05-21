@@ -1,4 +1,3 @@
-if not CLIENT then return end
 
 function SWEP:ShootEffects(slience)
     
@@ -55,7 +54,9 @@ end
 
 
 function SWEP:DoShell()
-    if not (CLIENT ) then return end
+    if not (CLIENT ) then
+        self:CallOnClient("DoShell")     
+    return end
     local vm = self:GetViewModel()
     if not IsValid(vm) then return end
     local effect = EffectData()

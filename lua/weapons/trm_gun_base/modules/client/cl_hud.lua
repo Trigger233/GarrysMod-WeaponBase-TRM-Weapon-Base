@@ -141,7 +141,7 @@ function DrawCustomCrosshair(ply, wep)
         surface.DrawRect(x - 2.5, y - 2.5, 5, 5)
         surface.SetDrawColor(r, g, b, alpha / 2)
         local spreadAvg = (spreadSizeX + spreadSizeY) / 2
-        surface.DrawCircle(x, y, spreadAvg + 5, 32)
+        surface.DrawCircle(x, y, spreadAvg + 5, r,g,b,alpha)
     elseif style == 3 then
         local size = 10
         local gap = 4

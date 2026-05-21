@@ -27,14 +27,8 @@ function SWEP:Holster(weapon)
         if self.CurrentAttachments then
             for _, entry in pairs(self.CurrentAttachments) do
                 if entry then
-                    if IsValid(entry.m_Model) then
-                        entry.m_Model:Remove()
-                        entry.m_Model = nil
-                    end
-                    if IsValid(entry.m_TpModel) then
-                        entry.m_TpModel:Remove()
-                        entry.m_TpModel = nil
-                    end
+                    self:RemoveAttachmentModel(entry)
+                    self:RemoveAttachmentModel(entry, true)
                 end
             end
         end

@@ -48,6 +48,7 @@ function ATTACHMENT:RenderScope(wep, model)
                 drawviewmodel = false ,
                 drawhud = false,
                 znear = 25 ,
+                dopostprocess = false ,
             })
             DisableClipping(old)
         end

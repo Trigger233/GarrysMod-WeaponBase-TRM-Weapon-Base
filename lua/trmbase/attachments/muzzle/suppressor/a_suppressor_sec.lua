@@ -1,4 +1,4 @@
-ATTACHMENT.Name = "Suppressor"
+ATTACHMENT.Name = "a_suppressor_sec"
 ATTACHMENT.Base = "att_suppressor"
 ATTACHMENT.Category = "att_muzzle"
 ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_suppressor_sec.mdl")

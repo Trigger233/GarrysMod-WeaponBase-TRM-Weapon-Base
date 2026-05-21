@@ -11,7 +11,11 @@ CreateConVar("trmbase_replace_weapon", "0", FCVAR_ARCHIVE)
 CreateConVar("trmbase_replace_chance", "100", FCVAR_ARCHIVE)
 CreateConVar("trmbase_random_attachments", "0", FCVAR_ARCHIVE)
 
+local refresh = FrameTime() * 5
+
 if CLIENT and not SERVER then return end
+
+
 
 -- 查找所有使用指定弹药类型的 TRM 武器（返回列表，支持随机）
 local function FindAllTRMByAmmo(ammoType)
@@ -56,8 +60,8 @@ local function RandomizeAttachments(ent)
         for attClass, attData in pairs(BASE_TRM_ATTS) do
             if type(attData) ~= "table" then continue end
             if not attData.Category then continue end
-            for _, cat in ipairs(istable(slot.Category) and slot.Category or {slot.Category}) do
-                if attData.Category == cat and  (attData.Selectable or true) then
+            for _, cat in ipairs(istable(slot.Category) and slot.Category or { slot.Category }) do
+                if attData.Category == cat and (attData.Selectable or true) then
                     table.insert(available, attClass)
                     break
                 end
@@ -67,7 +71,7 @@ local function RandomizeAttachments(ent)
         if #available == 0 then continue end
 
         -- 每个槽 60% 概率装一个随机配件（不装默认）
-        if math.random() < 0.6 then
+        if math.random() < 0.5 then
             local chosen = available[math.random(#available)]
             if chosen ~= slot.Default then
                 ent:EquipAttachment(tostring(i), chosen)
@@ -85,8 +89,7 @@ local function DoNPCReplace(npc)
     if not RollChance() then return end
 
     local wep = npc:GetActiveWeapon()
-    if not IsValid(wep) then return end
-
+    if not IsValid(wep) or wep.Base == "trm_gun_base" then return end
     -- 读弹药类型
     local ammoType = game.GetAmmoName(wep:GetPrimaryAmmoType())
     if not ammoType or ammoType == "" then
@@ -98,18 +101,21 @@ local function DoNPCReplace(npc)
             npc_citizen = "pistol",
         }
         ammoType = ammoMap[npc:GetClass()]
-        if not ammoType then return end
+        if not ammoType then
+            return
+        end
     end
 
     local candidates = FindAllTRMByAmmo(ammoType)
     if #candidates == 0 then return end
     local newClass = PickRandom(candidates)
 
-    print("[TRMBase] NPC " .. npc:GetClass() .. ": " .. wep:GetClass() .. " → " .. newClass .. " (random from " .. #candidates .. ")")
+    print("[TRMBase] NPC " ..
+    npc:GetClass() .. ": " .. wep:GetClass() .. " → " .. newClass .. " (random from " .. #candidates .. ")")
     if IsValid(wep) then wep:Remove() end
     npc:Give(newClass)
-    timer.Simple(FrameTime()*3 ,function()
-        local wep = npc:GetActiveWeapon() 
+    timer.Simple(refresh, function()
+        local wep = npc:GetActiveWeapon()
         if not IsValid(wep) then return end
         RandomizeAttachments(npc:GetActiveWeapon())
     end)
@@ -148,7 +154,8 @@ local function DoWeaponReplace(ent)
     local velocity = ent:GetVelocity()
     local isPlayerGen = IsPlayerSpawned(ent)
 
-    print("[TRMBase] World weapon: " .. ent:GetClass() .. " → " .. newClass .. (isPlayerGen and " (player)" or " (world)"))
+    print("[TRMBase] World weapon: " ..
+    ent:GetClass() .. " → " .. newClass .. (isPlayerGen and " (player)" or " (world)"))
 
     ent:Remove()
     local newEnt = ents.Create(newClass)
@@ -160,7 +167,7 @@ local function DoWeaponReplace(ent)
 
         -- 不是玩家生成的武器 → 随机装点配件
         if not isPlayerGen then
-            timer.Simple(FrameTime() * 2, function()
+            timer.Simple(refresh, function()
                 RandomizeAttachments(newEnt)
             end)
         end
@@ -170,8 +177,9 @@ end
 -- ===== 钩子 =====
 hook.Add("OnEntityCreated", "TRMBase_Replace", function(ent)
     if not IsValid(ent) then return end
+    -- 读档时跳过替换（save/restore 期间武器由存档系统管理）
 
-    timer.Simple(FrameTime() * 3, function()
+    timer.Simple(refresh, function()
         if ent:IsNPC() then
             DoNPCReplace(ent)
         elseif ent:IsWeapon() then
@@ -183,12 +191,11 @@ hook.Add("OnEntityCreated", "TRMBase_Replace", function(ent)
     end)
 end)
 
-hook.Add("PlayerDroppedWeapon","TRMBASE_ReplaceDrop",function(owner , ent)
-    timer.Simple(FrameTime() * 3, function()
-            local cv = GetConVar("trmbase_replace_weapon")
-            if cv and cv:GetBool() then
-                DoWeaponReplace(ent)
-            end
-            
+hook.Add("PlayerDroppedWeapon", "TRMBASE_ReplaceDrop", function(owner, ent)
+    timer.Simple(refresh, function()
+        local cv = GetConVar("trmbase_replace_weapon")
+        if cv and cv:GetBool() then
+            DoWeaponReplace(ent)
+        end
     end)
 end)

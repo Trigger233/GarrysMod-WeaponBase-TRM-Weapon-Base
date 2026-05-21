@@ -1,0 +1,6 @@
+{
+    "gluals.gmod.settingsAutoSave": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "Pollux.gmod-glua-ls",
+    "editor.formatOnPaste": true
+}

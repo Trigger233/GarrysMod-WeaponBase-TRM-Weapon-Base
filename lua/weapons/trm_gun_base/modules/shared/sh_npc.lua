@@ -19,4 +19,5 @@ function SWEP:NPCShoot_Primary(pos , dir)
             self:FirePrimaryBullet() 
             self:SetNextFireTime( 60 / self.Primary.RPM ) 
     end
-end
+end  
+
