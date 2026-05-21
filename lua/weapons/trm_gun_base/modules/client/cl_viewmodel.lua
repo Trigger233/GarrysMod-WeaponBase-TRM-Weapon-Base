@@ -163,7 +163,7 @@ function SWEP:CalcView(ply, pos, angles, fov)
     if not IsValid(vm) then return pos, angles, fov end
     
     -- 不需要相机跟随的动画
-    local ignoreAnims = {"Fire", "Idle"}
+    local ignoreAnims = {"Fire", "Idle","Sprint"}
     local currentSeq = self.m_CurrentSequence or self:GetPlayingSequence() or ""
     
     for _, anim in ipairs(ignoreAnims) do

@@ -2,7 +2,7 @@ if SERVER then
     AddCSLuaFile()
 end
 print("trmbase_att_load")
-BASE_TRM_ATTS = BASE_TRM_ATTS or {} 
+BASE_TRM_ATTS = BASE_TRM_ATTS or {}
 TRM_BASE_REF = 69
 
 local function LoadAttachmentStats(path, fileName)
@@ -18,16 +18,15 @@ local function LoadAttachmentStats(path, fileName)
         print("[TRMAtt] Failed to load:", fullPath)
         return
     end
- 
+
     ATTACHMENT = {}
-    ATTACHMENT.ClassName = name 
+    ATTACHMENT.ClassName = name
     ATTACHMENT.Folder = path
 
     func()
 
     BASE_TRM_ATTS[name] = BASE_TRM_ATTS[name] or {}
     table.Merge(BASE_TRM_ATTS[name], table.Copy(ATTACHMENT))
-
 end
 
 
@@ -37,10 +36,10 @@ local function LoadAttachments(path)
     print("load!")
     for _, fileName in ipairs(files) do
         if string.EndsWith(fileName, ".lua") then
-            LoadAttachmentStats(path, fileName) 
+            LoadAttachmentStats(path, fileName)
         end
     end
-    
+
     for _, folderName in ipairs(folders) do
         LoadAttachments(path .. "/" .. folderName)
     end
@@ -74,7 +73,7 @@ function BASE_TRM_ATTS.Inherit(att)
 end
 
 local function finishAttachments()
-    for name, att in pairs(BASE_TRM_ATTS) do 
+    for name, att in pairs(BASE_TRM_ATTS) do
         if type(att) ~= "table" then
             print("[TRMAtt] Skipping non-table:", name, type(att))
             continue
@@ -82,15 +81,15 @@ local function finishAttachments()
         if att.Base then
             BASE_TRM_ATTS.Inherit(att)
         end
-    end 
+    end
 end
 finishAttachments()
 
 
-hook.Add("OnReloaded","TRMBASE_ATT_RELOAD",function()
+hook.Add("OnReloaded", "TRMBASE_ATT_RELOAD", function()
     LoadAttachments("trmbase/attachments")
-    finishAttachments()   
-end) 
+    finishAttachments()
+end)
 
 -- 查看所有已加载配件
 concommand.Add("trm_list_atts", function()
@@ -114,7 +113,6 @@ end)
 
 -- 重新加载所有配件（开发用）
 concommand.Add("trm_reload_atts", function()
-    
     LoadAttachments("trmbase/attachments")
-    finishAttachments() 
+    finishAttachments()
 end)

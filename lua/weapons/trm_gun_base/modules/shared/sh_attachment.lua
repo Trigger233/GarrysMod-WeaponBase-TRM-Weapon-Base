@@ -403,7 +403,6 @@ end
 function SWEP:BuildCustomizedGun()
     if SERVER then
         self:CallOnClient("BuildCustomizedGun")
-
         return
     end
 
