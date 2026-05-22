@@ -16,7 +16,7 @@ TRMBase.Language.cn = {
     ["Mag"] = "弹匣" ,
     ["Barrel"] = "枪管" ,
     ["Stock"] = "枪托" ,
-    ["Grip"] = "前握把" ,
+    ["Grip"] = "后握把" ,
     ["UnderBarrel"] = "下挂" ,
     ["Misc"] = "杂项" ,
 

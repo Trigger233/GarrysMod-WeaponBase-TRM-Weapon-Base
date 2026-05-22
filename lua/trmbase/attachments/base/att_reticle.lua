@@ -56,8 +56,11 @@ function ATTACHMENT:RenderReticle(weapon, model)
         offset = offset + att.Ang:Right() * ret.Offset.x
         offset = offset + att.Ang:Up() * ret.Offset.y
     end
-    
-    render.DrawQuadEasy(att.Pos + offset, att.Ang:Forward():GetNegated(), size, size, color, -att.Ang.r + 180)
+    local roll = -att.Ang.r + 180
+    if ret.Rotate then
+        roll = roll + ret.Rotate
+    end
+    render.DrawQuadEasy(att.Pos + offset, att.Ang:Forward():GetNegated(), size, size, color, roll)
     render.ClearStencil()
     render.SetStencilEnable(false)
 end
