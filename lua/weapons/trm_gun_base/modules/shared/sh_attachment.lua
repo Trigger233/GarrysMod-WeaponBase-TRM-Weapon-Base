@@ -424,7 +424,7 @@ function SWEP:BuildCustomizedGun()
         -- 只在 vm 有效时创建/更新
         if hasVM then
             if not IsValid(entry.m_Model) and attData.Model then
-                local model = ClientsideModel(attData.Model, RENDERGROUP_VIEWMODEL)
+                local model = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
                 model:SetNoDraw(true)
                 model:SetNotSolid(true)
                 model:SetMoveType(MOVETYPE_NONE)

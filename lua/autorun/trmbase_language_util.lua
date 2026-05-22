@@ -9,6 +9,7 @@ TRMBase.Language = TRMBase.Language or {}
 
 -- 中文
 TRMBase.Language.cn = {
+    ["SniperPenetratedRound_ammo"]  ="狙击弹药" ,
     ["Optic"] = "瞄具",
     ["Muzzle"] = "枪口",
     ["Laser"] = "战术配件",

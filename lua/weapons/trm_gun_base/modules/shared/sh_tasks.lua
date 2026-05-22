@@ -4,7 +4,7 @@ SWEP.Tasks = {}
 
 function SWEP:TaskThink()
     local vm = self:GetViewModel()
-    if not IsValid(vm) or (CLIENT and game.SinglePlayer()) then
+    if not IsValid(vm) or (CLIENT and game.SinglePlayer()) and not IsFirstTimePredicted() then
         return
     end
 
@@ -33,7 +33,7 @@ function SWEP:TaskThink()
     local funcName = taskMap[task]
     if funcName and self[funcName] then
         self[funcName](self, cycle)
-    elseif task == "Finished" and cycle >= 0.90 then
+    elseif task == "Finished" and cycle >= 0.98 then
         self:Task_Idle()
     end
 end

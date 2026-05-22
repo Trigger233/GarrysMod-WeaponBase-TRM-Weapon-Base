@@ -9,7 +9,7 @@ end
 function SWEP:Task_PrimaryFire()
 	local aim = self:GetAimDelta() > 0.5 and true or false
 
-	if self:Clip1() == 1 and self.Animations.Fire_Last then
+	if self:Clip1() == 1 and self.Animations.Fire_Last then 
 		if aim and self.Animations.Iron_Fire_Last then
 			self:PlayAnimation("Iron_Fire_Last")
 		else

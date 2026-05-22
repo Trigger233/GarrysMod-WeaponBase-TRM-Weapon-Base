@@ -39,9 +39,9 @@ local cvar_infinite_reserve = CreateConVar("trmbase_infinite_ammo" ,0 , {FCVAR_A
 
 function SWEP:Task_ReloadLoop(cycle)
     local reserve = self:GetOwner():GetAmmoCount(self:GetPrimaryAmmoType())
-
-    if (self:Clip1() < self:GetMaxClip1() and (reserve > 0 or cvar_infinite_reserve:GetBool() )  ) then
-        self:PlayAnimation("Reload" ,true) 
+	local max = self:GetMaxClip1() + self:GetChamberAmmo()
+	if (self:Clip1() < max and (reserve > 0 or cvar_infinite_reserve:GetBool())) then
+		self:PlayAnimation("Reload", true)
     elseif cycle >= 0.9 then
         self:SetCurrentTask("ReloadEnd")
     end
@@ -65,7 +65,7 @@ function SWEP:CanReload()
     local seq =  self:GetPlayingSequence() 
     
 
-	local max = self.Primary.ClipSize + (    self.ReloadType == "Single" and 0 or	self.Primary.ChamberSize)
+	local max = self.Primary.ClipSize + (    self.ReloadType == "Single" and self:GetChamberAmmo() or	self.Primary.ChamberSize	)
 	if string.find(seq , "Reload") then return false end 
 	if not  GetConVar("trmbase_allow_sprintreload"):GetBool() and  string.find(seq , "Sprint") and not string.find(seq , "SprintOut") then return false end
 	if (cvar_infinite_reserve:GetBool()) then 
@@ -125,14 +125,13 @@ function SWEP:SingleLoaded(number)
 	if owner:GetActiveWeapon() ~= self then 
 		return 
 	end
-
+	local max = self:GetMaxClip1() + self:GetChamberAmmo()
 	if (cvar_infinite_reserve:GetBool()) then
 
-		self:SetClip1(math.min(self:Clip1() + number, self:GetMaxClip1()))
-	elseif	reserveAmmo > 0 then
-		owner:SetAmmo(reserveAmmo - math.min(number,self:GetMaxClip1() - self:Clip1()), self:GetPrimaryAmmoType())
-
-		self:SetClip1(self:Clip1() + math.min(number,self:GetMaxClip1() - self:Clip1()))
+		self:SetClip1(math.min(self:Clip1() + number, max))
+	elseif reserveAmmo > 0 then
+		owner:SetAmmo(reserveAmmo - math.min(number, max - self:Clip1()), self:GetPrimaryAmmoType())
+		self:SetClip1(self:Clip1() + math.min(number, max - self:Clip1()))
 	end
 
 end

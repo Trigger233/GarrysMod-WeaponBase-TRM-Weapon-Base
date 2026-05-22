@@ -109,7 +109,7 @@ function SWEP:PlayWorldAnimation(sequenceClass)
         -- 检视
         ["Inspect"] = PLAYER_IDLE,
         ["Inspect_Empty"] = PLAYER_IDLE,
-        ["Melee"] = PLAYER_ATTACK2,
+        ["Melee"] = PLAYER_ATTACK1,
         ["Melee_Empty"] = PLAYER_ATTACK1,
 
     }

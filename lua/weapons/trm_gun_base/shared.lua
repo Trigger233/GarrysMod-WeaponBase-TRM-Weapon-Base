@@ -407,8 +407,6 @@ function SWEP:Initialize()
     self.m_FirstDeployed = true
     self.WepSelectIcon = Material("vgui/hud/" .. self:GetClass())
     -- self:UpdateSelectIcon()
-    self:SetClip1(self.Primary.ClipSize)
-    self:SetClip2(self.Secondary.ClipSize)
     self.m_LastEmptySoundTime = 0
     self.m_ViewModelFOV = self.ViewModelFOV
     self:SetFirstDeployed(true)
@@ -464,16 +462,17 @@ function SWEP:Initialize()
 
     -- 地面/NPC 武器延后广播，确保客户端实体已就绪
     if SERVER then
-        timer.Simple(FrameTime() * 2, function()
+        timer.Simple(FrameTime() * 10, function()
             if not IsValid(self) then return end
             self:SyncAllAttachments()
         end)
     end
-    if self.GetOriginStat then self:GetOriginStat() end
-    if self.ChangeWeaponStats then self:ChangeWeaponStats() end
-    if self.SpreadInit then self:SpreadInit() end
-    if self.BuildCustomizedGun then self:BuildCustomizedGun() end
-
+    self:GetOriginStat() 
+    self:ChangeWeaponStats() 
+    self:SpreadInit() 
+    self:BuildCustomizedGun() 
+    self:SetClip1(self.Primary.ClipSize)
+    self:SetClip2(self.Secondary.ClipSize)
 end
 SWEP.Attachments = {}
 function SWEP:GetViewModel(index)
@@ -504,12 +503,11 @@ function SWEP:Deploy()
     self:SetNextAnimationTime(0)
     self:SetCurrentTask("Deploy")
 
-    if self.BuildCustomizedGun then self:BuildCustomizedGun() end
 
     -- 确保客户端知道当前配件（预设由初始化 / Equip / Restore 加载）
-    if SERVER and self.SyncAllAttachments then
-        self:SyncAllAttachments()
-    end
+    self:SyncAllAttachments()    
+    self:BuildCustomizedGun()
+
 end
 
 -- 读档后恢复配件数据
@@ -574,7 +572,7 @@ end
 
 function SWEP:OnRestore()
     self:OnReloaded()
-    self:ChangeWeaponStats()
+    self:EquipDefaultAttachments()
     --self:SpreadInit()
     self:SetCurrentTask("Finished")
     if SERVER and cvar_attachment:GetBool() then
@@ -583,8 +581,9 @@ function SWEP:OnRestore()
     end
 
     self:SyncAllAttachments()
+    self:ChangeWeaponStats()
 
-    if self.BuildCustomizedGun then self:BuildCustomizedGun() end
+    self:BuildCustomizedGun() 
 
     self:SetNextRecoil(0)
 end

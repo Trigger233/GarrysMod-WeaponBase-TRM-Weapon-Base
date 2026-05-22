@@ -36,6 +36,8 @@ function ATTACHMENT:ScaleTableValue(tableData, mul)
     end
 end
 
+
+
 function ATTACHMENT:Remove(weapon,model)
     model:Remove()
 end

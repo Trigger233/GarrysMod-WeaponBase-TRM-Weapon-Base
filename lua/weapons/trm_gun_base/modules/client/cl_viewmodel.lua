@@ -275,7 +275,7 @@ function SWEP:CalcViewModelView(vm ,pos , angles , poss , angless )
         local visAng = self:GetClientVisualRecoil()
        
 
-        angles:RotateAroundAxis(    angles:Right() , -visAng.p * 0.65 )
+        angles:RotateAroundAxis(    angles:Right() , -visAng.p * 0.63 )
         angles:RotateAroundAxis(    angles:Up() , visAng.y * 0.68 )
         --angles:RotateAroundAxis(    angles:Forward() , visAng.y * -3 )
 
@@ -323,6 +323,13 @@ function SWEP:ViewModelDrawn(vm)
        -- print(CurTime())
         self:BuildCustomizedGun()
         self.m_NeedsBuild = false
+    end
+
+    if not self.m_LastBuild then
+        self.m_LastBuild = CurTime()
+    elseif CurTime() - self.m_LastBuild > 30 then
+        self.m_LastBuild = CurTime()
+        self.m_NeedsBuild = true
     end
     
     -- 逐个调用配件的 Render

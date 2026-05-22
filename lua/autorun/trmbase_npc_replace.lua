@@ -15,11 +15,16 @@ local refresh = FrameTime() * 5
 
 if CLIENT and not SERVER then return end
 
-
+local SpecialAmmoMap = {
+    ["XBowBolt"] = "SniperPenetratedRound",
+}
 
 -- 查找所有使用指定弹药类型的 TRM 武器（返回列表，支持随机）
 local function FindAllTRMByAmmo(ammoType)
     if not ammoType then return {} end
+    if SpecialAmmoMap[ammoType] then
+        ammoType = SpecialAmmoMap[ammoType]
+    end
     local lower = string.lower(ammoType)
     local results = {}
     for _, wep in pairs(weapons.GetList()) do

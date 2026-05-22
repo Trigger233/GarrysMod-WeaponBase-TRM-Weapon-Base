@@ -25,9 +25,16 @@ if not CLIENT then return end
 -- end
 
 -- =============================================
--- DrawWorldModel — 每帧由引擎调用
+-- DrawWorldModel — 每帧由引擎调用  
 -- =============================================
 function SWEP:DrawWorldModel(flags)
+
+    if self.m_NeedsBuild and self.BuildCustomizedGun then
+        -- print(CurTime())
+        self:BuildCustomizedGun()
+        self.m_NeedsBuild = false
+    end
+
     -- 先计算骨骼变换，再画模型
     local bone = self:LookupBone(self.WorldModelOffsets.Bone)
     if bone and bone > 0 and IsValid(self:GetOwner()) then
