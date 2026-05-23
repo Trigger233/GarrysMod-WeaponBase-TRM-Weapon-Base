@@ -455,25 +455,28 @@ function SWEP:Initialize()
 
     self:EquipDefaultAttachments()
 
-    -- 从 JSON 恢复保存的配件（覆盖默认值）
-    -- if SERVER and self.LoadAttachmentPreset then
-    --     self:LoadAttachmentPreset()
-    -- end
+
 
     -- 地面/NPC 武器延后广播，确保客户端实体已就绪
     if SERVER then
         timer.Simple(FrameTime() * 10, function()
             if not IsValid(self) then return end
+            --从 JSON 恢复保存的配件（覆盖默认值）
+            if SERVER and self.LoadAttachmentPreset and self:GetOwner() ~= NULL and self:GetOwner():IsPlayer() then
+                self:LoadAttachmentPreset()
+            end
             self:SyncAllAttachments()
         end)
     end
-    self:GetOriginStat() 
-    self:ChangeWeaponStats() 
-    self:SpreadInit() 
-    self:BuildCustomizedGun() 
+
+    self:GetOriginStat()
+    self:ChangeWeaponStats()
+    self:SpreadInit()
+    self:BuildCustomizedGun()
     self:SetClip1(self.Primary.ClipSize)
     self:SetClip2(self.Secondary.ClipSize)
 end
+
 SWEP.Attachments = {}
 function SWEP:GetViewModel(index)
     local owner = self:GetOwner()
@@ -486,16 +489,15 @@ local cvar_attachment = GetConVar("trmbase_load_attachment_on_pickup")
 function SWEP:Equip()
     self:SetFirstDeployed(true)
     -- 服务端同步配件给客户端
-    
-        -- 先加载保存的配件配置
-    if cvar_attachment:GetBool() then
-        self:LoadAttachmentPreset()
-    end
-   
-    self:OnAttachmentChanged()
-    self:SyncAllAttachments()
+    timer.Simple(FrameTime() * 10, function()
+        if cvar_attachment:GetBool() then
+            self:LoadAttachmentPreset()
+        end
 
-    
+        self:OnAttachmentChanged()
+        self:SyncAllAttachments()
+    end)
+    -- 先加载保存的配件配置
 end
 
 function SWEP:Deploy()
@@ -505,9 +507,8 @@ function SWEP:Deploy()
 
 
     -- 确保客户端知道当前配件（预设由初始化 / Equip / Restore 加载）
-    self:SyncAllAttachments()    
+    self:SyncAllAttachments()
     self:BuildCustomizedGun()
-
 end
 
 -- 读档后恢复配件数据
@@ -583,7 +584,7 @@ function SWEP:OnRestore()
     self:SyncAllAttachments()
     self:ChangeWeaponStats()
 
-    self:BuildCustomizedGun() 
+    self:BuildCustomizedGun()
 
     self:SetNextRecoil(0)
 end
@@ -616,6 +617,7 @@ end
 function SWEP:Reload()
     if not self:CanReload() then return end
     self:SetCurrentTask("Reload")
+    return true
 end
 
 function SWEP:IsEmpty()

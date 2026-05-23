@@ -2,25 +2,46 @@ function SWEP:RefreshAttTable()
 
 end
 
---- 检查指定槽位是否被已装备的配件排除
---- 如果槽位的 Exclude 列表中有任何一个 Category 匹配已装备的配件，则此槽位不可用
-function SWEP:IsSlotExcluded(slotIndex)
-    if not self.Attachments or not self.Attachments[slotIndex] then return false end
+--- 检查指定槽位能否安装配件
+--- 返回 false 表示被排除（不可用），true 表示可用
+--- 排除条件：
+---   1. 槽位自身的 Exclude 列表匹配了已装备配件的 Category
+---   2. 已装备配件的 Excluded 列表匹配了本槽位的 Category（或其子分类）
+function SWEP:CanAttach(slotIndex)
+    if not self.Attachments or not self.Attachments[slotIndex] then return true end
     local slot = self.Attachments[slotIndex]
-    if not slot.Exclude or #slot.Exclude == 0 then return false end
+    local slotCats = istable(slot.Category) and slot.Category or { slot.Category }
 
-    -- 遍历当前已装备的配件，检查它们的 Category 是否匹配排除列表
-    for _, entry in pairs(self.CurrentAttachments or {}) do
-        local attData = BASE_TRM_ATTS[entry.Class]
-        if attData and attData.Category then
-            for _, excludeCat in ipairs(slot.Exclude) do
-                if attData.Category == excludeCat then
-                    return true
+    -- 检查槽位自身的 Exclude 列表
+    if slot.Exclude and #slot.Exclude > 0 then
+        for _, entry in pairs(self.CurrentAttachments or {}) do
+            local attData = BASE_TRM_ATTS[entry.Class]
+            if attData and attData.Category then
+                for _, excludeCat in ipairs(slot.Exclude) do
+                    if attData.Category == excludeCat then
+                        return false
+                    end
                 end
             end
         end
     end
-    return false
+
+    -- 检查已装备配件的 Excluded 列表
+    for _, entry in pairs(self.CurrentAttachments or {}) do
+        local attData = BASE_TRM_ATTS[entry.Class]
+        if attData and attData.Excluded then
+            local excluded = istable(attData.Excluded) and attData.Excluded or { attData.Excluded }
+            for _, excludeCat in ipairs(excluded) do
+                for _, slotCat in ipairs(slotCats) do
+                    if slotCat == excludeCat then
+                        return false
+                    end
+                end
+            end
+        end
+    end
+
+    return true
 end
 
 --self:GetViewModel():SetWeaponModel("models/weapons/c_smg1.mdl",self)
@@ -331,7 +352,7 @@ end
 function SWEP:EquipAttachment(slot, attClass)
     -- 检查此槽位是否被排除（防止绕过 VGUI 直接发 net 消息）
     local slotIndex = tonumber(slot)
-    if slotIndex and self:IsSlotExcluded(slotIndex) then
+    if slotIndex and not self:CanAttach(slotIndex) then
         print("[TRMBase] Slot", slot, "is excluded, cannot equip", attClass)
         return
     end
@@ -341,10 +362,11 @@ function SWEP:EquipAttachment(slot, attClass)
         self.CurrentAttachments[slot] = { Class = attClass }
 
         -- 装完后检查其他槽是否因此被排除，如有则自动卸掉
+
         local removedSlots = {}
         for i = 1, #(self.Attachments or {}) do
             local key = tostring(i)
-            if key ~= slot and self.CurrentAttachments[key] and self.CurrentAttachments[key].Class and self:IsSlotExcluded(i) then
+            if key ~= slot and self.CurrentAttachments[key] and self.CurrentAttachments[key].Class and not self:CanAttach(i) then
                 self:RemoveAttachmentModel(self.CurrentAttachments[key])
                 removedSlots[#removedSlots + 1] = key
                 self.CurrentAttachments[key] = nil
@@ -396,6 +418,20 @@ function SWEP:UnEquipAttachment(slot)
 
     self:OnAttachmentChanged()
     self:SaveAttachmentPreset()
+
+    -- 恢复被排他配件清空的槽位默认配件（跳过刚卸掉的槽位本身）
+    timer.Simple(FrameTime() * 5, function()
+        if SERVER then
+            for i, slotData in ipairs(self.Attachments or {}) do
+                local key = tostring(i)
+                if key ~= slot and not self.CurrentAttachments[key] and slotData.Default and self:CanAttach(i) then
+                    self:EquipAttachment(key, slotData.Default)
+                    PrintTable(self.CurrentAttachments[key])
+                end
+            end
+        end
+    end)
+
 
     --print("Unequipped:", slot, self.CurrentAttachments[slot] or "None")
 end

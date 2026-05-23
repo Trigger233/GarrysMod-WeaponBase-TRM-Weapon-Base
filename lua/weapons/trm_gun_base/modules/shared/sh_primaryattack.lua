@@ -9,7 +9,7 @@ end
 function SWEP:Task_PrimaryFire()
 	local aim = self:GetAimDelta() > 0.5 and true or false
 
-	if self:Clip1() == 1 and self.Animations.Fire_Last then 
+	if self:Clip1() == 1 and self.Animations.Fire_Last then
 		if aim and self.Animations.Iron_Fire_Last then
 			self:PlayAnimation("Iron_Fire_Last")
 		else
@@ -17,9 +17,9 @@ function SWEP:Task_PrimaryFire()
 		end
 	elseif self.Animations.Fire then
 		if aim and self.Animations.Iron_Fire then
-			self:PlayAnimation("Iron_Fire",false)
+			self:PlayAnimation("Iron_Fire", false)
 		else
-			self:PlayAnimation("Fire",false)
+			self:PlayAnimation("Fire", false)
 		end
 	end
 
@@ -30,7 +30,6 @@ function SWEP:Task_PrimaryFire()
 	end
 
 	self:SetNextFireTime(60 / self.Primary.RPM)
-
 end
 
 function SWEP:DoFireSound()
@@ -69,12 +68,16 @@ function SWEP:FirePrimaryBullet()
 
 	--Shake
 	if owner:IsPlayer() then
-		local shake = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 1)
-		shake = math.sin(2 * CurTime() / (60 / self.Primary.RPM)) * shake
+		if not self.r_shakeDir then
+			self.r_shakeDir = 1
+		end
+		self.r_shakeDir = -self.r_shakeDir
+
+		local shake = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 1) * self.r_shakeDir * math.random(0, 1)
 		owner:SetViewPunchAngles(Angle(0, 0, shake))
 		owner:SetViewPunchVelocity(Angle(0, 0, shake * 100))
 	end
-
+ 
 
 
 
@@ -100,6 +103,9 @@ function SWEP:FirePrimaryBullet()
 		Damage = self.Primary.Damage * self.Primary.NumBullets,
 		AmmoType = self.Primary.Ammo,
 		Callback = function(attacker, tr, dmginfo)
+			if CLIENT  then
+				self:Tracer(tr)
+			end
 			self:BulletCallback(attacker, tr, dmginfo)
 		end,
 	}
@@ -124,6 +130,8 @@ function SWEP:FirePrimaryBullet()
 	end
 	self:SetCurrentTask("Finished")
 end
+
+
 
 function SWEP:DoImpactEffect(tr, dmgType)
 	self:ImpactEffects(tr, dmgType)

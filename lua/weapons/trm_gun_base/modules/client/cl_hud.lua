@@ -30,7 +30,7 @@ hook.Add("HUDPaint", "TRMBase_HUD", function()
     if not IsValid(ply) then return end
     local wep = ply:GetActiveWeapon()
     if not IsValid(wep) then return end
-    if not (wep.Base == "trm_gun_base" or wep:GetClass() == "trm_gun_base") or not wep:ShouldDrawViewModel() then return end
+    if wep.Base ~= "trm_gun_base" and wep:GetClass() ~= "trm_gun_base" then return end
 
     DebugHUD(ply, wep)
     DrawCustomCrosshair(ply, wep)
@@ -90,7 +90,7 @@ function DrawCustomCrosshair(ply, wep)
 
     -- TraceLine 每 2 帧做一次（物理查询开销大，准星不需要每帧重新追踪）
     local frame = FrameNumber()
-    if frame ~= _lastTraceFrame and (frame % 10) == 0 then
+    if frame ~= _lastTraceFrame and (frame % 5) == 0 then 
         _lastTraceFrame = frame
         local tr = util.TraceLine({
             start = aimpos,
@@ -171,15 +171,4 @@ concommand.Add("trmbase_wep_updateIcon", function(ply)
 end)
 
 function DrawDebugHUD(ply, wep)
-    if true then return end
-    local x, y = ScrW() * 0.25, ScrH() * 0.7
-    local text = wep.m_duckPose
-    draw.SimpleText(text, "Default", x, y, Color(255, 255, 255), TEXT_ALIGN_BOTTOM, TEXT_ALIGN_BOTTOM)
-    local y = ScrH() * 0.8
-    for slot, entry in pairs(wep.CurrentAttachments) do
-        local attName = entry and entry.Class or "?"
-        draw.SimpleText(slot .. "  " .. attName, "Default", x, y + 30, Color(255, 255, 255), TEXT_ALIGN_BOTTOM,
-            TEXT_ALIGN_BOTTOM)
-        y = y + 20
-    end
 end

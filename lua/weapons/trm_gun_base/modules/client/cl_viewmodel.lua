@@ -40,13 +40,11 @@ function SWEP:CustomBob()
 end
 
 function SWEP:Sway()
-    if not (    CLIENT and  self:GetOwner() and   self:GetOwner():IsPlayer()) then 
+    if not (CLIENT and self:GetOwner() and self:GetOwner():IsPlayer()) then 
         return Angle(0,0,0), Vector(0,0,0)
     end
     
-    -- 非预测帧：直接返回当前值（不更新，但不抖）
     if not IsFirstTimePredicted() and SERVER then
-        -- 确保有值
         if not self.m_SwayAngle then
             self.m_SwayAngle = Angle(0,0,0)
             self.m_SwayPos = Vector(0,0,0)
@@ -54,8 +52,10 @@ function SWEP:Sway()
         return self.m_SwayAngle, self.m_SwayPos
     end
     
-    -- 以下只在预测帧执行
-    local angles = self:GetOwner():EyeAngles()
+    local owner = self:GetOwner()
+    local angles = owner:EyeAngles()
+    local velo = owner:GetVelocity()
+    
     if not self.m_LastViewModelAngle then
         self.m_LastViewModelAngle = angles
         self.m_SwayAngle = Angle(0, 0, 0)
@@ -63,40 +63,39 @@ function SWEP:Sway()
         return Angle(0, 0, 0), Vector(0, 0, 0)
     end
     
-    local ft = math.min(RealFrameTime(), 0.033)  -- 限制最大帧间隔
+    local ft = math.min(RealFrameTime(), 0.033)
     
+    -- 视角移动摇摆
     local dx = -math.AngleDifference(angles.yaw, self.m_LastViewModelAngle.yaw)
     local dy = math.AngleDifference(angles.pitch, self.m_LastViewModelAngle.pitch) 
     self.m_LastViewModelAngle = angles
     
-    -- 限制差值（重要！网络延迟会导致突变）
-    
-    -- dx = math.Clamp(dx, -10, 10)
-    -- dy = math.Clamp(dy, -20, 20)
-    
     local maxSway = 2
     local force = 0.1
-    local smooth = 12  -- 稍微降低，减少抖动
+    local smooth = 12
     
     self.m_SwayAngle.yaw = math.Clamp(self.m_SwayAngle.yaw - dx * force, -maxSway, maxSway)
     self.m_SwayAngle.pitch = math.Clamp(self.m_SwayAngle.pitch - dy * force, -maxSway, maxSway)
     
-    -- 归位
     self.m_SwayAngle.yaw = Lerp(ft * smooth, self.m_SwayAngle.yaw, 0)
     self.m_SwayAngle.pitch = Lerp(ft * smooth, self.m_SwayAngle.pitch, 0)
-    self.m_SwayAngle.roll = self.m_SwayAngle.yaw * 1
+    
+    -- ===== 侧向移动滚动 =====
+    local sideSpeed = velo:Dot(owner:GetRight())
+    local targetRoll = math.Clamp(sideSpeed * 0.22 , -15, 15)
+    self.m_SwayAngle.roll = Lerp(ft * 10, self.m_SwayAngle.roll, targetRoll)
+    -- ========================
+    
     -- 位置派生
     local posSway = Vector(0, 0, 0)
     posSway.x = self.m_SwayAngle.yaw * -1
     posSway.y = math.abs(self.m_SwayAngle.yaw) * -0.5
     posSway.z = -self.m_SwayAngle.pitch * 0.5
     
-    -- 存到 self 供非预测帧返回
     self.m_SwayPos = posSway
     
     return self.m_SwayAngle, posSway
 end
-
 function SWEP:GetClientAimDelta()
     if not CLIENT then
         return self:GetAimDelta()
@@ -122,7 +121,7 @@ function SWEP:GetClientVisualRecoil()
     if not self.m_Client_VisualRecoil then
         self.m_Client_VisualRecoil = source
     end
-    self.m_Client_VisualRecoil = LerpAngle( RealFrameTime() * 10 , self.m_Client_VisualRecoil , source )
+    self.m_Client_VisualRecoil = LerpAngle( RealFrameTime() * 50 , self.m_Client_VisualRecoil , source )
 
     return self.m_Client_VisualRecoil
 end
@@ -202,9 +201,14 @@ local AimOffset , AimOffsetAngle
 function SWEP:CalcViewModelView(vm ,pos , angles , poss , angless )
     if not CLIENT then return end
 
-    -- 冻结 VM 调试
-    if self.m_VMFrozen and self.m_VMFreezePos and self.m_VMFreezeAng then
+    -- 冻结 VM 调试（直接读 ConVar，不依赖 m_VMFrozen 同步）
+    if GetConVar("trmbase_freeze_vm"):GetInt() ~= 0 then
+        if not self.m_VMFreezeAng then self.m_VMFreezeAng = angles end
+        if not self.m_VMFreezePos then self.m_VMFreezePos = pos end
         return self.m_VMFreezePos, self.m_VMFreezeAng
+    else
+        self.m_VMFreezeAng = nil
+        self.m_VMFreezePos = nil
     end
 
 
@@ -221,7 +225,7 @@ function SWEP:CalcViewModelView(vm ,pos , angles , poss , angless )
     CacheAngle , CachePos  = self:Sway()
     local  Pos = -Vector( angles:Right() * CachePos.x , angles:Forward() * CachePos.y , angles:Up() * CachePos.z   )  * Lerp(aimdelta ,1 , 0.2 )
     pos:Add(Pos)
-    angles:Add(CacheAngle* Lerp(aimdelta ,1 , 0.2 ))
+    angles:Add(CacheAngle* Lerp(aimdelta ,1 , 0.5 ))
     --Bob
     local BobPos , BobAngle = self:CustomBob()
     local ApplyBobPos = Vector( angles:Right() * BobPos.x , angles:Forward() * BobPos.y , angles:Up() * BobPos.z   ) * ( 1 - aimdelta  )
@@ -327,7 +331,7 @@ function SWEP:ViewModelDrawn(vm)
 
     if not self.m_LastBuild then
         self.m_LastBuild = CurTime()
-    elseif CurTime() - self.m_LastBuild > 30 then
+    elseif CurTime() - self.m_LastBuild > 120 then
         self.m_LastBuild = CurTime()
         self.m_NeedsBuild = true
     end
@@ -383,10 +387,11 @@ concommand.Add("trmbase_freeze_vm", function(ply, cmd, args)
         return
     end
 
-    wep.m_VMFrozen = not wep.m_VMFrozen
-    GetConVar("trmbase_freeze_vm"):SetInt(wep.m_VMFrozen and 1 or 0)
+    local cv = GetConVar("trmbase_freeze_vm")
+    local newVal = cv:GetInt() == 0 and 1 or 0
+    cv:SetInt(newVal)
 
-    if wep.m_VMFrozen then
+    if newVal == 1 then
         local vm = wep:GetViewModel(0)
         if IsValid(vm) then
             wep.m_VMFreezePos = vm:GetPos()
@@ -397,35 +402,9 @@ concommand.Add("trmbase_freeze_vm", function(ply, cmd, args)
         print("  角度:", tostring(wep.m_VMFreezeAng))
         print("  再次执行 trmbase_freeze_vm 解冻")
     else
+        wep.m_VMFreezePos = nil
+        wep.m_VMFreezeAng = nil
         print("[TRMBase] Viewmodel 已解冻")
     end
 end)
 
--- ConVar 回调：勾选菜单时触发冻结/解冻
-cvars.AddChangeCallback("trmbase_freeze_vm", function(name, old, new)
-    local wep = LocalPlayer() and LocalPlayer():GetActiveWeapon()
-    if not IsValid(wep) then return end
-    if new == "1" and not wep.m_VMFrozen then
-        RunConsoleCommand("trmbase_freeze_vm")
-    elseif new == "0" and wep.m_VMFrozen then
-        RunConsoleCommand("trmbase_freeze_vm")
-    end
-end)
-
--- 打印当前 viewmodel 的位置/角度
-concommand.Add("trmbase_vm_info", function(ply)
-    local wep = ply:GetActiveWeapon()
-    if not IsValid(wep) or not util.IsTRMBase(wep) then return end
-
-    local vm = wep:GetViewModel(0)
-    if not IsValid(vm) then return end
-
-    print("========== Viewmodel Info ==========")
-    print("位置:", tostring(vm:GetPos()))
-    print("角度:", tostring(vm:GetAngles()))
-    print("冻结状态:", wep.m_VMFrozen and "是" or "否")
-    if wep.m_VMFrozen then
-        print("冻结位置:", tostring(wep.m_VMFreezePos))
-        print("冻结角度:", tostring(wep.m_VMFreezeAng))
-    end
-end)

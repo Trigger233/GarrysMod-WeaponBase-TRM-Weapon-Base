@@ -412,8 +412,8 @@ function PANEL:RefreshAttList()
     local currentAtt = currentEntry and currentEntry.Class -- nil = 无, string = 配件类名
     local atts = GetAttachmentsForSlot(slot)
 
-    -- 检查此槽位是否被已装备的配件排除（如 DG56 的激光槽会被特定枪管排除）
-    local slotExcluded = self.m_Weapon:IsSlotExcluded(self.m_Slot)
+    -- 检查此槽位是否被已装备的配件排除
+    local slotExcluded = not self.m_Weapon:CanAttach(self.m_Slot)
 
     -- 第一个按钮永远是"无"（清空槽位）
 
@@ -748,4 +748,17 @@ hook.Add("HUDShouldDraw", "HideWhileCustomizing", function(name)
             return false
         end
     end
+end)
+
+-- 调试：查看当前 HUD 状态
+concommand.Add("trmbase_hud_debug", function()
+    local ply = LocalPlayer()
+    if not IsValid(ply) then return end
+    local wep = ply:GetActiveWeapon()
+    print("=== HUD Debug ===")
+    print("IsTRMBase:", util.IsTRMBase(wep))
+    print("IsInspecting:", IsValid(wep) and wep:IsInspecting() or false)
+    print("MenuOpen:", IsValid(TRM_AttachMenu_Instance))
+    print("HideOnInspect:", cvar_hide:GetBool())
+    print("GM HideHUD:", ply:GetNW2Int("hidehud", 0))
 end)
