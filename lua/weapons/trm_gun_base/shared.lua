@@ -489,14 +489,13 @@ local cvar_attachment = GetConVar("trmbase_load_attachment_on_pickup")
 function SWEP:Equip()
     self:SetFirstDeployed(true)
     -- 服务端同步配件给客户端
-    timer.Simple(FrameTime() * 10, function()
-        if cvar_attachment:GetBool() then
-            self:LoadAttachmentPreset()
-        end
+    if cvar_attachment:GetBool() then
+        self:LoadAttachmentPreset()
+    end
 
-        self:OnAttachmentChanged()
-        self:SyncAllAttachments()
-    end)
+    self:OnAttachmentChanged()
+    self:SyncAllAttachments()
+
     -- 先加载保存的配件配置
 end
 
@@ -505,7 +504,7 @@ function SWEP:Deploy()
     self:SetNextAnimationTime(0)
     self:SetCurrentTask("Deploy")
 
-
+    self:OnAttachmentChanged()
     -- 确保客户端知道当前配件（预设由初始化 / Equip / Restore 加载）
     self:SyncAllAttachments()
     self:BuildCustomizedGun()
@@ -517,6 +516,7 @@ function SWEP:Restore()
         if self.EquipDefaultAttachments then self:EquipDefaultAttachments() end
         if self.LoadAttachmentPreset then self:LoadAttachmentPreset() end
     end
+    self:SyncAllAttachments()
     --PrintTable(self.CurrentAttachments)
 end
 
@@ -572,21 +572,23 @@ function SWEP:OnReloaded()
 end
 
 function SWEP:OnRestore()
-    self:OnReloaded()
-    self:EquipDefaultAttachments()
-    --self:SpreadInit()
-    self:SetCurrentTask("Finished")
-    if SERVER and cvar_attachment:GetBool() then
-        -- 先加载保存的配件配置
-        self:LoadAttachmentPreset()
-    end
+    timer.Simple(FrameTime() * 5, function()
+        self:OnReloaded()
+        self:EquipDefaultAttachments()
+        --self:SpreadInit()
+        self:SetCurrentTask("Finished")
+        if SERVER and cvar_attachment:GetBool() then
+            -- 先加载保存的配件配置
+            self:LoadAttachmentPreset()
+        end
 
-    self:SyncAllAttachments()
-    self:ChangeWeaponStats()
+        self:SyncAllAttachments()
 
-    self:BuildCustomizedGun()
+        self:BuildCustomizedGun()
 
-    self:SetNextRecoil(0)
+        self:ChangeWeaponStats()
+        self:SetNextRecoil(0)
+    end)
 end
 
 function SWEP:CanPrimaryAttack()

@@ -119,7 +119,7 @@ function SWEP:ApplyViewModelChange()
     if not IsValid(vm) then return false end
     vm:SetModel(self.m_ViewmodelCache || self.ViewModel)
     vm:SetSkin(self.m_SkinCache || 0)
-
+ 
     for bodygroup, sub in pairs(self.m_BodyGroupCache) do
         changeBodyGroup(vm, bodygroup, sub)
         for _, entry in pairs(self.CurrentAttachments or {}) do

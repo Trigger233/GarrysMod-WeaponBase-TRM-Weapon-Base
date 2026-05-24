@@ -18,9 +18,6 @@ function SWEP:TaskThink()
         Inspect = "Task_Inspect",
         Customize = "Task_Customize",
         PrimaryFire = "Task_PrimaryFire",
-        SprintIn = "Task_SprintIn",
-        Sprint = "Task_Sprint",
-        SprintOut = "Task_SprintOut",
         AdsIn = "Task_AdsIn",
         AdsOut = "Task_AdsOut",
         Melee = "Task_Melee",
@@ -28,6 +25,9 @@ function SWEP:TaskThink()
         Reload = "Task_Reload",
         ReloadLoop = "Task_ReloadLoop",
         ReloadEnd = "Task_ReloadEnd",
+        SprintIn = "Task_SprintIn",
+        Sprint = "Task_Sprint",
+        SprintOut = "Task_SprintOut",
     }
 
     local funcName = taskMap[task]
