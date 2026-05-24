@@ -570,7 +570,7 @@ function SWEP:OnReloaded()
 
     --print("[TRMBase] Client files reloaded!")
 end
-
+ 
 function SWEP:OnRestore()
     timer.Simple(FrameTime() * 5, function()
         self:OnReloaded()

@@ -33,21 +33,11 @@ function ENT:Initialize()
         -- 启动距离检测定时器
         self:StartCheckingDistance()
         
-        -- 启动自动消失定时器
-        self:StartLifetimeTimer()
-    end
+        end
         self:AddEffects(EF_ITEM_BLINK)
 
 end
 
--- 启动自动消失定时器
-function ENT:StartLifetimeTimer()
-    timer.Create("AmmoLifetime_" .. self:EntIndex(), self.Lifetime, 1, function()
-        if IsValid(self) then
-            self:Remove()
-        end
-    end)
-end
 
 -- 启动距离检测
 function ENT:StartCheckingDistance()
@@ -92,13 +82,7 @@ function ENT:GiveAmmoToPlayer(ply)
     end
 end
 
--- 清理定时器
-function ENT:OnRemove()
-    if SERVER then
-        timer.Remove("AmmoCheck_" .. self:EntIndex())
-        timer.Remove("AmmoLifetime_" .. self:EntIndex())
-    end
-end
+
 
 -- 移除原来的触碰和碰撞函数
 function ENT:PhysicsCollide(data, phys)

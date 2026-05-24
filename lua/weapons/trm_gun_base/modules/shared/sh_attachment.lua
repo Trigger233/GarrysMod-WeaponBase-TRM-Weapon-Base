@@ -119,7 +119,7 @@ function SWEP:ApplyViewModelChange()
     if not IsValid(vm) then return false end
     vm:SetModel(self.m_ViewmodelCache || self.ViewModel)
     vm:SetSkin(self.m_SkinCache || 0)
- 
+
     for bodygroup, sub in pairs(self.m_BodyGroupCache) do
         changeBodyGroup(vm, bodygroup, sub)
         for _, entry in pairs(self.CurrentAttachments or {}) do
@@ -390,7 +390,7 @@ function SWEP:EquipAttachment(slot, attClass)
         end
     end
 
-
+ 
     self:OnAttachmentChanged()
 
     --print("Equipped:", slot, attClass)
@@ -579,16 +579,20 @@ end
 
 function SWEP:GenerateAimOffset()
     if SERVER then return end
-    for slot, entry in pairs(self.CurrentAttachments) do
+    for slot, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
         local AttachmentData = BASE_TRM_ATTS[entry.Class]
-        if AttachmentData.Model == nil then continue end
+        if not AttachmentData or AttachmentData.Model == nil then continue end
 
         if AttachmentData.Sight != nil then
-            self:GetViewModel():InvalidateBoneCache()
-            self:GetViewModel():SetupBones()
+            local vm = self:GetViewModel()
+            if not IsValid(vm) then continue end
+
+            vm:InvalidateBoneCache()
+            vm:SetupBones()
 
             local align = self.Attachments[tonumber(slot)]
+            if not align or not align.Bone then continue end
 
             local AlignAttachment = self:GetBoneData(align.Bone)
 
@@ -600,26 +604,26 @@ function SWEP:GenerateAimOffset()
                 model:InvalidateBoneCache()
                 model:SetupBones()
 
-                model:GetParent():InvalidateBoneCache()
-                model:GetParent():SetupBones()
+                local parent = model:GetParent()
+                if IsValid(parent) then
+                    parent:InvalidateBoneCache()
+                    parent:SetupBones()
+                end
 
                 local Data = AlignAttachment
-                local sightData = model:GetAttachment(model:LookupAttachment(AttachmentData.Sight.Align))
+                local sightData = model:GetAttachment(model:LookupAttachment(AttachmentData.Sight.Align or "reticle"))
                 if not sightData then continue end
 
                 local localPos, localAng = WorldToLocal(sightData.Pos, Data.Ang, Data.Pos, Data.Ang)
                 localPos.x = 0
-                localPos.y = 0
-                if AttachmentData.Pos then
+                if AttachmentData.Sight.Pos then
                     localPos:Add(AttachmentData.Sight.Pos)
                 end
                 if align.SightPos then
                     localPos:Add(align.SightPos)
                 end
-                model.AimPos = Vector(localPos.x, align.SightPos.y, localPos.z)
+                model.AimPos = Vector(localPos.x, localPos.y, localPos.z)
                 model.AimAng = align.SightAng or Angle(0, 0, 0)
-                debugoverlay.Axis(sightData.Pos, Data.Ang, 10, 0, false)
-                debugoverlay.Axis(Data.Pos, Data.Ang, 10, 0, false)
                 if not self.m_Sight then
                     self.m_Sight = {
                         AimPos = model.AimPos,
