@@ -18,7 +18,7 @@ if CLIENT and not SERVER then return end
 local SpecialAmmoMap = {
     ["XBowBolt"] = "SniperPenetratedRound",
 }
- 
+
 local WeaponMap = {
     ["weapon_mp5_hl1"] = { "smg1", "ar2" },
     ['weapon_glock_hl1'] = "pistol",
@@ -147,7 +147,7 @@ local function DoNPCReplace(npc)
     local newClass = PickRandom(candidates)
 
     print("[TRMBase] NPC " ..
-    npc:GetClass() .. ": " .. wep:GetClass() .. " → " .. newClass .. " (random from " .. #candidates .. ")")
+        npc:GetClass() .. ": " .. wep:GetClass() .. " → " .. newClass .. " (random from " .. #candidates .. ")")
 
     if IsValid(wep) then wep:Remove() end
     npc:Give(newClass)
@@ -187,7 +187,7 @@ local function DoWeaponReplace(ent)
     local isPlayerGen = IsPlayerSpawned(ent)
 
     print("[TRMBase] World weapon: " ..
-    ent:GetClass() .. " → " .. newClass .. (isPlayerGen and " (player)" or " (world)"))
+        ent:GetClass() .. " → " .. newClass .. (isPlayerGen and " (player)" or " (world)"))
 
     ent:Remove()
 
@@ -210,6 +210,7 @@ local function DoWeaponReplace(ent)
 end
 
 -- ===== 弹药箱替换（修复版） =====
+-- ===== 弹药箱替换（保留原模型版） =====
 local function ReplaceAmmoBox(ent)
     local class = ent:GetClass()
     if not AmmoBoxMap[class] then return false end
@@ -225,9 +226,11 @@ local function ReplaceAmmoBox(ent)
     -- 保存原实体信息
     local pos = ent:GetPos()
     local ang = ent:GetAngles()
-    local model = ent:GetModel()
+    local model = ent:GetModel() -- 原模型路径
+    local skin = ent:GetSkin()   -- 原皮肤
 
     print("[TRMBase] Replacing ammo box: " .. class .. " → " .. targetClass)
+    print("[TRMBase] Preserving model: " .. (model or "none"))
 
     -- 创建新弹药箱
     local newEnt = ents.Create(targetClass)
@@ -235,9 +238,20 @@ local function ReplaceAmmoBox(ent)
         newEnt:SetPos(pos)
         newEnt:SetAngles(ang)
 
-        -- 只有非点实体才需要设置模型
-        if model and model ~= "" and newEnt.SetModel then
-            newEnt:SetModel(model)
+        -- 【关键】强制使用原模型，覆盖新实体的默认模型
+        if model and model ~= "" then
+            if newEnt.SetModel then
+                newEnt:SetModel(model)
+            end
+            -- 有些实体需要用 SetModelSimple
+            if newEnt.SetModelSimple then
+                newEnt:SetModelSimple(model)
+            end
+        end
+
+        -- 保留皮肤
+        if newEnt.SetSkin and skin then
+            newEnt:SetSkin(skin)
         end
 
         newEnt:Spawn()
@@ -247,20 +261,14 @@ local function ReplaceAmmoBox(ent)
             newEnt:SetAmmoCount(ent:GetAmmoCount())
         end
 
-        -- 如果原实体有皮肤，也复制过来
-        if ent.GetSkin and newEnt.SetSkin then
-            newEnt:SetSkin(ent:GetSkin())
-        end
-
         ent:Remove()
-        print("[TRMBase] Successfully created: " .. targetClass .. " at " .. tostring(pos))
+        print("[TRMBase] Successfully created: " .. targetClass .. " with original model")
         return true
     end
 
     print("[TRMBase] Failed to create: " .. targetClass)
     return false
 end
-
 -- ===== 主替换函数 =====
 local function replace(ent)
     if not IsValid(ent) then return end
@@ -324,7 +332,7 @@ end)
 
 -- 读档后重新扫描
 hook.Add("Restored", "TRMBASE_ReplaceRestored", function()
-    timer.Simple(refresh, function()
+    timer.Simple(refresh * 10, function()
         for _, ent in pairs(ents.GetAll()) do
             if not IsValid(ent) then continue end
             if ent:IsNPC() or
