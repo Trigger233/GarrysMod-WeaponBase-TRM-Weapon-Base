@@ -19,7 +19,7 @@ end
 
 function SWEP:DoMuzzleEffect()
 
-    if SERVER or self.Primary.Slienced then return end
+    if self.Primary.Slienced then return end
    
     local effect = EffectData()
     local data = self:GetAttachmentData(self.Effects.Muzzle.attachment)
@@ -33,7 +33,7 @@ function SWEP:DoMuzzleEffect()
     effect:SetEntity(   data.Ent )   
     effect:SetAttachment(   data.id  )
     effect:SetScale( 5 )
-    effect:SetFlags(2 )
+    effect:SetFlags(1 )
  
    --print(effect:GetEntity())
 

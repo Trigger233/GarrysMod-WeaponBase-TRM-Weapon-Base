@@ -4,8 +4,8 @@ function SWEP:Think()
 
     -- 原有逻辑...
     self:SetWeaponHoldType(self.HoldType)
+    self:SetHoldType(self.HoldType)
     self.m_CurrentSequence = self:GetPlayingSequence()
-
     local owner = self:GetOwner()
     if IsValid(owner) and owner:IsPlayer() then
         self:UpdatePoseParameters()

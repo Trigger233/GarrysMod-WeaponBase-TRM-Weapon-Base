@@ -56,10 +56,10 @@ function SWEP:Task_Sprint(cycle)
         self:PlayAnimation("Sprint_Empty",true)
     elseif self.Animations.Sprint then
         self:PlayAnimation("Sprint",true)
-    elseif self:IsEmpty() and self.Animations.Idle_Empty then 
-        self:PlayAnimation("Idle_Empty" ,true)
-    else
-        self:PlayAnimation("Idle" ,true)
+    -- elseif self:IsEmpty() and self.Animations.Idle_Empty then 
+    --     self:PlayAnimation("Idle_Empty" ,true)
+    -- else
+    --     self:PlayAnimation("Idle" ,true)
     end
     
     if self:GetOwner():KeyDown(IN_SPEED) == false or not self:GetOwner():OnGround() then

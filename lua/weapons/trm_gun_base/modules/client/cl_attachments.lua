@@ -332,8 +332,14 @@ function PANEL:Init()
     self.m_ModelYaw = 0
     self.m_ModelPitch = 0
     self.m_ModelZoom = 1.25
+    self.m_ModelPanX = 0
+    self.m_ModelPanZ = 0
     self.m_ModelCenter = Vector(0, 0, 0)
     self.m_ModelSize = 48
+    self.m_SlotScroll = 0
+    self.m_SlotMaxScroll = 0
+    self.m_StatsScroll = 0
+    self.m_StatsMaxScroll = 0
 
     self.m_ModelPanel = vgui.Create("DModelPanel", self)
     self.m_ModelPanel:SetFOV(28)
@@ -345,7 +351,7 @@ function PANEL:Init()
         surface.SetDrawColor(255, 255, 255, 9)
         surface.DrawOutlinedRect(0, 0, w, h, 1)
 
-        draw.SimpleText("DRAG TO ROTATE  /  SCROLL TO ZOOM", "TRM_Mod_Small", w / 2, h - 18, TEXT_DIM, TEXT_ALIGN_CENTER,
+        draw.SimpleText("DRAG TO PAN  /  SCROLL TO ZOOM", "TRM_Mod_Small", w / 2, h - 18, TEXT_DIM, TEXT_ALIGN_CENTER,
             TEXT_ALIGN_CENTER)
     end
     self.m_ModelPanel.LayoutEntity = function(_, ent)
@@ -375,6 +381,10 @@ function PANEL:Init()
     self.m_StatsPanel.Paint = function(_, w, h)
         self:PaintStats(w, h)
     end
+    self.m_StatsPanel.OnMouseWheeled = function(_, delta)
+        self.m_StatsScroll = math.Clamp((self.m_StatsScroll or 0) - delta * 36, 0, self.m_StatsMaxScroll or 0)
+        return true
+    end
 
     self.m_AttPanel = vgui.Create("DPanel", self)
     self.m_AttPanel.Paint = function(_, w, h)
@@ -389,6 +399,20 @@ function PANEL:Init()
     self.m_AttList:Dock(TOP)
     self.m_AttList:SetTall(0)
     self.m_AttList.Paint = function() end
+
+    self.m_SlotStrip = vgui.Create("DPanel", self)
+    self.m_SlotStrip.Paint = function(_, w, h)
+        surface.SetDrawColor(0, 0, 0, 72)
+        surface.DrawRect(0, 0, w, h)
+        if (self.m_SlotMaxScroll or 0) > 0 then
+            draw.SimpleText("SCROLL SLOTS", "TRM_Mod_Tiny", w - 8, h - 10, TEXT_DIM, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+        end
+    end
+    self.m_SlotStrip.OnMouseWheeled = function(_, delta)
+        self.m_SlotScroll = math.Clamp((self.m_SlotScroll or 0) - delta * 92, 0, self.m_SlotMaxScroll or 0)
+        self:LayoutSlotCards()
+        return true
+    end
 
     self.m_BackButton = vgui.Create("DButton", self)
     self.m_BackButton:SetText("")
@@ -423,6 +447,9 @@ function PANEL:PerformLayout(w, h)
 
     self.m_ModelPanel:SetPos(modelX, modelY)
     self.m_ModelPanel:SetSize(modelW, modelH)
+
+    self.m_SlotStrip:SetPos(modelX + 14, modelY + modelH - 104)
+    self.m_SlotStrip:SetSize(math.max(modelW - 28, 1), 78)
 
     self.m_BackButton:SetSize(118, 34)
     self.m_BackButton:SetPos(w - 144, h - 58)
@@ -472,8 +499,19 @@ function PANEL:UpdateModelDrag()
     local lastX = self.m_LastDragX or x
     local lastY = self.m_LastDragY or y
 
-    self.m_ModelYaw = self.m_ModelYaw + (x - lastX) * 0.45
-    self.m_ModelPitch = math.Clamp(self.m_ModelPitch + (y - lastY) * 0.20, -24, 24)
+    local dx = x - lastX
+    local dy = y - lastY
+    local size = math.max(self.m_ModelSize or 48, 1)
+    local zoom = self.m_ModelZoom or 1.25
+    local panelW = IsValid(self.m_ModelPanel) and math.max(self.m_ModelPanel:GetWide(), 1) or 1
+    local panelH = IsValid(self.m_ModelPanel) and math.max(self.m_ModelPanel:GetTall(), 1) or 1
+    local xScale = size * zoom / panelW
+    local zScale = size * zoom / panelH
+
+    self.m_ModelPanX = math.Clamp((self.m_ModelPanX or 0) - dx * xScale, -size, size)
+    self.m_ModelPanZ = math.Clamp((self.m_ModelPanZ or 0) + dy * zScale, -size, size)
+    self:UpdatePreviewCamera()
+
     self.m_LastDragX, self.m_LastDragY = x, y
 end
 
@@ -499,7 +537,7 @@ function PANEL:UpdatePreviewCamera()
     local ent = self.m_ModelPanel:GetEntity()
     if not IsValid(ent) then return end
 
-    local center = self.m_ModelCenter or Vector(0, 0, 0)
+    local center = (self.m_ModelCenter or Vector(0, 0, 0)) + Vector(self.m_ModelPanX or 0, 0, self.m_ModelPanZ or 0)
     local size = math.max(self.m_ModelSize or 48, 1)
     local zoom = self.m_ModelZoom or 1.25
     local dist = math.Clamp(size * zoom, 42, 260)
@@ -537,6 +575,8 @@ function PANEL:SetupModel()
     local size = math.max(bounds.x, bounds.y, bounds.z, 1)
     self.m_ModelCenter = center
     self.m_ModelSize = size
+    self.m_ModelPanX = 0
+    self.m_ModelPanZ = 0
     self:LayoutPreviewEntity(ent)
     self:UpdatePreviewCamera()
 
@@ -906,7 +946,7 @@ function PANEL:RebuildSlotCards()
     if not IsValid(self.m_Weapon) then return end
 
     for i, slot in ipairs(self.m_Weapon.Attachments or {}) do
-        local card = vgui.Create("DButton", self)
+        local card = vgui.Create("DButton", IsValid(self.m_SlotStrip) and self.m_SlotStrip or self)
         card:SetText("")
         card.m_Index = i
         card.m_Slot = slot
@@ -914,10 +954,16 @@ function PANEL:RebuildSlotCards()
         card.DoClick = function()
             self.m_Slot = i
             self:RefreshAttList()
+            self:EnsureSlotVisible(i)
             surface.PlaySound("buttons/lightswitch2.wav")
         end
         card.Paint = function(button, w, h)
             self:PaintSlotCard(button, w, h)
+        end
+        card.OnMouseWheeled = function(_, delta)
+            self.m_SlotScroll = math.Clamp((self.m_SlotScroll or 0) - delta * 92, 0, self.m_SlotMaxScroll or 0)
+            self:LayoutSlotCards()
+            return true
         end
 
         self.m_SlotCards[#self.m_SlotCards + 1] = card
@@ -929,29 +975,46 @@ end
 function PANEL:LayoutSlotCards()
     if not self.m_SlotCards then return end
 
-    local sw, sh = self:GetWide(), self:GetTall()
-    local modelX, modelY = 0, 0
-    local modelW, modelH = sw, sh
-    if IsValid(self.m_ModelPanel) then
-        modelX, modelY = self.m_ModelPanel:GetPos()
-        modelW, modelH = self.m_ModelPanel:GetSize()
-    end
+    if not IsValid(self.m_SlotStrip) then return end
 
     local count = math.max(#self.m_SlotCards, 1)
     local gap = 8
     local cardH = 66
-    local cardW = math.Clamp(math.floor((modelW - gap * (count + 1)) / count), 112, 172)
+    local stripW = math.max(self.m_SlotStrip:GetWide(), 1)
+    local stripH = math.max(self.m_SlotStrip:GetTall(), cardH)
+    local visibleCards = math.max(math.floor(stripW / 152), 1)
+    local cardW = math.Clamp(math.floor((stripW - gap * math.min(count + 1, visibleCards + 1)) / math.min(count, visibleCards)), 128, 172)
     local totalW = count * cardW + (count - 1) * gap
-    local startX = modelX + math.max(14, math.floor((modelW - totalW) * 0.5))
-    local y = modelY + modelH - cardH - 34
+    local startX = totalW < stripW and math.floor((stripW - totalW) * 0.5) or 0
+    self.m_SlotMaxScroll = math.max(totalW - stripW, 0)
+    self.m_SlotScroll = math.Clamp(self.m_SlotScroll or 0, 0, self.m_SlotMaxScroll)
+    local y = math.floor((stripH - cardH) * 0.5)
 
     for slotIndex, card in ipairs(self.m_SlotCards) do
         if not IsValid(card) then continue end
-        local x = startX + (slotIndex - 1) * (cardW + gap)
+        local x = startX + (slotIndex - 1) * (cardW + gap) - (self.m_SlotScroll or 0)
 
         card:SetSize(cardW, cardH)
-        card:SetPos(math.Clamp(x, 22, sw - cardW - 22), math.Clamp(y, 96, sh - cardH - 68))
+        card:SetPos(x, y)
     end
+end
+
+function PANEL:EnsureSlotVisible(slotIndex)
+    if not IsValid(self.m_SlotStrip) or not self.m_SlotCards then return end
+    local card = self.m_SlotCards[slotIndex]
+    if not IsValid(card) then return end
+
+    local x, _ = card:GetPos()
+    local w = card:GetWide()
+    local stripW = self.m_SlotStrip:GetWide()
+
+    if x < 0 then
+        self.m_SlotScroll = math.Clamp((self.m_SlotScroll or 0) + x - 8, 0, self.m_SlotMaxScroll or 0)
+    elseif x + w > stripW then
+        self.m_SlotScroll = math.Clamp((self.m_SlotScroll or 0) + (x + w - stripW) + 8, 0, self.m_SlotMaxScroll or 0)
+    end
+
+    self:LayoutSlotCards()
 end
 
 function PANEL:SlotTarget(card)
@@ -1060,7 +1123,18 @@ function PANEL:PaintStats(w, h)
         return
     end
 
-    local y = 75
+    local contentH = 75 + #stats * 55 + 16
+    self.m_StatsMaxScroll = math.max(contentH - h, 0)
+    self.m_StatsScroll = math.Clamp(self.m_StatsScroll or 0, 0, self.m_StatsMaxScroll)
+
+    if (self.m_StatsMaxScroll or 0) > 0 then
+        draw.SimpleText("SCROLL STATS", "TRM_Mod_Tiny", w - 14, 39, TEXT_DIM, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+    end
+
+    local sx, sy = self.m_StatsPanel:LocalToScreen(0, 58)
+    render.SetScissorRect(sx, sy, sx + w, sy + h - 6, true)
+
+    local y = 75 - (self.m_StatsScroll or 0)
     for _, stat in ipairs(stats) do
         local name = stat[1]
         local current = Num(stat[2])
@@ -1098,6 +1172,8 @@ function PANEL:PaintStats(w, h)
 
         y = y + 55
     end
+
+    render.SetScissorRect(0, 0, 0, 0, false)
 end
 
 function PANEL:PaintAttachmentPanel(w, h)
@@ -1243,7 +1319,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
         weapon.CurrentAttachments[slotKey] = (id ~= "None") and { Class = id } or nil
         weapon:SendAttachmentToServer(slotKey, id)
 
-        surface.PlaySound("buttons/lightswitch2.wav")
+        surface.PlaySound("weapons/ar2/ar2_empty.wav")
         self:RefreshPreview()
         self:RefreshAll()
     end

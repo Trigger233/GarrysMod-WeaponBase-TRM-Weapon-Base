@@ -105,17 +105,9 @@ local function DrawReticle2D(att, scope, x, y, radius, alpha)
 end
 
 local function DrawScopeEdge(x, y, radius, alpha)
-    surface.SetDrawColor(0, 0, 0, 255 * alpha)
-    for i = 0, 10 do
-        surface.DrawCircle(x, y, radius + i, 0, 0, 0, 255 * alpha)
-    end
-
     surface.SetDrawColor(255, 255, 255, 32 * alpha)
     surface.DrawCircle(x, y, radius - 5, 255, 255, 255, 32 * alpha)
     surface.DrawCircle(x, y, radius - 11, 255, 255, 255, 18 * alpha)
-
-    surface.SetDrawColor(0, 0, 0, 70 * alpha)
-    surface.DrawCircle(x, y, radius * 0.74, 0, 0, 0, 70 * alpha)
 end
 
 local function DrawCheapScopeOverlay(att, wep)
@@ -139,12 +131,6 @@ local function DrawCheapScopeOverlay(att, wep)
 
     surface.SetDrawColor(0, 0, 0, backdropAlpha * alpha)
     surface.DrawRect(0, 0, ScrW(), ScrH())
-
-    draw.NoTexture()
-    surface.SetDrawColor(0, 0, 0, 255 * alpha)
-    DrawTexturedCircle(x, y, radius + 34, scope.Segments or 144, 0)
-    surface.SetDrawColor(8, 8, 8, 245 * alpha)
-    DrawTexturedCircle(x, y, radius + 17, scope.Segments or 144, 0)
 
     surface.SetMaterial(scope.CheapMaterial or cheapScopeMat)
     surface.SetDrawColor(190, 210, 205, (scope.LensAlpha or 42) * alpha)
