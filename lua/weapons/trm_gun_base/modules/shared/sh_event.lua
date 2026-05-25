@@ -18,11 +18,12 @@ function SWEP:ShootEffects(slience)
 end
 
 function SWEP:DoMuzzleEffect()
-
+    if not CLIENT then return end
     if self.Primary.Slienced then return end
    
     local effect = EffectData()
     local data = self:GetAttachmentData(self.Effects.Muzzle.attachment)
+    if not data then return end
     local att = data.Ent:GetAttachment(data.id)
     --PrintTable(att )
     local vm = self:GetViewModel()

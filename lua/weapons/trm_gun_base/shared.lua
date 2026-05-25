@@ -102,6 +102,11 @@ SWEP.Primary.Ammo = ""
 SWEP.Primary.SpecialAmmo = -1
 SWEP.Primary.RPM = 600
 SWEP.Primary.Automatic = false
+-- SWEP.Primary.Trigger = {
+--     Time = 0 ,
+--     Type = "Hold", -- or "Tap" 
+--     Sound = Sound() ,
+-- }
 
 SWEP.BoltAction = false
 
@@ -601,17 +606,17 @@ local cvar = CreateConVar("trmbase_autoreload", 1, FCVAR_ARCHIVE)
 function SWEP:PrimaryAttack()
     if not self:CanPrimaryFire() then
         if self:IsEmpty() and cvar:GetInt() == 1 then
-            if CurTime() - self.m_LastEmptySoundTime > 1 then
-                self:EmitSound("weapons/ar2/ar2_empty.wav")
-                self.m_LastEmptySoundTime = CurTime()
-            end
             self:Reload()
         end
         return false
     end
+    if self.Primary.Trigger  then
+        self:SetCurrentTask("Charge")
+    else
+        self:SetCurrentTask("PrimaryFire")
 
-    self:SetCurrentTask("PrimaryFire")
-    self:SetNextPrimaryFire(CurTime() + 60 / self.Primary.RPM)
+    end
+
 end
 
 function SWEP:SecondaryAttack()

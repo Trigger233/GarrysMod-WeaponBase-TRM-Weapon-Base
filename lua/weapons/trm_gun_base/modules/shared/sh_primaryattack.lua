@@ -6,6 +6,41 @@ function SWEP:CanPrimaryFire()
 	return (not self:IsEmpty() and (self:GetNextPrimaryFire() <= CurTime()))
 end
 
+function SWEP:Task_Charge()
+	local stat = self.Primary.Trigger
+	if not stat then return end
+
+	if stat.Sound and not self.s_TriggerSound then
+		self:EmitSound(stat.Sound)
+		self.s_TriggerSound = true
+	end
+
+	-- 修复1：只在 m_NextFireTime 为 nil 时设置
+	if stat.Time > 0 and self.m_NextFireTime == nil then
+		self.m_NextFireTime = CurTime() + stat.Time
+	end
+
+	local anim = self.Animations
+	if anim and anim.Charge then
+		self:PlayAnimation("Charge", true)
+	end
+
+	local owner = self:GetOwner()
+	if not IsValid(owner) then return end
+
+	-- 修复2：确保 m_NextFireTime 存在再比较
+	if self.m_NextFireTime and CurTime() >= self.m_NextFireTime then
+		self.m_NextFireTime = nil
+		self.s_TriggerSound = false -- 修复3：重置声音标志
+
+		if stat.Type == "Hold" and not owner:KeyDown(IN_ATTACK) then
+			self:SetCurrentTask("Finished")
+		else
+			self:SetNextAnimationTime(0)
+			self:SetCurrentTask("PrimaryFire")
+		end
+	end
+end
 function SWEP:Task_PrimaryFire()
 	local aim = self:GetAimDelta() > 0.5 and true or false
 
@@ -73,11 +108,12 @@ function SWEP:FirePrimaryBullet()
 		end
 		self.r_shakeDir = -self.r_shakeDir
 
-		local shake = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 1) * self.r_shakeDir * math.random(0, 1)
+		local shake = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 1) * self.r_shakeDir *
+		math.random(0, 1)
 		owner:SetViewPunchAngles(Angle(0, 0, shake))
 		owner:SetViewPunchVelocity(Angle(0, 0, shake * 100))
 	end
- 
+
 
 
 
@@ -103,7 +139,7 @@ function SWEP:FirePrimaryBullet()
 		Damage = self.Primary.Damage * self.Primary.NumBullets,
 		AmmoType = self.Primary.Ammo,
 		Callback = function(attacker, tr, dmginfo)
-			if CLIENT  then
+			if CLIENT then
 				self:Tracer(tr)
 			end
 			self:BulletCallback(attacker, tr, dmginfo)
@@ -130,8 +166,6 @@ function SWEP:FirePrimaryBullet()
 	end
 	self:SetCurrentTask("Finished")
 end
-
-
 
 function SWEP:DoImpactEffect(tr, dmgType)
 	self:ImpactEffects(tr, dmgType)
@@ -318,31 +352,6 @@ function SWEP:DoCameraRecoil()
 
 	local nextRecoil = self:GetNextRecoil()
 	local isFiring = CurTime() < nextRecoil
-
-	-- ==========================================
-	-- 停火恢复逻辑
-	-- ==========================================
-	-- local recoverSpeed = self.Recoil.Recover or 1
-	-- if not isFiring and self.recoil_firstangle  then
-	--     local currentPitch = eyeAngles.pitch
-	--     local targetPitch = self.recoil_firstangle
-	--     local diff = targetPitch - currentPitch
-
-	--     -- 已经接近目标，直接归位并清空记录
-	--     if diff < 0.0 or  CurTime() - nextRecoil > 1 then
-	--         eyeAngles.pitch = targetPitch
-	--         self.recoil_firstangle = nil
-	--     else
-	--         -- 每帧恢复 30% 的差值（快速但平滑）
-	--         eyeAngles.pitch = currentPitch + math.min(diff, 1) * 0.45 * recoverSpeed
-	--         owner:SetEyeAngles(eyeAngles)
-	--     end
-	--     return
-	-- end
-
-	-- ==========================================
-	-- 开火中，正常处理后坐力
-	-- ==========================================
 	if CurTime() > nextRecoil then return end
 
 	local delay = 60 / self.Primary.RPM
@@ -369,10 +378,6 @@ function SWEP:DoCameraRecoil()
 		recoilAngle.roll * strength
 	)
 
-	-- 记录第一次开火时的俯仰角
-	if not self.recoil_firstangle then
-		self.recoil_firstangle = eyeAngles.pitch
-	end
 
 	eyeAngles.pitch = eyeAngles.pitch + current.pitch
 	eyeAngles.yaw = eyeAngles.yaw + current.yaw

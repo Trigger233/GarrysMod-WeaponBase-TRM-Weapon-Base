@@ -17,6 +17,7 @@ function SWEP:TaskThink()
         Holster = "Task_Holster",
         Inspect = "Task_Inspect",
         Customize = "Task_Customize",
+        Charge = "Task_Charge" ,
         PrimaryFire = "Task_PrimaryFire",
         AdsIn = "Task_AdsIn",
         AdsOut = "Task_AdsOut",

@@ -83,7 +83,8 @@ SWEP.Sight = {
     Align = nil, -- 瞄准参考附件点，替换为你的 viewmodel 上的 ironsight 附件名 不过我好像还没用上 不清楚
     Angles = Angle(0, 0, -90),
     Pos = Vector(-3.07, -1, 0.1),
-    Type = "Attachment"
+    Type = "Attachment" ,
+    PoseParameter = { "aim_offset" } -- 瞄准时调整PoseParameter
 }
 
 -- 后坐力
