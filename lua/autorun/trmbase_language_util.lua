@@ -23,6 +23,7 @@ TRMBase.Language.cn = {
     ["Misc"]                       = "杂项",
 
     -- VGUI
+    ["TRMBase_Installed"]            = "已安装",
     ["TRMBase_Default"]            = "默认配件",
     ["TRMBase_None"]               = "无",
     ["TRMBase_Customize"]          = " - 自定义",
@@ -68,7 +69,9 @@ TRMBase.Language.en = {
     -- VGUI
     ["TRMBase_Default"] = "Default",
 
-    ["TRMBase_None"] = "None",
+    ["TRMBase_Installed"]          = "Installed",
+
+    ["TRMBase_None"]               = "None",
     ["TRMBase_Customize"] = " - Customize",
     ["TRMBase_NoSlots"] = "This weapon has no attachment slots",
     ["TRMBase_CloseHint"] = "Press Menu_Context to close",

@@ -21,9 +21,10 @@ function ATTACHMENT:DoImpactEffect(tr,type)
     if  not tr or not tr.HitPos then return end
     local effect = EffectData()
     effect:SetOrigin(tr.HitPos)
-    effect:SetMagnitude(10)
-    effect:SetScale(10)
+    effect:SetNormal(tr.HitNormal)
+    effect:SetAngles(tr.HitNormal:Angle())
+    effect:SetMagnitude(1)
+    effect:SetScale(1)
     effect:SetFlags(0)
-    util.Effect("Explosion",effect)
-
+    util.Effect("ManhackSparks", effect)
 end

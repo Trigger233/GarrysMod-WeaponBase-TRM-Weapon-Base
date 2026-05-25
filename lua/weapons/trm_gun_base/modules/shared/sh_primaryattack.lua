@@ -144,7 +144,7 @@ function SWEP:ImpactEffects(tr, type)
 	end
 	for slot, entry in pairs(self.CurrentAttachments) do
 		if entry and entry.Class and BASE_TRM_ATTS[entry.Class].DoImpactEffect then
-			BASE_TRM_ATTS[entry.Class]:DoImpactEffect(ty, type)
+			BASE_TRM_ATTS[entry.Class]:DoImpactEffect(tr, type)
 		end
 	end
 end

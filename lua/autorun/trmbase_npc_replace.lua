@@ -17,12 +17,13 @@ if CLIENT and not SERVER then return end
 
 local SpecialAmmoMap = {
     ["XBowBolt"] = "SniperPenetratedRound",
+    ['357Round'] = '357' ,
 }
 
 local WeaponMap = {
     ["weapon_mp5_hl1"] = { "smg1", "ar2" },
-    ['weapon_glock_hl1'] = "pistol",
-    ['weapon_shotgun_hl1'] = "buckshot",
+    ["weapon_glock_hl1"] = "pistol",
+    ["weapon_shotgun_hl1"] = "buckshot",
 }
 
 -- 弹药箱映射表（扩展版）
@@ -37,12 +38,6 @@ local AmmoBoxMap = {
     ['ammo_mp5grenades'] = "item_ammo_smg1_grenade",
     ['ammo_rpgclip'] = "item_rpg_round",
     ['ammo_crossbow'] = "ent_trm_sniper_ammo",
-    -- 战役地图常见模型实体
-    ['prop_ammo_crate'] = "item_ammo_ar2_large",
-    ['prop_ammo_crate_9mm'] = "item_ammo_smg1_large",
-    ['item_ammo_crate'] = { "item_ammo_ar2_large", "item_ammo_smg1_large" },
-    ['item_ammo_crate_pistol'] = "item_ammo_pistol",
-    ['item_ammo_crate_shotgun'] = "item_box_buckshot",
 }
 
 -- 查找所有使用指定弹药类型的 TRM 武器（返回列表，支持随机）
@@ -142,7 +137,7 @@ local function DoNPCReplace(npc)
     if not IsValid(wep) or wep.Base == "trm_gun_base" then return end
 
     local candidates = FindAllTRMByAmmo(wep)
-    if #candidates == 0 then return end
+    if not candidates or  #candidates == 0 then return end
 
     local newClass = PickRandom(candidates)
 
@@ -226,7 +221,7 @@ local function ReplaceAmmoBox(ent)
     -- 保存原实体信息
     local pos = ent:GetPos()
     local ang = ent:GetAngles()
-    local model = ent:GetModel() -- 原模型路径
+    local model = tostring(ent:GetModel()) -- 原模型路径
     local skin = ent:GetSkin()   -- 原皮肤
 
     print("[TRMBase] Replacing ammo box: " .. class .. " → " .. targetClass)
@@ -238,21 +233,7 @@ local function ReplaceAmmoBox(ent)
         newEnt:SetPos(pos)
         newEnt:SetAngles(ang)
 
-        -- 【关键】强制使用原模型，覆盖新实体的默认模型
-        if model and model ~= "" then
-            if newEnt.SetModel then
-                newEnt:SetModel(model)
-            end
-            -- 有些实体需要用 SetModelSimple
-            if newEnt.SetModelSimple then
-                newEnt:SetModelSimple(model)
-            end
-        end
 
-        -- 保留皮肤
-        if newEnt.SetSkin and skin then
-            newEnt:SetSkin(skin)
-        end
 
         newEnt:Spawn()
 
@@ -260,6 +241,7 @@ local function ReplaceAmmoBox(ent)
         if ent.GetAmmoCount and newEnt.SetAmmoCount then
             newEnt:SetAmmoCount(ent:GetAmmoCount())
         end
+        newEnt:SetModel(model)
 
         ent:Remove()
         print("[TRMBase] Successfully created: " .. targetClass .. " with original model")
@@ -281,7 +263,7 @@ local function replace(ent)
 
     if ent:IsNPC() then
         DoNPCReplace(ent)
-    elseif ent:IsWeapon() and ent:GetOwner() == NULL then
+    elseif ent:IsWeapon()  then
         local cv = GetConVar("trmbase_replace_weapon")
         if cv and cv:GetBool() then
             DoWeaponReplace(ent)

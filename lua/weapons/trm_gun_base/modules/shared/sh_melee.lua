@@ -98,9 +98,8 @@ function SWEP:MeleeDoor(tr)
     ent:EmitSound("ambient/materials/door_hit1.wav", 100, math.random(80, 120))
     ent:SetKeyValue("Speed", "500")
     ent:SetKeyValue("Open Direction", "Both directions")
-    --ent:SetKeyValue("opendir", "0")
-    ent:Fire("openawayfrom", self:GetOwner():EntIndex(), 0)
-
+    ent:SetKeyValue("opendir", "0")
+    ent:Fire("openawayfrom", self:GetOwner():EntIndex(), 0.1)
     timer.Simple(0.3, function()
 			if IsValid(ent) then
 				ent:SetKeyValue("Speed", "100")

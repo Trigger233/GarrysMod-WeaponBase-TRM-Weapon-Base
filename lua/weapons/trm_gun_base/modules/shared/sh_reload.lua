@@ -65,8 +65,9 @@ function SWEP:CanReload()
     local seq =  self:GetPlayingSequence() 
     
 
-	local max = self.Primary.ClipSize + (    self.ReloadType == "Single" and self:GetChamberAmmo() or	self.Primary.ChamberSize	)
-	if string.find(seq , "Reload") then return false end 
+	local max = self.Primary.ClipSize +
+	(self.ReloadType == "Single" and self:GetChamberAmmo() or self.Primary.Chamber)
+	if string.find(seq, "Reload") then return false end
 	if not  GetConVar("trmbase_allow_sprintreload"):GetBool() and  string.find(seq , "Sprint") and not string.find(seq , "SprintOut") then return false end
 	if (cvar_infinite_reserve:GetBool()) then 
 		return  self:Clip1() < max
@@ -82,7 +83,7 @@ function SWEP:MagzineLoaded()
 	local reserveAmmo = owner:GetAmmoCount(self:GetPrimaryAmmoType())
 	local max = self:GetMaxClip1() 	 	
 	if not self:IsEmpty() then
-		max = max + (self.Primary.ChamberSize )
+		max = max + (self.Primary.Chamber)
 	end
 	local FinalClip1 = 0
 

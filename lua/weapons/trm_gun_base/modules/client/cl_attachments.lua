@@ -366,7 +366,7 @@ function PANEL:Init()
         self:UpdateModelDrag()
     end
     self.m_ModelPanel.OnMouseWheeled = function(_, delta)
-        self.m_ModelZoom = math.Clamp((self.m_ModelZoom or 1.25) - delta * 0.12, 0.95, 2.80)
+        self.m_ModelZoom = math.Clamp((self.m_ModelZoom or 1.25) - delta * 0.12, 0.05, 5.80)
         self:UpdatePreviewCamera()
         return true
     end
@@ -519,11 +519,22 @@ function PANEL:SetupModel()
     local ent = self.m_ModelPanel:GetEntity()
     if not IsValid(ent) then return end
 
+    ent:InvalidateBoneCache()
+    ent:SetupBones()
+
+    -- 缓存预览用骨骼数据
+    self.m_PreviewBones = {}
+    for i = 0, ent:GetBoneCount() do
+        local name = ent:GetBoneName(i)
+        if name and name ~= "" then
+            self.m_PreviewBones[name] = { Id = i, Parent = ent }
+        end
+    end
+
     local mins, maxs = ent:GetRenderBounds()
     local center = (mins + maxs) * 0.5
     local bounds = maxs - mins
     local size = math.max(bounds.x, bounds.y, bounds.z, 1)
-
     self.m_ModelCenter = center
     self.m_ModelSize = size
     self:LayoutPreviewEntity(ent)
@@ -702,20 +713,20 @@ end
 
 function PANEL:CreatePreviewModel(model, ent, slot, attData)
     if not IsValid(model) or not IsValid(ent) then return end
-
     model:SetNoDraw(true)
     model:SetNotSolid(true)
     model:SetMoveType(MOVETYPE_NONE)
+    model:SetOwner(ent)
 
     if attData and attData.Scale then
         model:SetModelScale(attData.Scale)
     end
+
 end
 
 function PANEL:ApplyPreviewModel(ent)
     self:BuildModelBone(ent)
     local slot = self.m_Weapon.Attachments
-    PrintTable(self.m_Weapon.CurrentAttachments)
     for slotKey, model in pairs(self.m_PreviewModels) do
         local attData = BASE_TRM_ATTS[model.Class]
         if attData.Bonemerge then
@@ -748,28 +759,40 @@ function PANEL:ApplyPreviewModel(ent)
 end
 
 function PANEL:BuildModelBone(ent)
-    self.m_PreviewBones = {}
-    ent:InvalidateBoneCache()
-    ent:SetupBones()
-
-    local amountBone = ent:GetBoneCount()
-    for i = 0 , amountBone do
-        local name = ent:GetBoneName(i)
-        self.m_PreviewBones[name] = {}
-        self.m_PreviewBones[name].Id =  i 
-        self.m_PreviewBones[name].Parent = ent
-    end
-
-    for _ , model in pairs(self.m_PreviewModels) do
-        amountBone = model:GetBoneCount()
-        for index = 0 , amountBone do
-            name = model:GetBoneName(index)
-            self.m_PreviewBones[name] = {}
-            self.m_PreviewBones[name].Id = index 
-            self.m_PreviewBones[name].Parent = model 
+    if not self.m_PreviewBones then
+        self.m_PreviewBones = {}
+        ent:InvalidateBoneCache()
+        ent:SetupBones()
+        for i = 0, ent:GetBoneCount() do
+            local name = ent:GetBoneName(i)
+            if name and name ~= "" then
+                self.m_PreviewBones[name] = { Id = i, Parent = ent }
+            end
+        end
+        -- 补充 Attachment 点（如 tag_flash_attachment）
+        local attTable = ent:GetAttachments()
+        if attTable and #attTable > 0 then
+            for i = 1, #attTable do
+                local att = attTable[i]
+                if att and att.name and not self.m_PreviewBones[att.name] then
+                    self.m_PreviewBones[att.name] = { Id = att.id, Parent = ent }
+                end
+            end
         end
     end
 
+    -- 更新配件模型的骨骼
+    for _, model in pairs(self.m_PreviewModels) do
+        model:InvalidateBoneCache()
+        model:SetupBones()
+        local count = model:GetBoneCount()
+        for index = 0, count do
+            local name = model:GetBoneName(index)
+            if name and name ~= "" then
+                self.m_PreviewBones[name] = { Id = index, Parent = model }
+            end
+        end
+    end
 end
 
 function PANEL:RefreshPreview()
@@ -789,6 +812,7 @@ function PANEL:RefreshPreview()
         if not path then continue end
 
         local slot = self.m_Weapon.Attachments and self.m_Weapon.Attachments[tonumber(slotKey)]
+        if not attData.Bonemerge then continue end
         local model = ClientsideModel(path, RENDERGROUP_OPAQUE)
         if not IsValid(model) then continue end
         model.Class = entry.Class
@@ -946,7 +970,7 @@ function PANEL:PaintSlotCard(card, w, h)
     local excluded = IsValid(self.m_Weapon) and not self.m_Weapon:CanAttach(card.m_Index)
     local attClass = IsValid(self.m_Weapon) and CurrentAttachmentClass(self.m_Weapon, card.m_Index) or nil
     local attName = AttachmentName(attClass or slot.Default)
-    local slotName = Phrase(slot.Name, "Slot")
+    local slotName = language.GetPhrase(slot.Name)
 
     if excluded then
         surface.SetDrawColor(80, 19, 18, 165)
@@ -1083,7 +1107,7 @@ function PANEL:PaintAttachmentPanel(w, h)
     surface.DrawOutlinedRect(0, 0, w, h, 1)
 
     local slot = IsValid(self.m_Weapon) and self.m_Weapon.Attachments and self.m_Weapon.Attachments[self.m_Slot]
-    local slotName = Phrase(slot and slot.Name, "Slot")
+    local slotName = language.GetPhrase(slot.Name)
     local attClass = IsValid(self.m_Weapon) and CurrentAttachmentClass(self.m_Weapon, self.m_Slot) or nil
 
     draw.SimpleText(string.upper(slotName), "TRM_Mod_Subtitle", 14, 18, TEXT_MAIN, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
@@ -1199,7 +1223,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
             blocked and WARNING or TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
         if isActive then
-            draw.SimpleText("INSTALLED", "TRM_Mod_Small", w - 12, 20, ACTIVE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+            draw.SimpleText(language.GetPhrase("TRMBase_Installed"), "TRM_Mod_Small", w - 12, 20, ACTIVE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
         elseif blocked then
             draw.SimpleText(Phrase("#TRMBase_Excluded", "Excluded"), "TRM_Mod_Small", w - 12, 20, WARNING,
                 TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)

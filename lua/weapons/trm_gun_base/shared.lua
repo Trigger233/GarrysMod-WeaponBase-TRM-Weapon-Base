@@ -400,6 +400,8 @@ SWEP.BasePoseParameters = {
     sprint = { "sprint_offset", "sprint_loop" }
 }
 
+
+
 function SWEP:Initialize()
     self.m_ViewModel = Model(self.ViewModel)
     self.m_HoldType = self.HoldType

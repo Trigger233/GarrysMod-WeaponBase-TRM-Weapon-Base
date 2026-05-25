@@ -56,7 +56,9 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
 
     local tr = self._lastTrace
     if not tr then return end
-
+    local distance = tr.HitPos:Distance(tr.StartPos)
+    if distance < 10 then return end
+    
     render.SetMaterial(self:GetLineMat())
     render.DrawBeam(att.Pos, tr.HitPos or tr.endpos, data.Width * math.random(0.5,1), 0, 1, data.Color)
 
