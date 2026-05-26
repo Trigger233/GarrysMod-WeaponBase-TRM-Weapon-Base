@@ -31,7 +31,11 @@ SWEP.Primary.Automatic = true
 SWEP.Primary.Damage = 34
 SWEP.Primary.Force = 1
 SWEP.Primary.NumBullets = 1
-
+-- SWEP.Primary.Trigger = {
+--     Time = 0 ,
+--     Type = "Hold", -- or "Tap"
+--     Sound = Sound() ,
+-- }
 -- 音效
 --
 -- 如果是自定义的音效 你需要在自己通过lua创建音效（你可以放个lua在lua/autorun 也可以直接include）
