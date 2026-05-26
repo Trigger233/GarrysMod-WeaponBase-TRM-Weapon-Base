@@ -97,8 +97,8 @@ function P.GetAttachmentProfile(att, class)
     out.FOV = (att and (att.PiPFOV or att.ElcanPiPFOV)) or (profile and profile.FOV) or 14
     out.LensNeedles = (att and (att.PiPLensMaterialNeedles or att.ElcanPiPLensMaterialNeedles)) or
         (profile and profile.LensNeedles) or P.Config.LensNeedles
-    out.Reticle = (att and (att.PiPReticle or att.ElcanPiPReticle)) or (profile and profile.Reticle) or
-        P.Config.FallbackReticle
+    out.Reticle =  tostring(att.Scope.Material) or P.Config.FallbackReticle
+    
     out.FlipX = (att and att.PiPFlipX)
     if out.FlipX == nil then out.FlipX = profile and profile.FlipX or false end
     out.FlipY = (att and att.PiPFlipY)
@@ -118,7 +118,7 @@ function P.GetAttachmentProfile(att, class)
     return out
 end
 
-function P.GetElcanAttachmentEntry(wep)
+function P.GetScopeAttachmentEntry(wep)
     if not IsValid(wep) then return nil end
     if not wep.CurrentAttachments then return nil end
 
@@ -150,7 +150,7 @@ function P.GetPiPAttachmentEntry(wep)
 end
 
 function P.HasElcanEquipped(wep)
-    local entry, att = P.GetElcanAttachmentEntry(wep)
+    local entry, att = P.GetScopeAttachmentEntry(wep)
     return entry ~= nil and att ~= nil and att.HasPiP == true
 end
 
@@ -331,7 +331,6 @@ function P.GetScopeTextureRoll(wep, profile)
     return P.SmoothedTextureRoll or 0
 end
 
-
 function P.DrawRing(x, y, innerRadius, outerRadius, segments)
     segments = segments or 128
 
@@ -419,7 +418,7 @@ function P.RenderScopeView()
     local rt = P.EnsureRenderTarget()
     if not rt then return end
 
-    local fps = (1 / RealFrameTime())
+    local fps = math.max(1 / RealFrameTime(), 144)
     local now = RealTime()
     if P.NextRender and now < P.NextRender then return end
     P.NextRender = now + (1 / fps) * 0.75
@@ -436,6 +435,8 @@ function P.RenderScopeView()
 
     render.PushRenderTarget(P.SceneRT)
     render.Clear(0, 0, 0, 255, true, true)
+    render.SetAmbientLight(0, 0, 0)
+
     local ok, err = xpcall(function()
         render.RenderView({
             x = 0,
@@ -488,5 +489,4 @@ hook.Add("Think", "TRM_ScopePiP_SmoothAutoRecoil", function()
     local wep = ply:GetActiveWeapon()
     local _, _, _, profile = P.GetPiPAttachmentEntry(wep)
     if not profile then return end
-
 end)

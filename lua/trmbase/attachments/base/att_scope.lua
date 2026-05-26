@@ -89,7 +89,7 @@ end
 
 local function DrawReticle2D(att, scope, x, y, radius, alpha)
     local ret = att.Sight or {}
-    local retMat = ret.Material or scope.ReticleMaterial or fallbackReticle
+    local retMat = ret.Material or scope.Material or fallbackReticle
     local retColor = ret.Color or Color(255, 255, 255)
     local lineColor = scope.ReticleLineColor or Color(8, 8, 8, 245)
     local retSize = scope.ReticleSize or ret.ReticleSize or math.min(radius * 1.45, ret.Size or radius * 1.25)

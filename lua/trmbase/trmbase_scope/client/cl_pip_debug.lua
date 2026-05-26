@@ -38,11 +38,11 @@ local function debugMaterials()
         for slot, entry in pairs(wep.CurrentAttachments or {}) do
             local att = entry and entry.Class and BASE_TRM_ATTS and BASE_TRM_ATTS[entry.Class]
             print("  slot " ..
-            tostring(slot) .. ": " .. tostring(entry and entry.Class) .. " / " .. tostring(att and att.Name))
+                tostring(slot) .. ": " .. tostring(entry and entry.Class) .. " / " .. tostring(att and att.Name))
         end
     end
 
-    local entry, att, slot = P.GetElcanAttachmentEntry(wep)
+    local entry, att, slot = P.GetScopeAttachmentEntry(wep)
     print("[TRM ELCAN PiP] elcan slot: " .. tostring(slot))
 
     if entry and IsValid(entry.m_Model) then
