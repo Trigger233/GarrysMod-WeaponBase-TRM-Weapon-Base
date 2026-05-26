@@ -23,7 +23,7 @@ TRMBase.Language.cn = {
     ["Misc"]                       = "杂项",
 
     -- VGUI
-    ["TRMBase_Installed"]            = "已安装",
+    ["TRMBase_Installed"]          = "已安装",
     ["TRMBase_Default"]            = "默认配件",
     ["TRMBase_None"]               = "无",
     ["TRMBase_Customize"]          = " - 自定义",
@@ -31,6 +31,9 @@ TRMBase.Language.cn = {
     ["TRMBase_CloseHint"]          = "按 Menu_Context 关闭",
     ["TRMBase_SlotExcluded"]       = "此槽位被已装备的配件排除",
     ["TRMBase_Excluded"]           = "已排除",
+
+    ["TRMBase_VGUI_Customize"]     = "武器改装",
+    ["TRMBase_VGUI_DragHint"]      = "左键拖动，滚轮缩放",
 
     -- 属性面板
     ["TRMBase_Stat_Damage"]        = "伤害",
@@ -62,48 +65,51 @@ TRMBase.Language.cn = {
 
 -- 英文
 TRMBase.Language.en = {
-    ["Optic"] = "Sight",
-    ["Muzzle"] = "Muzzle",
-    ["Laser"] = "Tactical",
+    ["Optic"]                = "Sight",
+    ["Muzzle"]               = "Muzzle",
+    ["Laser"]                = "Tactical",
 
     -- VGUI
-    ["TRMBase_Default"] = "Default",
+    ["TRMBase_Default"]      = "Default",
 
-    ["TRMBase_Installed"]          = "Installed",
+    ["TRMBase_Installed"]    = "Installed",
 
-    ["TRMBase_None"]               = "None",
-    ["TRMBase_Customize"] = " - Customize",
-    ["TRMBase_NoSlots"] = "This weapon has no attachment slots",
-    ["TRMBase_CloseHint"] = "Press Menu_Context to close",
+    ["TRMBase_None"]         = "None",
+    ["TRMBase_Customize"]    = " - Customize",
+    ["TRMBase_NoSlots"]      = "This weapon has no attachment slots",
+    ["TRMBase_CloseHint"]    = "Press Menu_Context to close",
     ["TRMBase_SlotExcluded"] = "This slot is excluded by equipped attachments",
-    ["TRMBase_Excluded"] = "Excluded",
+    ["TRMBase_Excluded"]     = "Excluded",
 
+
+    ["TRMBase_VGUI_Customize"]     = "Weapon Customize",
+    ["TRMBase_VGUI_DragHint"]      = "Hold to Drag | Wheel to Scale",
     -- 属性面板
-    ["TRMBase_Stat_Damage"] = "Damage",
-    ["TRMBase_Stat_ClipSize"] = "Clip Size",
-    ["TRMBase_Stat_RPM"] = "RPM",
-    ["TRMBase_Stat_Spread"] = "Spread",
-    ["TRMBase_Stat_AimSpeed"] = "Aim Time",
-    ["TRMBase_Stat_Recoil"] = "Recoil",
+    ["TRMBase_Stat_Damage"]        = "Damage",
+    ["TRMBase_Stat_ClipSize"]      = "Clip Size",
+    ["TRMBase_Stat_RPM"]           = "RPM",
+    ["TRMBase_Stat_Spread"]        = "Spread",
+    ["TRMBase_Stat_AimSpeed"]      = "Aim Time",
+    ["TRMBase_Stat_Recoil"]        = "Recoil",
 
     -- 菜单选项
-    ["TRMBase_InfiniteAmmo"] = "Infinite Reserve Ammo",
-    ["TRMBase_AutoReload"] = "Auto Reload",
+    ["TRMBase_InfiniteAmmo"]       = "Infinite Reserve Ammo",
+    ["TRMBase_AutoReload"]         = "Auto Reload",
     ["TRMBase_FireInteruptReload"] = "Fire Interrupt Reload",
-    ["TRMBase_SprintReload"] = "Sprint Reload",
-    ["TRMBase_LoadAttOnPickup"] = "Load Attachments on Pickup(WIP)",
-    ["TRMBase_ReplaceNPC"] = "Replace NPC Weapon",
-    ["TRMBase_ReplaceWeapon"] = "Replace Spawned Weapon",
-    ["TRMBase_ReplaceChance"] = "Replace Chance",
-    ["TRMBase_RandomAttach"] = "Random Attachments",
-    ["TRMBase_MeleeKey"] = "Melee",
-    ["TRMBase_InspectKey"] = "Inspect",
-    ["TRMBase_CustomizeKey"] = "Customize",
-    ["TRMBase_Crosshair"] = "Crosshair",
-    ["TRMBase_CrosshairColor"] = "Crosshair Color",
-    ["TRMBase_CrosshairStyle"] = "Crosshair Style",
-    ["TRMBase_CrosshairDot"] = "Crosshair Dot",
-    ["TRMBase_HideHUDInspect"] = "Hide HUD When Inspect",
+    ["TRMBase_SprintReload"]       = "Sprint Reload",
+    ["TRMBase_LoadAttOnPickup"]    = "Load Attachments on Pickup(WIP)",
+    ["TRMBase_ReplaceNPC"]         = "Replace NPC Weapon",
+    ["TRMBase_ReplaceWeapon"]      = "Replace Spawned Weapon",
+    ["TRMBase_ReplaceChance"]      = "Replace Chance",
+    ["TRMBase_RandomAttach"]       = "Random Attachments",
+    ["TRMBase_MeleeKey"]           = "Melee",
+    ["TRMBase_InspectKey"]         = "Inspect",
+    ["TRMBase_CustomizeKey"]       = "Customize",
+    ["TRMBase_Crosshair"]          = "Crosshair",
+    ["TRMBase_CrosshairColor"]     = "Crosshair Color",
+    ["TRMBase_CrosshairStyle"]     = "Crosshair Style",
+    ["TRMBase_CrosshairDot"]       = "Crosshair Dot",
+    ["TRMBase_HideHUDInspect"]     = "Hide HUD When Inspect",
 }
 
 -- 获取当前语言
@@ -116,6 +122,12 @@ function TRMBase.GetLanguage()
     return TRMBase.Language.en
 end
 
-for k, v in pairs(TRMBase.GetLanguage()) do
-    language.Add(k, v)
+local function refreshLang()
+    for k, v in pairs(TRMBase.GetLanguage()) do
+        language.Add(k, v)
+    end
+end
+
+function LanguageChanged(lang)
+    refreshLang()
 end

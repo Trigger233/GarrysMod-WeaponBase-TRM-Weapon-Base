@@ -1,45 +1,83 @@
 ATTACHMENT.Name = "Elcan 4x"
 ATTACHMENT.Category = "att_sight"
-ATTACHMENT.Base = "att_optic"
+ATTACHMENT.Base = "att_scope"
 ATTACHMENT.Selectable = true
 ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_optic_elcan.mdl")
 
 ATTACHMENT.Angles = Angle(-90, 0, 90)
 
+
 ATTACHMENT.Sight = {
-    Pos = Vector(0, -1.8, -1.8),
+    Pos = Vector(0, -0, -1.8),
     Align = "scope_origin",
-    Material = Material("models/weapons/tfa_ins2/optics/elcan_reticule"),
+    Material = Material("models/weapons/tfa_ins2/optics/eotech_reticule"),
     Size = 360,
     Color = Color(255, 255, 255)
 }
 
 ATTACHMENT.Scope = {
     Align = "scope_origin",
-    Magnification = 4,
-    FOV = 18,
-    RTSize = 1024,
+    Zoom = 4,
+    FOV = 12,
+    RTSize = 512,
     ScreenScale = 0.62,
-    CenterOverlay = true,
-    HideModelInScope = true,
     ReticleSize = 230,
     LensSize = 2.1,
-    ReticleWorldSize = 1.45,
-    ReticleDepth = -0.18,
     ReticleLineColor = Color(0, 0, 0, 245),
-    Parallax = 0.08,
-    ParallaxMax = 0.12,
+    RTAttachment = "scope_origin",
+    RTAttachmentRadius = 0.1,
+    RTAttachmentOffset = -2.2,
+    RTOffset = Vector(0,0,0) ,
+    RTAngle = Angle(0,0,-90),
+    DrawAt = 0.35,
+}
+function ATTACHMENT:ChangeWeaponStats(weapon)
+    weapon.Aim.Time = weapon.Aim.Time * 1.25
+end
+
+
+--[[
+ATTACHMENT.Scope = {
+    Align = "scope_origin",
+    Zoom = 4,
+    FOV = 12,
+    RTSize = 512,
+    ScreenScale = 0.62,
+    ReticleSize = 230,
+    LensSize = 2.1,
+    ReticleLineColor = Color(0, 0, 0, 245),
     BackdropAlpha = 245,
-    ScreenOverlay = true,
-    Use3D = false,
+    RTAttachment = "scope_origin",
+    RTAttachmentRadius = 0.1,
+    RTAttachmentOffset = -2.2,
+    RTAttachmentSegments = 10,
+    RTFlipU = true,
+    RTFlipV = true,
+    RTTextureRotate = 90,
+    DrawAttachmentReticle = false,
+    UseAttachmentReticleMaterial = true,
+    AttachmentReticleMaterialScale = 1.5,
+    AttachmentReticleColor = Color(255, 0, 0, 235),
+    AttachmentReticleOffset = -0.03,
+    AttachmentReticleGap = 0.035,
+    AttachmentReticleLength = 0.56,
+    AttachmentReticlePost = 0.74,
+    HideScopeGlass = true,
+    HideReticleMaterial = true,
     UseMaterialReticle = false,
     UseMaterialReticle3D = false,
     TextureRotate = 0,
     DrawAt = 0.35,
-    ZNear = 4
+    CameraForward = 0,
+    ZNear = 1
 }
+    function ATTACHMENT:Render(wep, model)
+--     if CLIENT and TRM_ScopePiP and TRM_ScopePiP.RenderScopeAttachment then
+--         return TRM_ScopePiP.RenderScopeAttachment(wep, model, self)
+--     end
 
-function ATTACHMENT:ChangeWeaponStats(weapon)
-    weapon.Aim.Time = weapon.Aim.Time * 1.25
-    weapon.Aim.Scale = math.max(weapon.Aim.Scale or 1, 1.15)
+--     if IsValid(model) then
+--         model:DrawModel()
+--     end
 end
+]]

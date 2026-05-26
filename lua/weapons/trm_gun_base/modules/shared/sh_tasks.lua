@@ -23,12 +23,12 @@ function SWEP:TaskThink()
         AdsOut = "Task_AdsOut",
         Melee = "Task_Melee",
         Rechamber = "Task_Rechamber",
+        SprintIn = "Task_SprintIn",
+        SprintOut = "Task_SprintOut",
         Reload = "Task_Reload",
         ReloadLoop = "Task_ReloadLoop",
         ReloadEnd = "Task_ReloadEnd",
-        SprintIn = "Task_SprintIn",
         Sprint = "Task_Sprint",
-        SprintOut = "Task_SprintOut",
     }
 
     local funcName = taskMap[task]

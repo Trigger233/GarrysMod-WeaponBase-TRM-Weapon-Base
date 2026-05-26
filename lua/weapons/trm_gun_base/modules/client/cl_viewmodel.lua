@@ -145,7 +145,7 @@ function SWEP:TranslateFOV(fov)
     local aimFOV = normalFOV / self.Aim.Scale -- 建议 55-65 之间
     -- if self:IsReloading() then aimFOV = normalFOV  end
     -- 使用平滑曲线，让过渡更自然
-    local easedDelta = math.pow(aimDelta, 2)
+    local easedDelta = math.pow(aimDelta, 1)
     local FOV = Lerp(easedDelta, normalFOV, aimFOV)
     self.m_MouseSensitivity = Lerp(easedDelta, 1, 1 / self.Aim.Scale)
     return FOV

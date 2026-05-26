@@ -1,42 +1,52 @@
 if SERVER then return end
 
-local MENU_BG = Color(2, 4, 4, 86)
-local BENCH_BG = Color(3, 6, 6, 122)
-local PANEL_BG = Color(8, 13, 13, 150)
-local PANEL_LINE = Color(105, 126, 126, 150)
-local TEXT_MAIN = Color(230, 244, 241)
-local TEXT_DIM = Color(184, 206, 202)
+local MENU_BG = Color(2, 4, 4, 118)
+local BENCH_BG = Color(3, 6, 6, 158)
+local PANEL_BG = Color(6, 11, 12, 202)
+local PANEL_LINE = Color(145, 180, 176, 218)
+local TEXT_MAIN = Color(242, 252, 249)
+local TEXT_DIM = Color(204, 226, 222)
 local ACCENT = Color(151, 222, 213)
 local ACTIVE = Color(88, 185, 125)
 local WARNING = Color(198, 74, 66)
+local ORANGE = Color(226, 168, 70)
+local BLUE_SOFT = Color(88, 148, 204)
+local PANEL_DARK = Color(2, 6, 7, 228)
 local ZERO_VECTOR = Vector(0, 0, 0)
 local ZERO_ANGLE = Angle(0, 0, 0)
 local FONT_FAMILY = "Roboto"
+local TRM_MARK = Material("trmbase/ui/trm_mark.png", "smooth")
+local TRM_SOUNDS = {
+    Menu = "trmbase/modern/ui_open.wav",
+    Select = "trmbase/modern/ui_select.wav",
+    Save = "trmbase/modern/ui_save.wav",
+    Deny = "trmbase/modern/ui_deny.wav",
+}
 surface.CreateFont("TRM_Mod_Title", {
     font = FONT_FAMILY,
-    size = 28,
-    weight = 700,
+    size = 30,
+    weight = 800,
     antialias = true,
 })
 
 surface.CreateFont("TRM_Mod_Subtitle", {
     font = FONT_FAMILY,
-    size = 18,
-    weight = 650,
+    size = 21,
+    weight = 750,
     antialias = true,
 })
 
 surface.CreateFont("TRM_Mod_Small", {
     font = FONT_FAMILY,
-    size = 14,
-    weight = 650,
+    size = 17,
+    weight = 700,
     antialias = true,
 })
 
 surface.CreateFont("TRM_Mod_Tiny", {
     font = FONT_FAMILY,
-    size = 12,
-    weight = 600,
+    size = 14,
+    weight = 650,
     antialias = true,
 })
 
@@ -102,6 +112,53 @@ end
 local function CurrentAttachmentClass(weapon, slotIndex)
     local entry = weapon.CurrentAttachments and weapon.CurrentAttachments[tostring(slotIndex)]
     return entry and entry.Class
+end
+
+local SLOT_ICON_PATHS = {
+    ammo = "trmbase/ui/symbols/ammo.png",
+    barrel = "trmbase/ui/symbols/barrel.png",
+    grip = "trmbase/ui/symbols/grip.png",
+    laser = "trmbase/ui/symbols/laser.png",
+    mag = "trmbase/ui/symbols/mag.png",
+    misc = "trmbase/ui/symbols/misc.png",
+    muzzle = "trmbase/ui/symbols/muzzle.png",
+    sight = "trmbase/ui/symbols/sight.png",
+    stock = "trmbase/ui/symbols/stock.png",
+    underbarrel = "trmbase/ui/symbols/underbarrel.png",
+}
+
+local SLOT_ICON_CACHE = {}
+
+local function SlotIconMaterial(iconName)
+    iconName = iconName or "misc"
+    if not SLOT_ICON_PATHS[iconName] then iconName = "misc" end
+
+    if not SLOT_ICON_CACHE[iconName] then
+        SLOT_ICON_CACHE[iconName] = Material(SLOT_ICON_PATHS[iconName], "smooth")
+    end
+
+    return SLOT_ICON_CACHE[iconName]
+end
+
+local function SlotIconName(slot)
+    local text = ""
+    for _, cat in ipairs(SlotCategories(slot)) do
+        text = text .. " " .. string.lower(tostring(cat))
+    end
+
+    text = text .. " " .. string.lower(tostring(slot and slot.Name or ""))
+
+    if string.find(text, "sight", 1, true) or string.find(text, "optic", 1, true) or string.find(text, "reflex", 1, true) then return "sight" end
+    if string.find(text, "mag", 1, true) or string.find(text, "clip", 1, true) then return "mag" end
+    if string.find(text, "barrel", 1, true) then return "barrel" end
+    if string.find(text, "muzzle", 1, true) or string.find(text, "suppress", 1, true) or string.find(text, "flash", 1, true) then return "muzzle" end
+    if string.find(text, "laser", 1, true) or string.find(text, "tactical", 1, true) then return "laser" end
+    if string.find(text, "under", 1, true) or string.find(text, "foregrip", 1, true) or string.find(text, "vert", 1, true) then return "underbarrel" end
+    if string.find(text, "stock", 1, true) then return "stock" end
+    if string.find(text, "grip", 1, true) then return "grip" end
+    if string.find(text, "ammo", 1, true) or string.find(text, "bullet", 1, true) then return "ammo" end
+
+    return "misc"
 end
 
 local function TrimText(font, text, maxWide)
@@ -193,7 +250,7 @@ local function ApplyAttachmentStats(target, attClass)
     end
 end
 
-local function BuildStatCopies(weapon)
+local function BuildStatCopies(weapon, overrideSlot, overrideClass, hasOverride)
     if not IsValid(weapon) then return nil, nil end
 
     local def = weapons.Get(weapon:GetClass()) or weapon
@@ -206,6 +263,10 @@ local function BuildStatCopies(weapon)
         end
 
         local selected = CurrentAttachmentClass(weapon, i)
+        if hasOverride and i == overrideSlot then
+            selected = overrideClass
+        end
+
         ApplyAttachmentStats(sim, selected)
     end
 
@@ -237,10 +298,7 @@ local function WeaponRecoil(weapon)
     return math.Round(fire + view, 3)
 end
 
-local function BuildStats(weapon)
-    local base, sim = BuildStatCopies(weapon)
-    if not base or not sim then return {} end
-
+local function BuildStatsFromCopies(base, sim)
     return {
         { Phrase("#TRMBase_Stat_Damage", "Damage"),       WeaponDamage(sim),                         WeaponDamage(base),                          true,  100 },
         { Phrase("#TRMBase_Stat_ClipSize", "Magazine"),   Num(sim.Primary and sim.Primary.ClipSize), Num(base.Primary and base.Primary.ClipSize), true,  150 },
@@ -249,6 +307,38 @@ local function BuildStats(weapon)
         { Phrase("#TRMBase_Stat_AimSpeed", "Ergonomics"), Num(sim.Aim and sim.Aim.Time),             Num(base.Aim and base.Aim.Time),             false, 1 },
         { Phrase("#TRMBase_Stat_Recoil", "Recoil"),       WeaponRecoil(sim),                         WeaponRecoil(base),                          false, 10 },
     }
+end
+
+local function BuildStats(weapon)
+    local base, sim = BuildStatCopies(weapon)
+    if not base or not sim then return {} end
+
+    return BuildStatsFromCopies(base, sim)
+end
+
+local function BuildAttachmentPreviewStats(weapon, slotIndex, attClass)
+    if not IsValid(weapon) or not slotIndex then return {} end
+
+    local _, current = BuildStatCopies(weapon)
+    local _, preview = BuildStatCopies(weapon, slotIndex, attClass, true)
+    if not current or not preview then return {} end
+
+    local rows = {}
+    for _, stat in ipairs(BuildStatsFromCopies(current, preview)) do
+        local delta = Num(stat[2]) - Num(stat[3])
+        if math.abs(delta) > 0.00001 then
+            local biggerIsBetter = stat[4]
+            local good = biggerIsBetter and delta > 0 or (not biggerIsBetter and delta < 0)
+            rows[#rows + 1] = {
+                Name = stat[1],
+                Value = Num(stat[2]),
+                Delta = delta,
+                Good = good,
+            }
+        end
+    end
+
+    return rows
 end
 
 local function SlotRole(slot)
@@ -315,7 +405,120 @@ end
 
 local PANEL = {}
 
+TRM_AttachMenu_LastSlots = TRM_AttachMenu_LastSlots or {}
+local PRESET_NAME_ROOT = "trm_weapon_base/preset/loadout_names/"
+
+local function WeaponSlotMemoryKey(weapon)
+    if not IsValid(weapon) then return nil end
+    return weapon:GetClass() or tostring(weapon)
+end
+
+local function PresetNamePath(weapon)
+    local key = WeaponSlotMemoryKey(weapon)
+    if not key then return nil end
+
+    key = string.lower(key)
+    key = string.gsub(key, "[^%w_%-]", "_")
+    return PRESET_NAME_ROOT .. key .. ".json"
+end
+
+local function DefaultPresetName(index)
+    return "Preset " .. tostring(index)
+end
+
+local function ReadPresetNames(weapon)
+    local out = {}
+    for i = 1, 5 do
+        out[i] = DefaultPresetName(i)
+    end
+
+    local path = PresetNamePath(weapon)
+    if not path then return out end
+
+    local raw = file.Read(path, "DATA")
+    if not raw or raw == "" then return out end
+
+    local decoded = util.JSONToTable(raw)
+    if not istable(decoded) then return out end
+
+    for i = 1, 5 do
+        local name = decoded[tostring(i)] or decoded[i]
+        if isstring(name) and string.Trim(name) ~= "" then
+            out[i] = string.Left(string.Trim(name), 24)
+        end
+    end
+
+    return out
+end
+
+local function WritePresetNames(weapon, names)
+    local path = PresetNamePath(weapon)
+    if not path then return end
+
+    file.CreateDir("trm_weapon_base")
+    file.CreateDir("trm_weapon_base/preset")
+    file.CreateDir("trm_weapon_base/preset/loadout_names")
+
+    local data = {}
+    for i = 1, 5 do
+        data[tostring(i)] = (names and names[i]) or DefaultPresetName(i)
+    end
+
+    file.Write(path, util.TableToJSON(data, true))
+end
+
+local function DrawCornerChrome(x, y, w, h, col, len, thick)
+    len = len or 18
+    thick = thick or 2
+
+    surface.SetDrawColor(col)
+    surface.DrawRect(x, y, len, thick)
+    surface.DrawRect(x, y, thick, len)
+    surface.DrawRect(x + w - len, y, len, thick)
+    surface.DrawRect(x + w - thick, y, thick, len)
+    surface.DrawRect(x, y + h - thick, len, thick)
+    surface.DrawRect(x, y + h - len, thick, len)
+    surface.DrawRect(x + w - len, y + h - thick, len, thick)
+    surface.DrawRect(x + w - thick, y + h - len, thick, len)
+end
+
+local function DrawHashStrip(x, y, w, h, col, spacing)
+    spacing = spacing or 12
+    surface.SetDrawColor(col)
+    for i = -h, w, spacing do
+        local x1 = math.Clamp(i, 0, w)
+        local x2 = math.Clamp(i + h, 0, w)
+        surface.DrawLine(x + x1, y + h - (x1 - i), x + x2, y + h - (x2 - i))
+    end
+end
+
+local function DrawPanelHeader(w, title, subtitle, rightText)
+    surface.SetDrawColor(0, 0, 0, 132)
+    surface.DrawRect(0, 0, w, 58)
+    surface.SetDrawColor(ACCENT.r, ACCENT.g, ACCENT.b, 22)
+    surface.DrawRect(0, 55, w, 3)
+    DrawHashStrip(w - 86, 8, 68, 10, Color(ORANGE.r, ORANGE.g, ORANGE.b, 105), 9)
+
+    draw.SimpleText(title, "TRM_Mod_Subtitle", 14, 18, TEXT_MAIN, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+    if subtitle and subtitle ~= "" then
+        draw.SimpleText(subtitle, "TRM_Mod_Tiny", 14, 40, TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+    end
+    if rightText and rightText ~= "" then
+        draw.SimpleText(rightText, "TRM_Mod_Tiny", w - 14, 40, ORANGE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+    end
+end
+
+local function DrawPanelShell(w, h, title, subtitle, rightText)
+    surface.SetDrawColor(PANEL_BG)
+    surface.DrawRect(0, 0, w, h)
+    surface.SetDrawColor(PANEL_LINE)
+    surface.DrawOutlinedRect(0, 0, w, h, 1)
+    DrawCornerChrome(0, 0, w, h, Color(ACCENT.r, ACCENT.g, ACCENT.b, 170), 22, 2)
+    DrawPanelHeader(w, title, subtitle, rightText)
+end
+
 function PANEL:Init()
+    surface.PlaySound(TRM_SOUNDS.Menu)
     self:SetTitle("")
     self:ShowCloseButton(false)
     self:SetDraggable(false)
@@ -340,6 +543,12 @@ function PANEL:Init()
     self.m_SlotMaxScroll = 0
     self.m_StatsScroll = 0
     self.m_StatsMaxScroll = 0
+    self.m_PresetOpen = false
+    self.m_PresetMessage = ""
+    self.m_PresetMessageTime = 0
+    self.m_PresetNames = {}
+    self.m_PresetButtons = {}
+    self.m_PresetRows = {}
 
     self.m_ModelPanel = vgui.Create("DModelPanel", self)
     self.m_ModelPanel:SetFOV(28)
@@ -348,10 +557,19 @@ function PANEL:Init()
     self.m_ModelPanel:SetDirectionalLight(BOX_FRONT, Color(225, 245, 238))
     self.m_ModelPanel:SetDirectionalLight(BOX_RIGHT, Color(120, 180, 175))
     self.m_ModelPanel.PaintOver = function(panel, w, h)
-        surface.SetDrawColor(255, 255, 255, 9)
+        surface.SetDrawColor(255, 255, 255, 14)
         surface.DrawOutlinedRect(0, 0, w, h, 1)
+        DrawCornerChrome(0, 0, w, h, Color(ORANGE.r, ORANGE.g, ORANGE.b, 155), 32, 2)
 
-        draw.SimpleText("DRAG TO PAN  /  SCROLL TO ZOOM", "TRM_Mod_Small", w / 2, h - 18, TEXT_DIM, TEXT_ALIGN_CENTER,
+        surface.SetDrawColor(0, 0, 0, 102)
+        surface.DrawRect(0, 0, w, 42)
+        surface.SetDrawColor(ACCENT.r, ACCENT.g, ACCENT.b, 22)
+        surface.DrawRect(0, 40, w, 2)
+        draw.SimpleText(language.GetPhrase("#TRMBase_VGUI_Customize"), "TRM_Mod_Small", 14, 19, TEXT_MAIN, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        draw.SimpleText("CUSTOM BUILD", "TRM_Mod_Tiny", w - 14, 19, ORANGE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+        surface.SetDrawColor(ACCENT.r, ACCENT.g, ACCENT.b, 42)
+        surface.DrawLine(18, h * 0.5, w - 18, h * 0.5)
+        draw.SimpleText(language.GetPhrase("TRMBase_VGUI_DragHint"), "TRM_Mod_Small", w / 2, h - 18, TEXT_DIM, TEXT_ALIGN_CENTER,
             TEXT_ALIGN_CENTER)
     end
     self.m_ModelPanel.LayoutEntity = function(_, ent)
@@ -393,17 +611,28 @@ function PANEL:Init()
 
     self.m_AttScroll = vgui.Create("DScrollPanel", self.m_AttPanel)
     self.m_AttScroll:Dock(FILL)
-    self.m_AttScroll:DockMargin(12, 78, 12, 46)
+    self.m_AttScroll:DockMargin(12, 116, 12, 46)
 
     self.m_AttList = vgui.Create("DPanel", self.m_AttScroll)
     self.m_AttList:Dock(TOP)
     self.m_AttList:SetTall(0)
     self.m_AttList.Paint = function() end
 
+    self.m_HoverStatPanel = vgui.Create("DPanel", self)
+    self.m_HoverStatPanel:SetVisible(false)
+    self.m_HoverStatPanel:SetZPos(400)
+    self.m_HoverStatPanel.Paint = function(_, w, h)
+        self:PaintAttachmentHoverStats(w, h)
+    end
+
     self.m_SlotStrip = vgui.Create("DPanel", self)
     self.m_SlotStrip.Paint = function(_, w, h)
-        surface.SetDrawColor(0, 0, 0, 72)
+        surface.SetDrawColor(0, 0, 0, 112)
         surface.DrawRect(0, 0, w, h)
+        surface.SetDrawColor(ACCENT.r, ACCENT.g, ACCENT.b, 28)
+        surface.DrawRect(0, 0, w, 2)
+        surface.SetDrawColor(ORANGE.r, ORANGE.g, ORANGE.b, 55)
+        surface.DrawRect(0, h - 2, w, 2)
         if (self.m_SlotMaxScroll or 0) > 0 then
             draw.SimpleText("SCROLL SLOTS", "TRM_Mod_Tiny", w - 8, h - 10, TEXT_DIM, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
         end
@@ -421,10 +650,97 @@ function PANEL:Init()
     end
     self.m_BackButton.Paint = function(button, w, h)
         local hovered = button:IsHovered()
+        surface.SetDrawColor(hovered and Color(20, 58, 49, 218) or Color(0, 0, 0, 160))
+        surface.DrawRect(0, 0, w, h)
         surface.SetDrawColor(hovered and ACCENT or PANEL_LINE)
         surface.DrawOutlinedRect(0, 0, w, h, 1)
+        DrawHashStrip(8, 6, 22, h - 12, Color(ORANGE.r, ORANGE.g, ORANGE.b, hovered and 150 or 80), 7)
         draw.SimpleText("BACK", "TRM_Mod_Subtitle", w / 2, h / 2, hovered and ACCENT or TEXT_MAIN, TEXT_ALIGN_CENTER,
             TEXT_ALIGN_CENTER)
+    end
+
+    self.m_PresetToggle = vgui.Create("DButton", self)
+    self.m_PresetToggle:SetText("")
+    self.m_PresetToggle:SetZPos(310)
+    self.m_PresetToggle.DoClick = function()
+        self.m_PresetOpen = not self.m_PresetOpen
+        if IsValid(self.m_PresetPanel) then
+            self.m_PresetPanel:SetVisible(self.m_PresetOpen)
+        end
+        surface.PlaySound(TRM_SOUNDS.Menu)
+    end
+    self.m_PresetToggle.Paint = function(button, w, h)
+        self:PaintPresetToggle(button, w, h)
+    end
+
+    self.m_PresetPanel = vgui.Create("DPanel", self)
+    self.m_PresetPanel:SetVisible(false)
+    self.m_PresetPanel:SetZPos(300)
+    self.m_PresetPanel.Paint = function(_, w, h)
+        self:PaintPresetPanel(w, h)
+    end
+
+    for i = 1, 5 do
+        local row = vgui.Create("DPanel", self.m_PresetPanel)
+        row.m_PresetIndex = i
+        row.Paint = function(panel, w, h)
+            local hovered = panel:IsHovered()
+            surface.SetDrawColor(hovered and Color(18, 31, 31, 222) or Color(8, 14, 14, 208))
+            surface.DrawRect(0, 0, w, h)
+            surface.SetDrawColor(PANEL_LINE)
+            surface.DrawOutlinedRect(0, 0, w, h, 1)
+            draw.SimpleText(TrimText("TRM_Mod_Small", self:GetPresetName(panel.m_PresetIndex), math.max(w - 210, 70)),
+                "TRM_Mod_Small", 12, h / 2, TEXT_MAIN,
+                TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        end
+        row.OnMousePressed = function(panel, code)
+            if code == MOUSE_RIGHT then
+                self:OpenPresetRename(panel.m_PresetIndex)
+            end
+        end
+
+        local rename = vgui.Create("DButton", row)
+        rename:SetText("")
+        rename.m_PresetIndex = i
+        rename.m_Mode = "EDIT"
+        rename.DoClick = function(button)
+            self:OpenPresetRename(button.m_PresetIndex)
+        end
+        rename.Paint = function(button, w, h)
+            self:PaintPresetActionButton(button, w, h)
+        end
+
+        local load = vgui.Create("DButton", row)
+        load:SetText("")
+        load.m_PresetIndex = i
+        load.m_Mode = "LOAD"
+        load.DoClick = function(button)
+            self:RunPresetAction(button.m_PresetIndex, button.m_Mode)
+        end
+        load.Paint = function(button, w, h)
+            self:PaintPresetActionButton(button, w, h)
+        end
+
+        local save = vgui.Create("DButton", row)
+        save:SetText("")
+        save.m_PresetIndex = i
+        save.m_Mode = "SAVE"
+        save.DoClick = function(button)
+            self:RunPresetAction(button.m_PresetIndex, button.m_Mode)
+        end
+        save.Paint = function(button, w, h)
+            self:PaintPresetActionButton(button, w, h)
+        end
+
+        self.m_PresetButtons[#self.m_PresetButtons + 1] = load
+        self.m_PresetButtons[#self.m_PresetButtons + 1] = save
+        self.m_PresetButtons[#self.m_PresetButtons + 1] = rename
+        self.m_PresetRows[#self.m_PresetRows + 1] = {
+            Panel = row,
+            Rename = rename,
+            Load = load,
+            Save = save,
+        }
     end
 end
 
@@ -453,6 +769,40 @@ function PANEL:PerformLayout(w, h)
 
     self.m_BackButton:SetSize(118, 34)
     self.m_BackButton:SetPos(w - 144, h - 58)
+
+    local presetW = math.min(370, math.max(310, math.floor(w * 0.18)))
+    local presetMaxX = math.max(340, w - presetW - 22)
+    local presetX = math.Clamp(w - presetW - 160, 340, presetMaxX)
+    if IsValid(self.m_PresetToggle) then
+        self.m_PresetToggle:SetSize(150, 34)
+        self.m_PresetToggle:SetPos(presetX, 24)
+    end
+    if IsValid(self.m_PresetPanel) then
+        self.m_PresetPanel:SetSize(presetW, 286)
+        self.m_PresetPanel:SetPos(presetX, 66)
+    end
+
+    for index, row in ipairs(self.m_PresetRows or {}) do
+        if not row or not IsValid(row.Panel) then continue end
+
+        local y = 58 + (index - 1) * 43
+        row.Panel:SetPos(12, y)
+        local rowW = presetW - 24
+        row.Panel:SetSize(rowW, 37)
+
+        if IsValid(row.Rename) then
+            row.Rename:SetPos(rowW - 188, 5)
+            row.Rename:SetSize(54, 27)
+        end
+        if IsValid(row.Load) then
+            row.Load:SetPos(rowW - 128, 5)
+            row.Load:SetSize(58, 27)
+        end
+        if IsValid(row.Save) then
+            row.Save:SetPos(rowW - 64, 5)
+            row.Save:SetSize(60, 27)
+        end
+    end
 
     self:RefreshSlotTargets()
     self:LayoutSlotCards()
@@ -529,6 +879,7 @@ end
 
 function PANEL:Think()
     self:UpdateModelDrag()
+    self:UpdateHoverStatPanel()
 end
 
 function PANEL:UpdatePreviewCamera()
@@ -953,9 +1304,10 @@ function PANEL:RebuildSlotCards()
         card.m_Layout = SlotLayout(slot, i, #(self.m_Weapon.Attachments or {}))
         card.DoClick = function()
             self.m_Slot = i
+            self:RememberSlot(i)
             self:RefreshAttList()
             self:EnsureSlotVisible(i)
-            surface.PlaySound("buttons/lightswitch2.wav")
+            surface.PlaySound(TRM_SOUNDS.Select)
         end
         card.Paint = function(button, w, h)
             self:PaintSlotCard(button, w, h)
@@ -1017,6 +1369,32 @@ function PANEL:EnsureSlotVisible(slotIndex)
     self:LayoutSlotCards()
 end
 
+function PANEL:RememberSlot(slotIndex)
+    if not IsValid(self.m_Weapon) then return end
+
+    local count = #(self.m_Weapon.Attachments or {})
+    if count <= 0 then return end
+
+    local slot = math.Clamp(tonumber(slotIndex) or 1, 1, count)
+    local key = WeaponSlotMemoryKey(self.m_Weapon)
+    if key then
+        TRM_AttachMenu_LastSlots[key] = slot
+    end
+
+    self.m_Weapon.TRM_LastCustomizeSlot = slot
+end
+
+function PANEL:RestoreSlot()
+    if not IsValid(self.m_Weapon) then return 1 end
+
+    local count = #(self.m_Weapon.Attachments or {})
+    if count <= 0 then return 1 end
+
+    local key = WeaponSlotMemoryKey(self.m_Weapon)
+    local saved = (key and TRM_AttachMenu_LastSlots[key]) or self.m_Weapon.TRM_LastCustomizeSlot or 1
+    return math.Clamp(tonumber(saved) or 1, 1, count)
+end
+
 function PANEL:SlotTarget(card)
     local target = self.m_SlotScreen and self.m_SlotScreen[card.m_Index]
     if target and target.visible then
@@ -1034,70 +1412,199 @@ function PANEL:PaintSlotCard(card, w, h)
     local attClass = IsValid(self.m_Weapon) and CurrentAttachmentClass(self.m_Weapon, card.m_Index) or nil
     local attName = AttachmentName(attClass or slot.Default)
     local slotName = language.GetPhrase(slot.Name)
+    local iconMat = SlotIconMaterial(SlotIconName(slot))
+    local hovered = card:IsHovered()
+    local targetPop = hovered and 1 or (selected and 0.35 or 0)
+    card.m_HoverPop = Lerp(math.Clamp(RealFrameTime() * 14, 0, 1), card.m_HoverPop or 0, targetPop)
+    local pop = card.m_HoverPop or 0
 
     if excluded then
         surface.SetDrawColor(80, 19, 18, 165)
     elseif selected then
-        surface.SetDrawColor(20, 78, 57, 220)
-    elseif card:IsHovered() then
-        surface.SetDrawColor(19, 31, 31, 195)
+        surface.SetDrawColor(18, 78, 58, 232)
+    elseif hovered then
+        surface.SetDrawColor(20, 35, 35, 212)
     else
-        surface.SetDrawColor(9, 15, 15, 166)
+        surface.SetDrawColor(7, 12, 13, 188)
     end
     surface.DrawRect(0, 0, w, h)
 
     surface.SetDrawColor(selected and ACCENT or PANEL_LINE)
     surface.DrawOutlinedRect(0, 0, w, h, 1)
+    surface.SetDrawColor(selected and ORANGE or Color(ACCENT.r, ACCENT.g, ACCENT.b, 40))
+    surface.DrawRect(0, 0, 3, h)
+    DrawHashStrip(w - 42, 8, 32, 11, Color(ORANGE.r, ORANGE.g, ORANGE.b, selected and 145 or 55), 8)
+    if pop > 0.01 then
+        surface.SetDrawColor(ACCENT.r, ACCENT.g, ACCENT.b, 72 * pop)
+        surface.DrawOutlinedRect(1, 1, w - 2, h - 2, 1)
+        surface.SetDrawColor(ACCENT.r, ACCENT.g, ACCENT.b, 24 * pop)
+        surface.DrawRect(0, 0, w, 3)
+    end
 
-    local plusColor = selected and ACCENT or Color(216, 238, 234, 235)
-    local textX = 46
-    surface.SetDrawColor(plusColor.r, plusColor.g, plusColor.b, selected and 72 or 38)
-    surface.DrawRect(8, 12, 28, 28)
+    local plusColor = selected and ACCENT or Color(232, 248, 245, 245)
+    local iconSize = math.floor(30 + 10 * pop)
+    local iconX = math.floor(24 - iconSize * 0.5)
+    local iconY = math.floor(28 - iconSize * 0.5)
+    local textX = 54 + math.floor(6 * pop)
+    surface.SetDrawColor(plusColor.r, plusColor.g, plusColor.b, selected and 84 or 48 + 38 * pop)
+    surface.DrawRect(iconX, iconY, iconSize, iconSize)
     surface.SetDrawColor(plusColor)
-    surface.DrawOutlinedRect(8, 12, 28, 28, 1)
-    draw.SimpleText("+", "TRM_Mod_Subtitle", 22, 25, plusColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    surface.DrawOutlinedRect(iconX, iconY, iconSize, iconSize, 1)
+    surface.SetMaterial(iconMat)
+    surface.SetDrawColor(255, 255, 255, excluded and 118 or 245)
+    surface.DrawTexturedRect(iconX + 5, iconY + 5, iconSize - 10, iconSize - 10)
+
+    local badge = math.floor(14 + 4 * pop)
+    surface.SetDrawColor(0, 0, 0, 210)
+    surface.DrawRect(iconX + iconSize - badge + 3, iconY - 2, badge, badge)
+    surface.SetDrawColor(ACCENT)
+    surface.DrawOutlinedRect(iconX + iconSize - badge + 3, iconY - 2, badge, badge, 1)
+    draw.SimpleText("+", "TRM_Mod_Tiny", iconX + iconSize - badge * 0.5 + 3, iconY + badge * 0.45 - 2, ACCENT, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
     draw.SimpleText(TrimText("TRM_Mod_Small", string.upper(slotName), w - textX - 8), "TRM_Mod_Small", textX, 19,
         selected and ACCENT or TEXT_MAIN, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
     draw.SimpleText(TrimText("TRM_Mod_Tiny", attName, w - textX - 8), "TRM_Mod_Tiny", textX, 43,
         excluded and WARNING or TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+
+    if selected then
+        draw.SimpleText("ACTIVE", "TRM_Mod_Tiny", w - 8, h - 10, ORANGE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+    end
 end
 
 function PANEL:Paint(w, h)
     self.m_Anim = math.Approach(self.m_Anim or 0, 1, RealFrameTime() * 3)
+    local pulse = 0.5 + math.sin(CurTime() * 2.2) * 0.5
 
     surface.SetDrawColor(MENU_BG)
     surface.DrawRect(0, 0, w, h)
+
+    surface.SetDrawColor(0, 0, 0, 92)
+    surface.DrawRect(0, 0, w, 92)
+    surface.SetDrawColor(0, 0, 0, 78)
+    surface.DrawRect(0, h - 94, w, 94)
 
     if IsValid(self.m_ModelPanel) then
         local mx, my = self.m_ModelPanel:GetPos()
         local mw, mh = self.m_ModelPanel:GetSize()
         surface.SetDrawColor(BENCH_BG)
         surface.DrawRect(mx, my, mw, mh)
-        surface.SetDrawColor(21, 36, 35, 235)
+        surface.SetDrawColor(21, 42, 39, 240)
         surface.DrawOutlinedRect(mx, my, mw, mh, 1)
-        surface.SetDrawColor(151, 222, 213, 18)
-        surface.DrawLine(mx + 18, my + mh * 0.5, mx + mw - 18, my + mh * 0.5)
-        surface.SetDrawColor(0, 0, 0, 120)
-        surface.DrawRect(mx, my, mw, 42)
-        draw.SimpleText("WEAPON PREVIEW", "TRM_Mod_Small", mx + 14, my + 19, TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        surface.SetDrawColor(ORANGE.r, ORANGE.g, ORANGE.b, 24 + 18 * pulse)
+        surface.DrawOutlinedRect(mx + 5, my + 5, mw - 10, mh - 10, 1)
     end
 
-    surface.SetDrawColor(255, 255, 255, 2)
-    for x = 0, w, 128 do
+    surface.SetDrawColor(255, 255, 255, 3)
+    for x = 0, w, 96 do
         surface.DrawLine(x, 0, x, h)
     end
-    for y = 0, h, 128 do
+    for y = 0, h, 96 do
         surface.DrawLine(0, y, w, y)
     end
 
-    draw.SimpleText("WEAPON MODDING", "TRM_Mod_Title", 28, 28, TEXT_MAIN, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+    surface.SetDrawColor(0, 0, 0, 180)
+    surface.DrawRect(18, 12, 56, 56)
+    surface.SetDrawColor(ACCENT.r, ACCENT.g, ACCENT.b, 180 + 45 * pulse)
+    surface.DrawOutlinedRect(18, 12, 56, 56, 1)
+    surface.SetMaterial(TRM_MARK)
+    surface.SetDrawColor(255, 255, 255, 245)
+    surface.DrawTexturedRect(22, 16, 48, 48)
+
+    draw.SimpleText("TRM WEAPON MODDING", "TRM_Mod_Title", 88, 27, TEXT_MAIN, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+    draw.SimpleText("TACTICAL RECONFIGURATION MODULE", "TRM_Mod_Tiny", 90, 51, ORANGE, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
     local weaponName = IsValid(self.m_Weapon) and self.m_Weapon:GetPrintName() or ""
-    draw.SimpleText(string.upper(weaponName), "TRM_Mod_Subtitle", 31, 57, ACCENT, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+    draw.SimpleText(string.upper(weaponName), "TRM_Mod_Subtitle", 330, 51, ACCENT, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+    DrawHashStrip(520, 23, 128, 14, Color(ACCENT.r, ACCENT.g, ACCENT.b, 82), 10)
 
     surface.SetDrawColor(PANEL_LINE)
     surface.DrawLine(24, 78, w - 24, 78)
+    surface.SetDrawColor(ORANGE.r, ORANGE.g, ORANGE.b, 160)
+    surface.DrawLine(24, 80, 180, 80)
+    surface.DrawLine(190, 80, 266, 80)
+
+    draw.SimpleText("ARMORY LINK ACTIVE", "TRM_Mod_Tiny", w - 24, 28, ACTIVE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+    draw.SimpleText("BUILD " .. os.date("%H%M"), "TRM_Mod_Tiny", w - 24, 52, TEXT_DIM, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+end
+
+function PANEL:RunPresetAction(index, mode)
+    if not IsValid(self.m_Weapon) then return end
+
+    index = math.Clamp(tonumber(index) or 1, 1, 5)
+    mode = tostring(mode or "")
+
+    if mode == "LOAD" then
+        net.Start("TRMBase_LoadLoadout")
+        net.WriteEntity(self.m_Weapon)
+        net.WriteUInt(index, 3)
+        net.SendToServer()
+
+        self.m_PresetMessage = "Loaded Preset " .. tostring(index)
+        self.m_PresetMessageTime = CurTime() + 2.0
+
+        timer.Simple(0.12, function()
+            if IsValid(self) then
+                self:RefreshAll()
+            end
+        end)
+        surface.PlaySound(TRM_SOUNDS.Select)
+    elseif mode == "SAVE" then
+        net.Start("TRMBase_SaveLoadout")
+        net.WriteEntity(self.m_Weapon)
+        net.WriteUInt(index, 3)
+        net.SendToServer()
+
+        self.m_PresetMessage = "Saved Preset " .. tostring(index)
+        self.m_PresetMessageTime = CurTime() + 2.0
+        surface.PlaySound(TRM_SOUNDS.Save)
+    end
+end
+
+function PANEL:PaintPresetToggle(button, w, h)
+    local hovered = button:IsHovered()
+    local open = self.m_PresetOpen
+    local fill = open and Color(18, 66, 49, 238) or Color(7, 14, 16, 225)
+    local line = open and ACTIVE or ACCENT
+
+    surface.SetDrawColor(hovered and Color(fill.r + 18, fill.g + 18, fill.b + 18, 235) or fill)
+    surface.DrawRect(0, 0, w, h)
+    surface.SetDrawColor(line)
+    surface.DrawOutlinedRect(0, 0, w, h, 1)
+    DrawHashStrip(w - 35, 7, 24, h - 14, Color(ORANGE.r, ORANGE.g, ORANGE.b, 105), 8)
+
+    draw.SimpleText(open and "PRESETS OPEN" or "PRESETS", "TRM_Mod_Small", 14, h / 2, hovered and TEXT_MAIN or line,
+        TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+    draw.SimpleText(open and "-" or "+", "TRM_Mod_Subtitle", w - 17, h / 2, hovered and TEXT_MAIN or line,
+        TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+end
+
+function PANEL:PaintPresetPanel(w, h)
+    DrawPanelShell(w, h, "LOADOUT PRESETS", "SAVE / LOAD CURRENT BUILD", "LOCAL")
+
+    local message = self.m_PresetMessage or ""
+    if message ~= "" and CurTime() < (self.m_PresetMessageTime or 0) then
+        draw.SimpleText(message, "TRM_Mod_Small", w - 14, h - 18, ACTIVE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+    else
+        draw.SimpleText("5 local slots", "TRM_Mod_Small", w - 14, h - 18, TEXT_DIM, TEXT_ALIGN_RIGHT,
+            TEXT_ALIGN_CENTER)
+    end
+end
+
+function PANEL:PaintPresetActionButton(button, w, h)
+    local hovered = button:IsHovered()
+    local saveMode = button.m_Mode == "SAVE"
+    local editMode = button.m_Mode == "EDIT"
+    local fill = saveMode and Color(53, 36, 13, 232) or (editMode and Color(25, 25, 31, 232) or Color(10, 26, 31, 232))
+    local line = saveMode and Color(228, 170, 82, 235) or (editMode and TEXT_DIM or ACCENT)
+
+    surface.SetDrawColor(hovered and Color(fill.r + 18, fill.g + 18, fill.b + 18, 245) or fill)
+    surface.DrawRect(0, 0, w, h)
+    surface.SetDrawColor(line)
+    surface.DrawOutlinedRect(0, 0, w, h, 1)
+
+    local label = editMode and "NAME" or (saveMode and "SAVE" or "LOAD")
+    draw.SimpleText(label, "TRM_Mod_Small", w / 2, h / 2, hovered and TEXT_MAIN or line,
+        TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
 function PANEL:PaintOver(w, h)
@@ -1105,13 +1612,7 @@ function PANEL:PaintOver(w, h)
 end
 
 function PANEL:PaintStats(w, h)
-    surface.SetDrawColor(PANEL_BG)
-    surface.DrawRect(0, 0, w, h)
-    surface.SetDrawColor(PANEL_LINE)
-    surface.DrawOutlinedRect(0, 0, w, h, 1)
-
-    draw.SimpleText("STATISTICS", "TRM_Mod_Subtitle", 14, 18, TEXT_MAIN, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-    draw.SimpleText("CURRENT BUILD", "TRM_Mod_Small", 14, 39, TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+    DrawPanelShell(w, h, "STATISTICS", "CURRENT BUILD", "LIVE")
 
     if not IsValid(self.m_Weapon) then return end
 
@@ -1144,7 +1645,7 @@ function PANEL:PaintStats(w, h)
         if maxValue <= 0 then maxValue = math.max(math.abs(base) * 2, 1) end
 
         local delta = current - base
-        local good = biggerIsBetter and delta >= 0 or delta <= 0
+        local good = biggerIsBetter and delta >= 0 or (not biggerIsBetter and delta <= 0)
         local deltaColor = delta == 0 and TEXT_DIM or (good and ACTIVE or WARNING)
         local ratio = math.Clamp(current / maxValue, 0, 1)
         local baseRatio = math.Clamp(base / maxValue, 0, 1)
@@ -1157,13 +1658,17 @@ function PANEL:PaintStats(w, h)
         draw.SimpleText(string.format("%.3g", current), "TRM_Mod_Small", w - 14, y, TEXT_MAIN, TEXT_ALIGN_RIGHT,
             TEXT_ALIGN_CENTER)
 
-        surface.SetDrawColor(42, 55, 54, 230)
+        surface.SetDrawColor(17, 24, 24, 238)
         surface.DrawRect(14, y + 13, w - 28, 8)
+        surface.SetDrawColor(255, 255, 255, 14)
+        surface.DrawRect(14, y + 13, w - 28, 1)
         surface.SetDrawColor(ACCENT)
         surface.DrawRect(14, y + 13, (w - 28) * ratio * self.m_Anim, 8)
         surface.SetDrawColor(deltaColor)
         surface.DrawRect(14 + (w - 28) * math.min(ratio, baseRatio) * self.m_Anim, y + 13,
             (w - 28) * math.abs(ratio - baseRatio) * self.m_Anim, 8)
+        surface.SetDrawColor(ORANGE.r, ORANGE.g, ORANGE.b, 135)
+        surface.DrawRect(14 + (w - 28) * baseRatio, y + 10, 2, 14)
 
         if delta ~= 0 then
             local deltaText = (delta > 0 and "+" or "") .. string.format("%.3g", delta)
@@ -1177,37 +1682,163 @@ function PANEL:PaintStats(w, h)
 end
 
 function PANEL:PaintAttachmentPanel(w, h)
-    surface.SetDrawColor(PANEL_BG)
-    surface.DrawRect(0, 0, w, h)
-    surface.SetDrawColor(PANEL_LINE)
-    surface.DrawOutlinedRect(0, 0, w, h, 1)
-
     local slot = IsValid(self.m_Weapon) and self.m_Weapon.Attachments and self.m_Weapon.Attachments[self.m_Slot]
     local slotName = language.GetPhrase(slot.Name)
     local attClass = IsValid(self.m_Weapon) and CurrentAttachmentClass(self.m_Weapon, self.m_Slot) or nil
+    DrawPanelShell(w, h, string.upper(slotName), "SELECT ACCESSORY", "SLOT " .. tostring(self.m_Slot or 1))
 
-    draw.SimpleText(string.upper(slotName), "TRM_Mod_Subtitle", 14, 18, TEXT_MAIN, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
     draw.SimpleText(TrimText("TRM_Mod_Small", AttachmentName(attClass or (slot and slot.Default)), w - 28),
-        "TRM_Mod_Small", 14, 40, ACCENT, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        "TRM_Mod_Small", 14, 72, ACCENT, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
     local boneText = slot and slot.Bone and ("BONE  " .. slot.Bone) or "NO BONE MAPPING"
-    draw.SimpleText(TrimText("TRM_Mod_Small", boneText, w - 28), "TRM_Mod_Small", 14, 60, TEXT_DIM, TEXT_ALIGN_LEFT,
+    draw.SimpleText(TrimText("TRM_Mod_Tiny", boneText, w - 28), "TRM_Mod_Tiny", 14, 91, TEXT_DIM, TEXT_ALIGN_LEFT,
         TEXT_ALIGN_CENTER)
 
+    surface.SetDrawColor(ACCENT.r, ACCENT.g, ACCENT.b, 32)
+    surface.DrawRect(14, 106, w - 28, 1)
     draw.SimpleText(Phrase("#TRMBase_CloseHint", "Close with the customize key or Back"), "TRM_Mod_Small", w / 2, h - 24,
         TEXT_DIM, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+end
+
+function PANEL:SetAttachmentHover(button, name, attClass, isDefault)
+    self.m_AttHoverInfo = {
+        Button = button,
+        Name = name,
+        Class = attClass,
+        IsDefault = isDefault,
+        Stats = BuildAttachmentPreviewStats(self.m_Weapon, self.m_Slot, attClass),
+    }
+
+    self:UpdateHoverStatPanel()
+end
+
+function PANEL:ClearAttachmentHover(button)
+    if not button or (self.m_AttHoverInfo and self.m_AttHoverInfo.Button == button) then
+        self.m_AttHoverInfo = nil
+    end
+
+    if IsValid(self.m_HoverStatPanel) then
+        self.m_HoverStatPanel:SetVisible(false)
+    end
+end
+
+function PANEL:UpdateHoverStatPanel()
+    if not IsValid(self.m_HoverStatPanel) then return end
+
+    local info = self.m_AttHoverInfo
+    if not info or not IsValid(info.Button) or not info.Button:IsHovered() then
+        self.m_HoverStatPanel:SetVisible(false)
+        return
+    end
+
+    local statCount = math.max(#(info.Stats or {}), 1)
+    local panelW = 286
+    local panelH = math.Clamp(86 + statCount * 25, 112, 238)
+    local sx, sy = info.Button:LocalToScreen(0, 0)
+    local lx, ly = self:ScreenToLocal(sx - panelW - 12, sy - 8)
+
+    lx = math.Clamp(lx, 12, self:GetWide() - panelW - 12)
+    ly = math.Clamp(ly, 92, self:GetTall() - panelH - 18)
+
+    self.m_HoverStatPanel:SetSize(panelW, panelH)
+    self.m_HoverStatPanel:SetPos(lx, ly)
+    self.m_HoverStatPanel:SetVisible(true)
+end
+
+function PANEL:PaintAttachmentHoverStats(w, h)
+    local info = self.m_AttHoverInfo
+    if not info then return end
+
+    surface.SetDrawColor(PANEL_DARK)
+    surface.DrawRect(0, 0, w, h)
+    surface.SetDrawColor(ACCENT)
+    surface.DrawOutlinedRect(0, 0, w, h, 1)
+    DrawCornerChrome(0, 0, w, h, Color(ORANGE.r, ORANGE.g, ORANGE.b, 130), 16, 2)
+    surface.SetDrawColor(ACCENT.r, ACCENT.g, ACCENT.b, 28)
+    surface.DrawRect(0, 0, w, 5)
+
+    draw.SimpleText("ATTACHMENT DELTA", "TRM_Mod_Small", 12, 17, ACCENT, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+    draw.SimpleText(TrimText("TRM_Mod_Subtitle", info.Name or "Attachment", w - 24), "TRM_Mod_Subtitle", 12, 40,
+        TEXT_MAIN, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+
+    local sub = info.Class or "None"
+    if info.IsDefault then sub = sub .. " / default" end
+    draw.SimpleText(TrimText("TRM_Mod_Tiny", sub, w - 24), "TRM_Mod_Tiny", 12, 60, TEXT_DIM, TEXT_ALIGN_LEFT,
+        TEXT_ALIGN_CENTER)
+
+    local stats = info.Stats or {}
+    if #stats == 0 then
+        draw.SimpleText("NO STAT CHANGE", "TRM_Mod_Small", 12, 91, TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        return
+    end
+
+    local y = 87
+    for _, row in ipairs(stats) do
+        if y > h - 18 then break end
+
+        local color = row.Good and ACTIVE or WARNING
+        local deltaText = (row.Delta > 0 and "+" or "") .. string.format("%.3g", row.Delta)
+        draw.SimpleText(string.upper(row.Name), "TRM_Mod_Tiny", 12, y, TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        draw.SimpleText(deltaText, "TRM_Mod_Small", w - 14, y, color, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+        y = y + 25
+    end
 end
 
 function PANEL:SetWeapon(weapon)
     if not IsValid(weapon) or not util.IsTRMBase(weapon) then return end
 
     self.m_Weapon = weapon
-    self.m_Slot = 1
+    self.m_PresetNames = ReadPresetNames(weapon)
+    self.m_Slot = self:RestoreSlot()
 
     self:SetupModel()
     self:RebuildSlotCards()
     self:RefreshPreview()
     self:RefreshAttList()
+    self:EnsureSlotVisible(self.m_Slot)
+end
+
+function PANEL:GetPresetName(index)
+    index = math.Clamp(tonumber(index) or 1, 1, 5)
+    return (self.m_PresetNames and self.m_PresetNames[index]) or DefaultPresetName(index)
+end
+
+function PANEL:SetPresetName(index, name)
+    if not IsValid(self.m_Weapon) then return end
+
+    index = math.Clamp(tonumber(index) or 1, 1, 5)
+    name = string.Trim(tostring(name or ""))
+    if name == "" then
+        name = DefaultPresetName(index)
+    end
+
+    self.m_PresetNames = self.m_PresetNames or ReadPresetNames(self.m_Weapon)
+    self.m_PresetNames[index] = string.Left(name, 24)
+    WritePresetNames(self.m_Weapon, self.m_PresetNames)
+
+    self.m_PresetMessage = "Renamed slot " .. tostring(index)
+    self.m_PresetMessageTime = CurTime() + 2.0
+end
+
+function PANEL:OpenPresetRename(index)
+    if not IsValid(self.m_Weapon) then return end
+
+    index = math.Clamp(tonumber(index) or 1, 1, 5)
+    local oldName = self:GetPresetName(index)
+
+    Derma_StringRequest(
+        "Rename Loadout Preset",
+        "Preset name:",
+        oldName,
+        function(text)
+            if not IsValid(self) then return end
+            self:SetPresetName(index, text)
+            self:InvalidateLayout(true)
+        end,
+        nil,
+        "RENAME",
+        "CANCEL"
+    )
 end
 
 function PANEL:RefreshAll()
@@ -1218,6 +1849,7 @@ end
 
 function PANEL:RefreshAttList()
     if not IsValid(self.m_AttList) then return end
+    self:ClearAttachmentHover()
     self.m_AttList:Clear()
 
     if not IsValid(self.m_Weapon) then return end
@@ -1260,22 +1892,37 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
 
     local weapon = self.m_Weapon
 
+    btn.OnCursorEntered = function(button)
+        self:SetAttachmentHover(button, name, attClass, isDefault)
+    end
+
+    btn.OnCursorExited = function(button)
+        self:ClearAttachmentHover(button)
+    end
+
     btn.Paint = function(button, w, h)
         local blocked = slotExcluded and not isActive
 
         if isActive then
-            surface.SetDrawColor(18, 55, 39, 238)
+            surface.SetDrawColor(18, 62, 43, 242)
         elseif blocked then
             surface.SetDrawColor(58, 21, 21, 228)
         elseif button:IsHovered() then
-            surface.SetDrawColor(23, 36, 36, 232)
+            surface.SetDrawColor(22, 38, 39, 236)
         else
-            surface.SetDrawColor(12, 20, 20, 220)
+            surface.SetDrawColor(8, 15, 16, 226)
         end
         surface.DrawRect(0, 0, w, h)
 
         surface.SetDrawColor(isActive and ACTIVE or PANEL_LINE)
         surface.DrawOutlinedRect(0, 0, w, h, 1)
+        surface.SetDrawColor(isActive and ORANGE or Color(ACCENT.r, ACCENT.g, ACCENT.b, 42))
+        surface.DrawRect(0, 0, 4, h)
+        if button:IsHovered() or isActive then
+            surface.SetDrawColor(ACCENT.r, ACCENT.g, ACCENT.b, isActive and 42 or 28)
+            surface.DrawRect(0, 0, w, 3)
+            DrawHashStrip(w - 72, 10, 52, 12, Color(ORANGE.r, ORANGE.g, ORANGE.b, isActive and 145 or 82), 9)
+        end
 
         local markerW = isActive and 0 or 28
         local textX = markerW > 0 and 44 or 12
@@ -1308,7 +1955,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
 
     btn.DoClick = function()
         if slotExcluded and not isActive then
-            surface.PlaySound("weapons/ar2/ar2_empty.wav")
+            surface.PlaySound(TRM_SOUNDS.Deny)
             return
         end
 
@@ -1319,13 +1966,14 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
         weapon.CurrentAttachments[slotKey] = (id ~= "None") and { Class = id } or nil
         weapon:SendAttachmentToServer(slotKey, id)
 
-        surface.PlaySound("weapons/ar2/ar2_empty.wav")
+        surface.PlaySound(TRM_SOUNDS.Select)
         self:RefreshPreview()
         self:RefreshAll()
     end
 end
 
 function PANEL:Close()
+    self:RememberSlot(self.m_Slot)
     gui.EnableScreenClicker(false)
     TRM_AttachMenu_Instance = nil
     self:RemovePreviewModels()

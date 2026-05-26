@@ -355,7 +355,7 @@ function SWEP:DoCameraRecoil()
 	local eyeAngles = owner:EyeAngles()
 	local delay = 60 / self.Primary.RPM
 	local nextRecoil = self:GetNextRecoil()
-	local isFiring = CurTime() - nextRecoil < 0.5
+	local isFiring = CurTime() - nextRecoil < 0.0
 	local NextAngle = Angle(0, 0, 0)
 	local stat = self.Recoil
 	
@@ -379,7 +379,7 @@ function SWEP:DoCameraRecoil()
 		NextAngle.p = NextAngle.p  + stat.KickDown * (t < 0.5 and t or 1 - t) 
 		self.m_RecoilSum:Add(-NextAngle)
 		-- 玩家压枪抵消后坐力累积
-		self.m_RecoilDelta = self.m_RecoilDelta - playerPitchDelta
+		self.m_RecoilDelta = self.m_RecoilDelta - math.min( playerPitchDelta , 0)
 	else
 		-- 停火后：回正剩余的后坐力
 		if self.m_RecoilDelta * (current.pitch > 0 and 1 or -1) > 0.1 then

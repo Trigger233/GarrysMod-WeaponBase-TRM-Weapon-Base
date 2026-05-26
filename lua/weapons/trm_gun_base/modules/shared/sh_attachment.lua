@@ -52,6 +52,7 @@ function SWEP:PrecacheViewModel()
     self.m_BodyGroupCache = {}
     self.m_PoseParameter = {}
     self.m_PoseParameter2 = {}
+    
 
     for _, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
@@ -119,6 +120,7 @@ function SWEP:ApplyViewModelChange()
     if not IsValid(vm) then return false end
     vm:SetModel(self.m_ViewmodelCache || self.ViewModel)
     vm:SetSkin(self.m_SkinCache || 0)
+    vm:ClearPoseParameters()
 
     for bodygroup, sub in pairs(self.m_BodyGroupCache) do
         changeBodyGroup(vm, bodygroup, sub)
