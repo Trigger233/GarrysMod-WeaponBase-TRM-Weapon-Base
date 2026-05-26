@@ -30,8 +30,10 @@ function SWEP:Task_Charge()
 
 	-- 修复2：确保 m_NextFireTime 存在再比较
 	if self.m_NextFireTime and CurTime() >= self.m_NextFireTime then
-		self.m_NextFireTime = nil
-		self.s_TriggerSound = false -- 修复3：重置声音标志
+		if not self.Primary.Automatic then
+			self.m_NextFireTime = nil
+			self.s_TriggerSound = false -- 修复3：重置声音标志
+		end
 
 		if stat.Type == "Hold" and not owner:KeyDown(IN_ATTACK) then
 			self:SetCurrentTask("Finished")
@@ -41,6 +43,7 @@ function SWEP:Task_Charge()
 		end
 	end
 end
+
 function SWEP:Task_PrimaryFire()
 	local aim = self:GetAimDelta() > 0.5 and true or false
 
@@ -63,7 +66,8 @@ function SWEP:Task_PrimaryFire()
 	else
 		self:FireProjectile()
 	end
-
+	-- local debugRPM = 60/(CurTime() - self:GetNextPrimaryFire())
+	-- print(debugRPM)
 	self:SetNextFireTime(60 / self.Primary.RPM)
 end
 
@@ -109,7 +113,7 @@ function SWEP:FirePrimaryBullet()
 		self.r_shakeDir = -self.r_shakeDir
 
 		local shake = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 1) * self.r_shakeDir *
-		math.random(0, 1)
+			math.random(0, 1)
 		owner:SetViewPunchAngles(Angle(0, 0, shake))
 		owner:SetViewPunchVelocity(Angle(0, 0, shake * 100))
 	end
@@ -349,40 +353,48 @@ function SWEP:DoCameraRecoil()
 	local owner = self:GetOwner()
 	if not IsValid(owner) then return end
 	local eyeAngles = owner:EyeAngles()
-
-	local nextRecoil = self:GetNextRecoil()
-	local isFiring = CurTime() < nextRecoil
-	if CurTime() > nextRecoil then return end
-
 	local delay = 60 / self.Primary.RPM
-	local elapsed = delay - (nextRecoil - CurTime())
-	local t = math.Clamp((elapsed / delay) ^ 0.5, 0, 1)
-
-	local recoilAngle = self:GetRecoil()
-	local kickDown = (self.Recoil.KickDown or 0) * delay * 5
-
-	local strength
-	if t < 0.2 then
-		strength = 1 - (t / 0.2)
-	elseif t < 0.8 then
-		local t2 = (t - 0.2) / 0.6
-		strength = -kickDown * t2
-	else
-		local t3 = (t - 0.8) / 0.3
-		strength = -kickDown * (1 - t3)
+	local nextRecoil = self:GetNextRecoil()
+	local isFiring = CurTime() - nextRecoil < 0.5
+	local NextAngle = Angle(0, 0, 0)
+	local stat = self.Recoil
+	
+	if not self.m_RecoilSum then
+		self.m_RecoilSum = Angle(0, 0, 0)
+		self.m_RecoilDelta = 0
+		self.m_LastEyePitch = eyeAngles.pitch
 	end
 
-	local current = Angle(
-		recoilAngle.pitch * strength,
-		recoilAngle.yaw * strength,
-		recoilAngle.roll * strength
-	)
+	-- 计算玩家压枪输入（视角向下移动的量）
+	local playerPitchDelta = self.m_LastEyePitch  - eyeAngles.pitch
 
-
-	eyeAngles.pitch = eyeAngles.pitch + current.pitch
-	eyeAngles.yaw = eyeAngles.yaw + current.yaw
-	eyeAngles.roll = eyeAngles.roll + current.roll
+	local current = self:GetRecoil()
+	self.m_RecoilSum:Add(current)
+	self.m_RecoilDelta = self.m_RecoilDelta + current.pitch
+	self:SetRecoil(Angle(0, 0, 0))
+	local t = math.Clamp((CurTime() - nextRecoil )/ delay, 0, 1)
+	if isFiring then
+		-- 射击时：应用后坐力，然后用玩家压枪输入抵消
+		NextAngle = self.m_RecoilSum * stat.Factor
+		NextAngle.p = NextAngle.p  + stat.KickDown * (t < 0.5 and t or 1 - t) 
+		self.m_RecoilSum:Add(-NextAngle)
+		-- 玩家压枪抵消后坐力累积
+		self.m_RecoilDelta = self.m_RecoilDelta - playerPitchDelta
+	else
+		-- 停火后：回正剩余的后坐力
+		if self.m_RecoilDelta * (current.pitch > 0 and 1 or -1) > 0.1 then
+			NextAngle.pitch = -self.m_RecoilDelta * stat.Recover
+			self.m_RecoilDelta = self.m_RecoilDelta + NextAngle.pitch
+		else
+			self.m_RecoilDelta = 0
+			self.m_RecoilSum = Angle(0, 0, 0)
+		end
+	end
+	eyeAngles:Add(NextAngle)
 	owner:SetEyeAngles(eyeAngles)
+ 
+	-- 记录当前视角供下一帧使用
+	self.m_LastEyePitch = eyeAngles.pitch
 end
 
 function SWEP:DoSpread()

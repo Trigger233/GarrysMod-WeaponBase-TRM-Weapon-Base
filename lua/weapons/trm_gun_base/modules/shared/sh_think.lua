@@ -23,12 +23,19 @@ end
 
 function SWEP:bDownThink()
     local seq = self.m_CurrentSequence
-    if self:GetOwner() and self:GetOwner():KeyDown(IN_ATTACK) and seq == "Reload" and self.ReloadType == "Single" then
+    local owner = self:GetOwner()
+    local task = self:GetCurrentTask()
+    if owner and owner:KeyDown(IN_ATTACK) and seq == "Reload" and self.ReloadType == "Single" then
         self:SetCurrentTask("ReloadEnd")
     end
 
     if self.BoltAction and self.Animations.Rechamber and self:GetChamberAmmo() <= 0 and self:CanRechamber() and not self:IsReloading() then
         self:SetCurrentTask("Rechamber") 
+    end
+
+    if owner and not owner:KeyDown(IN_ATTACK) and task ~= "Charge" then
+        self.m_NextFireTime = nil
+        self.s_TriggerSound = false
     end
 
 end
