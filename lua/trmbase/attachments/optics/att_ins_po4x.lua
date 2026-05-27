@@ -1,17 +1,16 @@
-ATTACHMENT.Name = "Elcan 4x"
+ATTACHMENT.Name = "Po4x"
 ATTACHMENT.Category = "att_sight"
 ATTACHMENT.Base = "att_scope"
 ATTACHMENT.Selectable = true
-ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_optic_elcan.mdl")
-
+ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_optic_po4x24.mdl")
 ATTACHMENT.Angles = Angle(-90, 0, 90)
 
 
 ATTACHMENT.Sight = {
-    Pos = Vector(0, -0, -1.8),
+    Pos = Vector(0.05, -0, -0.69),
     Align = "scope_origin",
-    Material = Material("models/weapons/tfa_ins2/optics/elcan_reticule"),
-    Size = 360,
+    Material = Material("models/weapons/tfa_ins2/optics/po4x_reticule"),
+    Size = 450,
     Color = Color(255, 255, 255)
 }
 

@@ -21,6 +21,8 @@ ATTACHMENT.Scope = {
     Offset = Vector(0,0,0) ,
     Angle = Angle(0,0,-90),
     DrawAt = 0.35,
+    Lens = { "lense_rt" }
+
 }
 function ATTACHMENT:ChangeWeaponStats(weapon)
     weapon.Aim.Time = weapon.Aim.Time * 1.1

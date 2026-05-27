@@ -148,12 +148,15 @@ local function SlotIconName(slot)
 
     text = text .. " " .. string.lower(tostring(slot and slot.Name or ""))
 
-    if string.find(text, "sight", 1, true) or string.find(text, "optic", 1, true) or string.find(text, "reflex", 1, true) then return "sight" end
+    if string.find(text, "sight", 1, true) or string.find(text, "optic", 1, true) or string.find(text, "reflex", 1, true) then return
+        "sight" end
     if string.find(text, "mag", 1, true) or string.find(text, "clip", 1, true) then return "mag" end
     if string.find(text, "barrel", 1, true) then return "barrel" end
-    if string.find(text, "muzzle", 1, true) or string.find(text, "suppress", 1, true) or string.find(text, "flash", 1, true) then return "muzzle" end
+    if string.find(text, "muzzle", 1, true) or string.find(text, "suppress", 1, true) or string.find(text, "flash", 1, true) then return
+        "muzzle" end
     if string.find(text, "laser", 1, true) or string.find(text, "tactical", 1, true) then return "laser" end
-    if string.find(text, "under", 1, true) or string.find(text, "foregrip", 1, true) or string.find(text, "vert", 1, true) then return "underbarrel" end
+    if string.find(text, "under", 1, true) or string.find(text, "foregrip", 1, true) or string.find(text, "vert", 1, true) then return
+        "underbarrel" end
     if string.find(text, "stock", 1, true) then return "stock" end
     if string.find(text, "grip", 1, true) then return "grip" end
     if string.find(text, "ammo", 1, true) or string.find(text, "bullet", 1, true) then return "ammo" end
@@ -565,11 +568,13 @@ function PANEL:Init()
         surface.DrawRect(0, 0, w, 42)
         surface.SetDrawColor(ACCENT.r, ACCENT.g, ACCENT.b, 22)
         surface.DrawRect(0, 40, w, 2)
-        draw.SimpleText(language.GetPhrase("#TRMBase_VGUI_Customize"), "TRM_Mod_Small", 14, 19, TEXT_MAIN, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        draw.SimpleText(language.GetPhrase("#TRMBase_VGUI_Customize"), "TRM_Mod_Small", 14, 19, TEXT_MAIN,
+            TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
         draw.SimpleText("CUSTOM BUILD", "TRM_Mod_Tiny", w - 14, 19, ORANGE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
         surface.SetDrawColor(ACCENT.r, ACCENT.g, ACCENT.b, 42)
         surface.DrawLine(18, h * 0.5, w - 18, h * 0.5)
-        draw.SimpleText(language.GetPhrase("TRMBase_VGUI_DragHint"), "TRM_Mod_Small", w / 2, h - 18, TEXT_DIM, TEXT_ALIGN_CENTER,
+        draw.SimpleText(language.GetPhrase("TRMBase_VGUI_DragHint"), "TRM_Mod_Small", w / 2, h - 18, TEXT_DIM,
+            TEXT_ALIGN_CENTER,
             TEXT_ALIGN_CENTER)
     end
     self.m_ModelPanel.LayoutEntity = function(_, ent)
@@ -1112,14 +1117,12 @@ function PANEL:CreatePreviewModel(model, ent, slot, attData)
     if attData and attData.Scale then
         model:SetModelScale(attData.Scale)
     end
-
 end
 
 function PANEL:ApplyPreviewModel(ent)
     self:BuildModelBone(ent)
     local slot = self.m_Weapon.Attachments
     for slotKey, model in pairs(self.m_PreviewModels) do
-
         local attData = BASE_TRM_ATTS[model.Class]
         if attData.Bonemerge then
             model:AddEffects(EF_BONEMERGE)
@@ -1127,7 +1130,6 @@ function PANEL:ApplyPreviewModel(ent)
             model:SetParent(ent)
             model:SetLocalPos(ZERO_VECTOR)
             model:SetLocalAngles(ZERO_ANGLE)
-
         else
             model:InvalidateBoneCache()
             model:SetupBones()
@@ -1135,7 +1137,7 @@ function PANEL:ApplyPreviewModel(ent)
             if not slotEntry then continue end
             local BoneData = self.m_PreviewBones[slotEntry.Bone]
             if not BoneData then continue end
-            model:FollowBone(BoneData.Parent,BoneData.Id)
+            model:FollowBone(BoneData.Parent, BoneData.Id)
             model:SetLocalPos(ZERO_VECTOR)
             model:SetLocalAngles(ZERO_ANGLE)
             local LocalPos = CopyVector(ZERO_VECTOR)
@@ -1148,8 +1150,6 @@ function PANEL:ApplyPreviewModel(ent)
             model:SetLocalAngles(LocalAngle)
         end
     end
-
-    
 end
 
 function PANEL:BuildModelBone(ent)
@@ -1196,7 +1196,7 @@ function PANEL:RefreshPreview()
 
     local ent = self.m_ModelPanel:GetEntity()
     if not IsValid(ent) then return end
-    
+
 
     for slotKey, entry in pairs(self.m_Weapon.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
@@ -1206,7 +1206,7 @@ function PANEL:RefreshPreview()
         if not path then continue end
 
         local slot = self.m_Weapon.Attachments and self.m_Weapon.Attachments[tonumber(slotKey)]
-       -- if not attData.Bonemerge then continue end
+        -- if not attData.Bonemerge then continue end
         local model = ClientsideModel(path, RENDERGROUP_OPAQUE)
         model:InvalidateBoneCache()
         model:SetupBones()
@@ -1340,7 +1340,8 @@ function PANEL:LayoutSlotCards()
     local stripW = math.max(self.m_SlotStrip:GetWide(), 1)
     local stripH = math.max(self.m_SlotStrip:GetTall(), cardH)
     local visibleCards = math.max(math.floor(stripW / 152), 1)
-    local cardW = math.Clamp(math.floor((stripW - gap * math.min(count + 1, visibleCards + 1)) / math.min(count, visibleCards)), 128, 172)
+    local cardW = math.Clamp(
+    math.floor((stripW - gap * math.min(count + 1, visibleCards + 1)) / math.min(count, visibleCards)), 128, 172)
     local totalW = count * cardW + (count - 1) * gap
     local startX = totalW < stripW and math.floor((stripW - totalW) * 0.5) or 0
     self.m_SlotMaxScroll = math.max(totalW - stripW, 0)
@@ -1429,7 +1430,12 @@ function PANEL:PaintSlotCard(card, w, h)
         surface.SetDrawColor(18, 78, 58, 232)
     elseif hovered then
         surface.SetDrawColor(20, 35, 35, 212)
+        if not card.m_SlotHoverSoundPlayed then
+            surface.PlaySound(TRM_SOUNDS.Select)
+        end
+        card.m_SlotHoverSoundPlayed = true
     else
+        card.m_SlotHoverSoundPlayed = false
         surface.SetDrawColor(7, 12, 13, 188)
     end
     surface.DrawRect(0, 0, w, h)
@@ -1464,7 +1470,8 @@ function PANEL:PaintSlotCard(card, w, h)
     surface.DrawRect(iconX + iconSize - badge + 3, iconY - 2, badge, badge)
     surface.SetDrawColor(ACCENT)
     surface.DrawOutlinedRect(iconX + iconSize - badge + 3, iconY - 2, badge, badge, 1)
-    draw.SimpleText("+", "TRM_Mod_Tiny", iconX + iconSize - badge * 0.5 + 3, iconY + badge * 0.45 - 2, ACCENT, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    draw.SimpleText("+", "TRM_Mod_Tiny", iconX + iconSize - badge * 0.5 + 3, iconY + badge * 0.45 - 2, ACCENT,
+        TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
     draw.SimpleText(TrimText("TRM_Mod_Small", string.upper(slotName), w - textX - 8), "TRM_Mod_Small", textX, 19,
         selected and ACCENT or TEXT_MAIN, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
@@ -1529,7 +1536,8 @@ function PANEL:Paint(w, h)
     surface.DrawLine(190, 80, 266, 80)
 
     draw.SimpleText("ARMORY LINK ACTIVE", "TRM_Mod_Tiny", w - 24, 28, ACTIVE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
-    draw.SimpleText("BUILD " .. os.date("%H%M"), "TRM_Mod_Tiny", w - 24, 52, TEXT_DIM, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+    draw.SimpleText("BUILD " .. os.date("%H%M"), "TRM_Mod_Tiny", w - 24, 52, TEXT_DIM, TEXT_ALIGN_RIGHT,
+        TEXT_ALIGN_CENTER)
 end
 
 function PANEL:RunPresetAction(index, mode)
@@ -1951,7 +1959,8 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
             blocked and WARNING or TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
         if isActive then
-            draw.SimpleText(language.GetPhrase("TRMBase_Installed"), "TRM_Mod_Small", w - 12, 20, ACTIVE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+            draw.SimpleText(language.GetPhrase("TRMBase_Installed"), "TRM_Mod_Small", w - 12, 20, ACTIVE,
+                TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
         elseif blocked then
             draw.SimpleText(Phrase("#TRMBase_Excluded", "Excluded"), "TRM_Mod_Small", w - 12, 20, WARNING,
                 TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
@@ -2107,7 +2116,7 @@ concommand.Add("trmbase_debug_slots", function(ply)
     for name, data in pairs(BASE_TRM_ATTS or {}) do
         if type(data) == "table" and data.Category then
             print("  " ..
-            name .. " -> Category: " .. tostring(data.Category) .. ", Selectable: " .. tostring(data.Selectable))
+                name .. " -> Category: " .. tostring(data.Category) .. ", Selectable: " .. tostring(data.Selectable))
         end
     end
 
@@ -2120,10 +2129,10 @@ concommand.Add("trmbase_debug_slots", function(ply)
     for i, slot in ipairs(weapon.Attachments) do
         if istable(slot) then
             print("Slot " ..
-            i ..
-            ": Name=" ..
-            tostring(slot.Name) ..
-            ", Category={" .. table.concat(SlotCategories(slot), ", ") .. "}, Bone=" .. tostring(slot.Bone))
+                i ..
+                ": Name=" ..
+                tostring(slot.Name) ..
+                ", Category={" .. table.concat(SlotCategories(slot), ", ") .. "}, Bone=" .. tostring(slot.Bone))
 
             local matches = GetAttachmentsForSlot(slot)
             if #matches > 0 then
@@ -2154,5 +2163,3 @@ hook.Add("HUDShouldDraw", "HideWhileCustomizing", function()
         end
     end
 end)
-
-

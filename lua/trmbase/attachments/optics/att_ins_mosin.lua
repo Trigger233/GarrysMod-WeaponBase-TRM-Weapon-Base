@@ -7,7 +7,7 @@ ATTACHMENT.Angles = Angle(-90, 0, 90)
 ATTACHMENT.Pos = Vector(-1.5,0,0)
 
 ATTACHMENT.Sight = {
-    Pos = Vector(0, 4, -0.0),
+    Pos = Vector(0, 2, 0.2),
     Align = "scope_origin",
     Size = 360,
     Color = Color(255, 255, 255) ,
@@ -20,7 +20,9 @@ ATTACHMENT.Scope = {
     RTSize = 512,
     Offset = Vector(0,0,0) ,
     Angle = Angle(0,0,-90),
-    DrawAt = 0.35,
+    --DrawAt = 0.35,
+    Lens = { "lense_rt" }
+
 }
 function ATTACHMENT:ChangeWeaponStats(weapon)
     weapon.Aim.Time = weapon.Aim.Time * 1.1

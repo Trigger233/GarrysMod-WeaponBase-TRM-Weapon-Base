@@ -39,9 +39,9 @@ function P.EnsureRenderTarget()
         return P.RT, P.RTMaterial, P.RTMaterialName
     end
 
-    local rtName = P.Config.RTNamePrefix .. tostring(size)
-    local sceneRTName = P.Config.RTNamePrefix .. "scene_" .. tostring(size)
-    local matName = P.Config.MaterialNamePrefix .. tostring(size)
+    local rtName = "trmbase_pip_RTName"
+    local sceneRTName = "trmbase_pip_sceneRT"
+    local matName = "trmbase_pip_matName"
 
     P.RT = GetRenderTarget(rtName, size, size)
     P.SceneRT = GetRenderTarget(sceneRTName, size, size)
@@ -77,15 +77,9 @@ function P.EnsureRenderTarget()
         ["$nodecal"] = "1"
     })
 
-    P.Arc9RTMaterial = safeMat("effects/arc9/rt")
-    P.Arc9CheapMaterial = safeMat("effects/arc9/rt_cheap")
     P.ReticleMaterial = safeMat(P.Config.ReticleMaterial) or safeMat(P.Config.FallbackReticle)
-    P.MaskMaterial = safeMat(P.Config.MaskMaterial)
-    P.LensOverlayMaterial = safeMat(P.Config.LensOverlayMaterial)
-    P.ShadowMaterial = safeMat("arc9/shadow2")
 
     P.DebugPrint("created RT", rtName, matName)
-
     return P.RT, P.RTMaterial, P.RTMaterialName
 end
 
@@ -187,9 +181,8 @@ function P.FindLensIndex(model, att)
         return model.TRM_ScopePiPLensIndex, model.TRM_ScopePiPLensMaterial
     end
 
-    local profile = P.GetAttachmentProfile(att, att and att.ClassName)
-    local lensNeedles = profile.LensNeedles or P.Config.LensNeedles
-    local skipNeedles = P.Config.SkipNeedles
+    local lensNeedles = att.Scope.Lens or {"lense_rt"}
+    local skipNeedles = P.Config.SkipNeedles or {}
 
     for index, matName in ipairs(model:GetMaterials() or {}) do
         if hasNeedle(matName, lensNeedles) and not hasNeedle(matName, skipNeedles) then
@@ -211,6 +204,7 @@ function P.ApplyLensMaterial(model, att)
     if lensIndex == nil or lensIndex == false then return false end
 
     model:SetSubMaterial(lensIndex, "!" .. materialName)
+    --print(materialName)
     model.TRM_ScopePiPApplied = true
     model.TRM_ScopePiPInactive = false
     return true
@@ -424,7 +418,7 @@ function P.RenderScopeView()
     if P.NextRender and now < P.NextRender then return end
     P.NextRender = now + (1 / fps)
 
-    local size = P.RTSize or P.GetResolution()
+    local size =  P.GetResolution()
     local fov = GetConVar("fov_desired"):GetInt()
     local zoomfov = fov / att:GetScopeMagnification()
     local origin, angles = P.GetCamera(ply, wep, entry, att, model)
@@ -440,7 +434,7 @@ function P.RenderScopeView()
     render.SetAmbientLight(0, 0, 0)
 
     if att.RTCode then
-        att:RTCode(wep,att)
+        att:RTCode(wep)
     end
 
     local ok, err = xpcall(function()
@@ -454,10 +448,11 @@ function P.RenderScopeView()
             fov = zoomfov,
             aspectratio = 1,
             drawviewmodel = false,
+            viewmodelfov = zoomfov,
             drawhud = false,
             dopostprocess = false,
             znear = 4,
-            zfar = 15000
+           -- zfar = 15000
         })
     end, debug.traceback)
     if not ok then
@@ -471,7 +466,7 @@ function P.RenderScopeView()
     local radius = size 
     surface.SetMaterial(P.SceneMaterial)
     surface.SetDrawColor(255, 255, 255, 255)
-    P.DrawTexturedCircle(size * 0.5, size * 0.5, radius, 160, profile and profile.FlipX, profile and profile.FlipY,
+    P.DrawTexturedCircle(size * 0.5, size * 0.5, radius, 20, profile and profile.FlipX, profile and profile.FlipY,
         textureRoll)
     -- P.DrawLensBlend(size, profile) --this lost performance very high
     P.DrawReticle(size, att, textureRoll)
@@ -483,7 +478,7 @@ function P.RenderScopeView()
     TRM_SCOPE_RENDERING_RT = nil
 end
 
-hook.Add("PostRender", "TRM_ScopePiP_UpdateRT", function()
+hook.Add("PreRender", "TRM_ScopePiP_UpdateRT", function()
     if P.Rendering then return end
     P.RenderScopeView()
 end)

@@ -5,11 +5,8 @@ TRM_ScopePiP = TRM_ScopePiP or {}
 local P = TRM_ScopePiP
 
 P.Config = P.Config or {}
-P.Config.ElcanClass = "att_ins_elcan"
-P.Config.ElcanModel = "models/weapons/tfa_ins2/upgrades/a_optic_elcan.mdl"
 P.Config.RTNamePrefix = "youraddon_elcan_pip_rt_"
-P.Config.MaterialNamePrefix = "youraddon_elcan_pip_mat_"
-P.Config.LensNeedles = { "lense_rt", "optic_lense" }
+P.Config.MaterialNamePrefix = "youraddon_scope_pip_mat_"
 P.Config.SkipNeedles = { "parallax_mask", "reticule", "reticle" }
 P.Config.FallbackReticle = "models/weapons/tfa_ins2/optics/elcan_reticule"
 P.Config.ReticleMaterial = "youraddon/scopes/elcan_reticle"

@@ -29,7 +29,7 @@ local function LoadAttachmentStats(path, fileName)
     table.Merge(BASE_TRM_ATTS[name], table.Copy(ATTACHMENT))
 end
 
-
+ 
 
 local function LoadAttachments(path)
     local files, folders = file.Find(path .. "/*", "LUA")

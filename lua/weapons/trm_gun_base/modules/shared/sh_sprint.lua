@@ -28,7 +28,6 @@ function SWEP:CanSprint()
         end
     end
     
-    -- 动画播完后，额外检查一些状态（防止残留）
     local blacklist = {"Deploy","Rechamber", "Holster", "Reload", "Inspect", "Melee", "Draw"}
     for _, v in ipairs(blacklist) do
         if string.find(task, v) or string.find(seq, v) then
@@ -92,7 +91,7 @@ function SWEP:Sprint()
     local radio = speed / runSpeed
     local sequence = self:GetPlayingSequence()
     -- 已经在冲刺相关状态中，不要干扰
-    if currentTask == "SprintIn" or currentTask == "Sprint" or currentTask == "SprintOut"  then
+    if currentTask == "SprintIn" or currentTask == "Sprint" or currentTask == "SprintOut" or string.find(currentTask,"Reload") then
         return
     end
     
