@@ -4,7 +4,7 @@ ATTACHMENT.Base = "att_scope"
 ATTACHMENT.Selectable = true
 ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_optic_aimp2x.mdl")
 ATTACHMENT.Angles = Angle(-90, 0, 90)
-ATTACHMENT.Pos = Vector(-1.5,0,0)
+ATTACHMENT.Pos = Vector(-0,0,0)
 
 ATTACHMENT.Sight = {
     Pos = Vector(0, -0, -0.9),

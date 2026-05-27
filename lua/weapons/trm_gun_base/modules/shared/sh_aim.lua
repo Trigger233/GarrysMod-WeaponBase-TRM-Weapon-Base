@@ -76,10 +76,3 @@ end
 
 
 
-
-function SWEP:AdjustMouseSensitivity()
-    
-    return self.m_MouseSensitivity or 1
-end
-
-

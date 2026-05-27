@@ -147,7 +147,6 @@ function SWEP:TranslateFOV(fov)
     -- 使用平滑曲线，让过渡更自然
     local easedDelta = math.pow(aimDelta, 1)
     local FOV = Lerp(easedDelta, normalFOV, aimFOV)
-    self.m_MouseSensitivity = Lerp(easedDelta, 1, 1 / self.Aim.Scale)
     return FOV
 end
 
@@ -354,6 +353,35 @@ end
 
 function SWEP:PreDrawViewModel()
 
+end
+
+local cvar_mdv = CreateClientConVar("trmbase_sight_mdv", 1.33 , true, false, "None Description", 0, 3)
+local function MDVSensitivity(curFOV, defFOV, mdv)
+    -- mdv 默认 1.33 (16:10 或 4:3 的常用值)
+    mdv = mdv or 1.33
+
+    local a = math.tan(math.rad(defFOV / 2) / mdv)
+    local b = math.tan(math.rad(curFOV / 2) / mdv)
+
+    return math.max(b / a,0)
+end
+local function HasScope(wep)
+    for _ ,entry in pairs(wep.CurrentAttachments or {}) do
+        if BASE_TRM_ATTS[entry.Class] and BASE_TRM_ATTS[entry.Class].Scope then
+            return (BASE_TRM_ATTS[entry.Class].Scope.Zoom or 1)
+        end 
+    end
+    return false
+end
+
+function SWEP:AdjustMouseSensitivity(defaultSensitivity, localFOV, defaultFOV)
+    local currentFOV = localFOV 
+    local scope = HasScope(self)
+    if scope then
+        currentFOV = Lerp(self:GetAimDelta(), defaultFOV, defaultFOV / (scope or 1))
+    end
+    --self:GetOwner():ChatPrint(currentFOV.."||"..defaultFOV)
+    return MDVSensitivity(currentFOV, defaultFOV, cvar_mdv:GetFloat())
 end
 
 concommand.Add("trm_clear_test_model", function(ply)

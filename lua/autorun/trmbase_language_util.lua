@@ -61,6 +61,7 @@ TRMBase.Language.cn = {
     ["TRMBase_CrosshairStyle"]     = "准星样式",
     ["TRMBase_CrosshairDot"]       = "准星中心点",
     ["TRMBase_HideHUDInspect"]     = "检视时隐藏 HUD",
+    ["TRMBase_MDV"] = "灵敏度缩放系数" ,
 }
 
 -- 英文
@@ -110,6 +111,8 @@ TRMBase.Language.en = {
     ["TRMBase_CrosshairStyle"]     = "Crosshair Style",
     ["TRMBase_CrosshairDot"]       = "Crosshair Dot",
     ["TRMBase_HideHUDInspect"]     = "Hide HUD When Inspect",
+    ["TRMBase_MDV"]                = "MDV Sensitivity",
+
 }
 
 -- 获取当前语言

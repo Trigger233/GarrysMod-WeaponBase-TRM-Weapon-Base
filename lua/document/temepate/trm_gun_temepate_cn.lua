@@ -7,7 +7,6 @@ SWEP.AdminOnly = false
 SWEP.PrintName = "武器名称"
 SWEP.Author = "作者名"
 SWEP.Purpose = ""
-SWEP.DrawCrosshair = false
 SWEP.DrawCrossHairIS = false
 
 -- 模型
@@ -22,7 +21,7 @@ SWEP.Slot = 2
 
 -- 弹药
 SWEP.Primary.ClipSize = 30
-SWEP.Primary.Chamber = 1
+SWEP.Primary.Chamber = 1 -- 预装弹药数量，0表示不预装，1表示预装一发
 SWEP.Primary.DefaultClip = 0
 SWEP.Primary.Ammo = "ar2"
 SWEP.Primary.SpecialAmmo = -1
@@ -93,11 +92,14 @@ SWEP.Sight = {
 
 -- 后坐力
 SWEP.Recoil = {
-    Vertical = { 2, 2 },
-    Horizonal = { -0.3, 0.3 },
-    AdsMultiplier = 0.1,
-    KickDown = 1,
-    Shake = 0.8,
+    Vertical = { 2, 2 }, -- 每次开火增加的后坐力范围
+    Horizonal = { -0.3, 0.3 },  -- 水平后坐力范围，负数向左，正数向右
+    AdsMultiplier = 0.1, -- 瞄准时后坐力的倍率
+    KickDown = 1, -- 开火时枪口向下的程度
+    Shake = 0.8, -- 开火时屏幕震动的程度
+    Recover = 0.04, -- 后坐力恢复速度，数值越大恢复越快
+    Factor = 0.2, -- 后坐力不平滑增加的程度，数值越大后坐力增加越快
+
     -- Functional = {
     --     Increase = 0.2 ,
     --     Recover = 0.4,
