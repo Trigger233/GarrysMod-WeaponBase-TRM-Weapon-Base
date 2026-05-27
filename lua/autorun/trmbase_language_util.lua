@@ -127,7 +127,7 @@ local function refreshLang()
         language.Add(k, v)
     end
 end
-
+refreshLang()
 function LanguageChanged(lang)
     refreshLang()
 end

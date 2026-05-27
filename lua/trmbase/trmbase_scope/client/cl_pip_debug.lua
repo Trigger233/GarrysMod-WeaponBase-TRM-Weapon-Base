@@ -28,7 +28,7 @@ local function debugMaterials()
     print("[TRM ELCAN PiP] active weapon: " .. (IsValid(wep) and wep:GetClass() or "invalid"))
     print("[TRM ELCAN PiP] weapon model: " .. (IsValid(wep) and tostring(wep:GetModel()) or "invalid"))
     print("[TRM ELCAN PiP] aiming: " .. tostring(IsValid(wep) and wep.GetAimDelta and wep:GetAimDelta() or "unknown"))
-    print("[TRM ELCAN PiP] elcan equipped: " .. tostring(P.HasElcanEquipped(wep)))
+    print("[TRM ELCAN PiP] elcan equipped: " .. tostring(P.HasScopeEquipped(wep)))
     print("[TRM ELCAN PiP] force test: " .. tostring(P.ForceTest == true))
 
     printMaterials("local viewmodel materials", vm)

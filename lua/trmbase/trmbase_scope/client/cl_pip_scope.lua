@@ -7,10 +7,10 @@ local P = TRM_ScopePiP
 function P.RenderScopeAttachment(wep, model, att)
     if not IsValid(model) then return end
 
-    P.RegisterElcanModel(wep, model, att)
+    -- P.RegisterElcanModel(wep, model, att)
 
     local ply = LocalPlayer()
-    local shouldApply = IsValid(ply) and P.IsPlayerAimingWithElcan(ply, wep)
+    local shouldApply = IsValid(ply) and P.IsPlayerAimingWithScope(ply, wep)
 
     if shouldApply then
         P.ApplyLensMaterial(model, att)

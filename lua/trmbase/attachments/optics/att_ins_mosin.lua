@@ -1,31 +1,29 @@
-ATTACHMENT.Name = "Elcan 4x"
+ATTACHMENT.Name = "Mosin 7.5x (WIP)"
 ATTACHMENT.Category = "att_sight"
 ATTACHMENT.Base = "att_scope"
 ATTACHMENT.Selectable = true
-ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_optic_elcan.mdl")
-
+ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_optic_mosin.mdl")
 ATTACHMENT.Angles = Angle(-90, 0, 90)
-
+ATTACHMENT.Pos = Vector(-1.5,0,0)
 
 ATTACHMENT.Sight = {
-    Pos = Vector(0, -0, -1.8),
+    Pos = Vector(0, 4, -0.0),
     Align = "scope_origin",
-    Material = Material("models/weapons/tfa_ins2/optics/elcan_reticule"),
     Size = 360,
-    Color = Color(255, 255, 255)
+    Color = Color(255, 255, 255) ,
+    Material = Material("models/weapons/tfa_ins2/optics/a_optic_mosin"),
 }
 
 ATTACHMENT.Scope = {
     Align = "scope_origin",
-    Zoom = 4,
-    FOV = 12,
+    Zoom = 7.5,
     RTSize = 512,
     Offset = Vector(0,0,0) ,
     Angle = Angle(0,0,-90),
     DrawAt = 0.35,
 }
 function ATTACHMENT:ChangeWeaponStats(weapon)
-    weapon.Aim.Time = weapon.Aim.Time * 1.25
+    weapon.Aim.Time = weapon.Aim.Time * 1.1
 end
 
 

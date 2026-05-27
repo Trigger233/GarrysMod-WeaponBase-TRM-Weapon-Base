@@ -97,8 +97,8 @@ function P.GetAttachmentProfile(att, class)
     out.FOV = (att and (att.PiPFOV or att.ElcanPiPFOV)) or (profile and profile.FOV) or 14
     out.LensNeedles = (att and (att.PiPLensMaterialNeedles or att.ElcanPiPLensMaterialNeedles)) or
         (profile and profile.LensNeedles) or P.Config.LensNeedles
-    out.Reticle =  tostring(att.Scope.Material) or P.Config.FallbackReticle
-    
+    out.Reticle = tostring(att.Scope.Material) or P.Config.FallbackReticle
+
     out.FlipX = (att and att.PiPFlipX)
     if out.FlipX == nil then out.FlipX = profile and profile.FlipX or false end
     out.FlipY = (att and att.PiPFlipY)
@@ -149,7 +149,7 @@ function P.GetPiPAttachmentEntry(wep)
     return nil
 end
 
-function P.HasElcanEquipped(wep)
+function P.HasScopeEquipped(wep)
     local entry, att = P.GetScopeAttachmentEntry(wep)
     return entry ~= nil and att ~= nil and att.HasPiP == true
 end
@@ -165,7 +165,7 @@ function P.IsWeaponCustomizing(wep)
     return false
 end
 
-function P.IsPlayerAimingWithElcan(ply, wep)
+function P.IsPlayerAimingWithScope(ply, wep)
     if not P.GetBool("enable", true) then return false end
     if P.ForceTest then return P.HasPiPEquipped(wep) end
     if not IsValid(ply) or not ply:Alive() then return false end
@@ -242,15 +242,6 @@ function P.ResetModel(model)
     model.TRM_ScopePiPInactive = false
 end
 
-function P.RegisterElcanModel(wep, model, att)
-    if not IsValid(wep) or not IsValid(model) then return end
-
-    P.ActiveWeapon = wep
-    P.ActiveModel = model
-    P.ActiveAttachment = att
-    P.LastSeen = CurTime()
-end
-
 function P.GetCamera(ply, wep, entry, att, model)
     local pos = ply:EyePos()
     local ang = ply:EyeAngles()
@@ -266,8 +257,8 @@ function P.GetCamera(ply, wep, entry, att, model)
         end
     end
 
-    local offsetPos = (att and att.Scope and att.Scope.RTOffset) or Vector(0, 0, 0)
-    local offsetAng = (att and att.Scope and att.Scope.RTAngle) or Angle(0, 0, 0)
+    local offsetPos = (att and att.Scope and att.Scope.Offset) or Vector(0, 0, 0)
+    local offsetAng = (att and att.Scope and att.Scope.Angle) or Angle(0, 0, 0)
     if isvector(offsetPos) then
         pos = pos + ang:Forward() * offsetPos.x + ang:Right() * offsetPos.y + ang:Up() * offsetPos.z
     end
@@ -331,7 +322,44 @@ function P.GetScopeTextureRoll(wep, profile)
     return P.SmoothedTextureRoll or 0
 end
 
-function P.DrawRing(x, y, innerRadius, outerRadius, segments)
+function P.DrawReticle(size, att, textureRoll)
+    if not att.Sight then return end
+
+    local reticleMat = att.Sight.Material   or P.ReticleMaterial
+    local radius = size 
+    local offset = att.Sight.Offset or Vector(0,0,0)
+    local x = size * (0.5 + (isvector(offset) and offset.x or 0))
+    local y = size * (0.5 + (isvector(offset) and offset.y or 0))
+
+    if reticleMat then
+        surface.SetMaterial(reticleMat)
+        surface.SetDrawColor(255, 255, 255, 210)
+        P.DrawTexturedCircle(x, y, radius, 128, att.Scope.FlipX or false, att.Scope.FlipY or false , textureRoll)
+        return
+    end
+
+    local thin = math.max(1, math.floor(size * 0.0025))
+    local gap = size * 0.035
+    local len = size * 0.19
+
+    surface.SetDrawColor(10, 10, 10, 230)
+    
+    surface.DrawRect(x - thin * 0.5, y - gap - len, thin, len)
+    surface.DrawRect(x - thin * 0.5, y + gap, thin, len)
+    surface.DrawRect(x - gap - len, y - thin * 0.5, len, thin)
+    surface.DrawRect(x + gap, y - thin * 0.5, len, thin)
+end
+
+--[[
+-- function P.RegisterElcanModel(wep, model, att)
+--     if not IsValid(wep) or not IsValid(model) then return end
+
+--     P.ActiveWeapon = wep
+--     P.ActiveModel = model
+--     P.ActiveAttachment = att
+--     P.LastSeen = CurTime()
+-- end
+-- function P.DrawRing(x, y, innerRadius, outerRadius, segments)
     segments = segments or 128
 
     for i = 0, segments - 1 do
@@ -347,34 +375,6 @@ function P.DrawRing(x, y, innerRadius, outerRadius, segments)
             { x = x + c1 * outerRadius, y = y + s1 * outerRadius }
         })
     end
-end
-
-function P.DrawReticle(size, profile, textureRoll)
-    if not P.GetBool("reticle", true) then return end
-
-    local reticlePath = profile and profile.Reticle or P.Config.FallbackReticle
-    local reticleMat = safeMat(reticlePath) or P.ReticleMaterial
-    local radius = size * ((profile and profile.ReticleRadius) or P.Config.DefaultReticleRadius)
-    local offset = (profile and profile.ReticleOffset) or P.Config.DefaultReticleOffset
-    local x = size * (0.5 + (isvector(offset) and offset.x or 0))
-    local y = size * (0.5 + (isvector(offset) and offset.y or 0))
-
-    if reticleMat then
-        surface.SetMaterial(reticleMat)
-        surface.SetDrawColor(255, 255, 255, 210)
-        P.DrawTexturedCircle(x, y, radius, 128, profile and profile.FlipX, profile and profile.FlipY, textureRoll)
-        return
-    end
-
-    local thin = math.max(1, math.floor(size * 0.0025))
-    local gap = size * 0.035
-    local len = size * 0.19
-
-    surface.SetDrawColor(10, 10, 10, 230)
-    surface.DrawRect(x - thin * 0.5, y - gap - len, thin, len)
-    surface.DrawRect(x - thin * 0.5, y + gap, thin, len)
-    surface.DrawRect(x - gap - len, y - thin * 0.5, len, thin)
-    surface.DrawRect(x + gap, y - thin * 0.5, len, thin)
 end
 
 function P.DrawLensBlend(size, profile)
@@ -399,13 +399,14 @@ function P.DrawLensBlend(size, profile)
     surface.SetDrawColor(0, 0, 0, 55)
     P.DrawRing(x, y, radius - softness * 0.18, radius + softness * 0.08, 160)
 end
+]]
 
 function P.RenderScopeView()
     local ply = LocalPlayer()
     if not IsValid(ply) then return end
 
     local wep = ply:GetActiveWeapon()
-    if not P.IsPlayerAimingWithElcan(ply, wep) then return end
+    if not P.IsPlayerAimingWithScope(ply, wep) then return end
 
     local entry, att, _, profile = P.GetPiPAttachmentEntry(wep)
     if not entry or not att then return end
@@ -418,13 +419,14 @@ function P.RenderScopeView()
     local rt = P.EnsureRenderTarget()
     if not rt then return end
 
-    local fps = math.max(1 / RealFrameTime(), 144)
+    local fps = math.max(1 / RealFrameTime(), 30)
     local now = RealTime()
     if P.NextRender and now < P.NextRender then return end
-    P.NextRender = now + (1 / fps) * 0.75
+    P.NextRender = now + (1 / fps)
 
     local size = P.RTSize or P.GetResolution()
-    local fov = math.Clamp(P.GetFloat("fov", profile and profile.FOV or att.ElcanPiPFOV or 14), 5, 45)
+    local fov = GetConVar("fov_desired"):GetInt()
+    local zoomfov = fov / att:GetScopeMagnification()
     local origin, angles = P.GetCamera(ply, wep, entry, att, model)
     local textureRoll = P.GetScopeTextureRoll(wep, profile)
 
@@ -437,6 +439,10 @@ function P.RenderScopeView()
     render.Clear(0, 0, 0, 255, true, true)
     render.SetAmbientLight(0, 0, 0)
 
+    if att.RTCode then
+        att:RTCode(wep,att)
+    end
+
     local ok, err = xpcall(function()
         render.RenderView({
             x = 0,
@@ -445,13 +451,13 @@ function P.RenderScopeView()
             h = size,
             origin = origin,
             angles = angles,
-            fov = fov,
+            fov = zoomfov,
             aspectratio = 1,
             drawviewmodel = false,
             drawhud = false,
             dopostprocess = false,
             znear = 4,
-            zfar = 30000
+            zfar = 15000
         })
     end, debug.traceback)
     if not ok then
@@ -462,13 +468,13 @@ function P.RenderScopeView()
     render.PushRenderTarget(rt)
     render.Clear(0, 0, 0, 0, true, true)
     cam.Start2D()
-    local radius = size * ((profile and profile.LensRadius) or P.Config.DefaultLensRadius)
+    local radius = size 
     surface.SetMaterial(P.SceneMaterial)
     surface.SetDrawColor(255, 255, 255, 255)
     P.DrawTexturedCircle(size * 0.5, size * 0.5, radius, 160, profile and profile.FlipX, profile and profile.FlipY,
         textureRoll)
-    P.DrawLensBlend(size, profile)
-    P.DrawReticle(size, profile, textureRoll)
+    -- P.DrawLensBlend(size, profile) --this lost performance very high
+    P.DrawReticle(size, att, textureRoll)
     cam.End2D()
     render.PopRenderTarget()
 
@@ -477,16 +483,7 @@ function P.RenderScopeView()
     TRM_SCOPE_RENDERING_RT = nil
 end
 
-hook.Add("PreRender", "TRM_ScopePiP_UpdateRT", function()
+hook.Add("PostRender", "TRM_ScopePiP_UpdateRT", function()
     if P.Rendering then return end
     P.RenderScopeView()
-end)
-
-hook.Add("Think", "TRM_ScopePiP_SmoothAutoRecoil", function()
-    local ply = LocalPlayer()
-    if not IsValid(ply) then return end
-
-    local wep = ply:GetActiveWeapon()
-    local _, _, _, profile = P.GetPiPAttachmentEntry(wep)
-    if not profile then return end
 end)

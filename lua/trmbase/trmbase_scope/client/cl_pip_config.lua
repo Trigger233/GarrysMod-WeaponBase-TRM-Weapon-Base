@@ -71,10 +71,7 @@ function P.GetFloat(name, fallback)
 end
 
 function P.GetResolution()
-    local raw = math.floor(P.GetFloat("res", 512))
-    if raw <= 256 then return 256 end
-    if raw >= 1024 then return 1024 end
-    return 512
+    return 1024
 end
 
 function P.DebugPrint(...)

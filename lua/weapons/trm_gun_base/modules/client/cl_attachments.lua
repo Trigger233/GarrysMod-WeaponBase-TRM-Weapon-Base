@@ -910,7 +910,7 @@ function PANEL:SetupModel()
 
     ent:InvalidateBoneCache()
     ent:SetupBones()
-
+    ent:SetPredictable(true)
     -- 缓存预览用骨骼数据
     self.m_PreviewBones = {}
     for i = 0, ent:GetBoneCount() do
@@ -1119,6 +1119,7 @@ function PANEL:ApplyPreviewModel(ent)
     self:BuildModelBone(ent)
     local slot = self.m_Weapon.Attachments
     for slotKey, model in pairs(self.m_PreviewModels) do
+
         local attData = BASE_TRM_ATTS[model.Class]
         if attData.Bonemerge then
             model:AddEffects(EF_BONEMERGE)
@@ -1128,6 +1129,8 @@ function PANEL:ApplyPreviewModel(ent)
             model:SetLocalAngles(ZERO_ANGLE)
 
         else
+            model:InvalidateBoneCache()
+            model:SetupBones()
             local slotEntry = slot[tonumber(model.Slot)]
             if not slotEntry then continue end
             local BoneData = self.m_PreviewBones[slotEntry.Bone]
@@ -1193,7 +1196,7 @@ function PANEL:RefreshPreview()
 
     local ent = self.m_ModelPanel:GetEntity()
     if not IsValid(ent) then return end
-
+    
 
     for slotKey, entry in pairs(self.m_Weapon.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
@@ -1203,8 +1206,10 @@ function PANEL:RefreshPreview()
         if not path then continue end
 
         local slot = self.m_Weapon.Attachments and self.m_Weapon.Attachments[tonumber(slotKey)]
-        if not attData.Bonemerge then continue end
+       -- if not attData.Bonemerge then continue end
         local model = ClientsideModel(path, RENDERGROUP_OPAQUE)
+        model:InvalidateBoneCache()
+        model:SetupBones()
         if not IsValid(model) then continue end
         model.Class = entry.Class
         model.Slot = slotKey

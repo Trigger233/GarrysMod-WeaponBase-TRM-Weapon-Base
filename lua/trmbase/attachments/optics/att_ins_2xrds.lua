@@ -4,34 +4,26 @@ ATTACHMENT.Base = "att_scope"
 ATTACHMENT.Selectable = true
 ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_optic_aimp2x.mdl")
 ATTACHMENT.Angles = Angle(-90, 0, 90)
-
 ATTACHMENT.Pos = Vector(-1.5,0,0)
+
 ATTACHMENT.Sight = {
     Pos = Vector(0, -0, -0.9),
     Align = "scope_origin",
     Size = 360,
-    Color = Color(255, 255, 255)
+    Color = Color(255, 255, 255) ,
+    Material = Material("models/weapons/tfa_ins2/optics/aimpoint_reticule") ,
 }
 
 ATTACHMENT.Scope = {
     Align = "scope_origin",
     Zoom = 2,
-    -- FOV = 12,
     RTSize = 512,
-    Material = Material("models/weapons/tfa_ins2/optics/aimpoint_reticule") ,
-    ScreenScale = 0.62,
-    ReticleSize = 230,
-    LensSize = 2.1,
-    ReticleLineColor = Color(0, 0, 0, 245),
-    RTAttachment = "scope_origin",
-    RTAttachmentRadius = 0.1,
-    RTAttachmentOffset = -2.2,
-    RTOffset = Vector(0,0,0) ,
-    RTAngle = Angle(0,0,-90),
+    Offset = Vector(0,0,0) ,
+    Angle = Angle(0,0,-90),
     DrawAt = 0.35,
 }
 function ATTACHMENT:ChangeWeaponStats(weapon)
-    weapon.Aim.Time = weapon.Aim.Time * 1.25
+    weapon.Aim.Time = weapon.Aim.Time * 1.1
 end
 
 

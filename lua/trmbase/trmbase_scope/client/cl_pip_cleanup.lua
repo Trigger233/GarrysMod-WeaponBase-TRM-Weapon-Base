@@ -20,7 +20,7 @@ hook.Add("Think", "TRM_ScopePiP_CleanupInactive", function()
 
     local ply = LocalPlayer()
     local wep = IsValid(ply) and ply:GetActiveWeapon() or nil
-    if not P.IsPlayerAimingWithElcan(ply, wep) then
+    if not P.IsPlayerAimingWithScope(ply, wep) then
         if IsValid(wep) and P.HasPiPEquipped and P.HasPiPEquipped(wep) then
             P.ApplyInactiveLensMaterial(P.ActiveModel, P.ActiveAttachment)
         else
@@ -28,7 +28,7 @@ hook.Add("Think", "TRM_ScopePiP_CleanupInactive", function()
         end
     end
 
-    if P.LastSeen and CurTime() - P.LastSeen > 2 then
+    if P.LastSeen and CurTime() - P.LastSeen > 1 then
         P.Cleanup()
     end
 end)
