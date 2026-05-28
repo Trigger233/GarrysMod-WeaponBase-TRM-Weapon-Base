@@ -382,7 +382,7 @@ function SWEP:DoCameraRecoil()
 		self.m_RecoilDelta = self.m_RecoilDelta - math.min( playerPitchDelta , 0)
 	else
 		-- 停火后：回正剩余的后坐力
-		if self.m_RecoilDelta * (current.pitch > 0 and 1 or -1) > 0.5 then
+		if self.m_RecoilDelta * (current.pitch > 0 and 1 or -1) > 1 then
 			NextAngle.pitch = -self.m_RecoilDelta * stat.Recover
 			self.m_RecoilDelta = self.m_RecoilDelta + NextAngle.pitch
 		else

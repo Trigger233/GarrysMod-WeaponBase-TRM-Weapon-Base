@@ -357,30 +357,48 @@ end
 
 local cvar_mdv = CreateClientConVar("trmbase_sight_mdv", 1.33 , true, false, "None Description", 0, 3)
 local function MDVSensitivity(curFOV, defFOV, mdv)
-    -- mdv 默认 1.33 (16:10 或 4:3 的常用值)
-    mdv = mdv or 1.33
+    -- 限制 mdv 最小值，避免 tan 爆炸
+    mdv = math.max(mdv or 1.33, 0.5) -- 最小 0.5
 
-    local a = math.tan(math.rad(defFOV / 2) / mdv)
-    local b = math.tan(math.rad(curFOV / 2) / mdv)
+    if mdv == 0 then
+        return curFOV / defFOV
+    end
 
-    return math.max(b / a,0)
+    -- 保护：避免角度接近 90°
+    local angleA = math.rad(defFOV / 2) / mdv
+    local angleB = math.rad(curFOV / 2) / mdv
+
+    -- 角度超过 85° 时钳制，避免 tan 爆炸
+    local maxAngle = math.rad(85)
+    if angleA > maxAngle then angleA = maxAngle end
+    if angleB > maxAngle then angleB = maxAngle end
+
+    local a = math.tan(angleA)
+    local b = math.tan(angleB)
+
+    return math.Clamp(b / a, 0.01, 1)
 end
 local function HasScope(wep)
     for _ ,entry in pairs(wep.CurrentAttachments or {}) do
-        if BASE_TRM_ATTS[entry.Class] and BASE_TRM_ATTS[entry.Class].Scope then
+        local att = BASE_TRM_ATTS[entry.Class]
+        if att and att.Scope and att.Scope.Zoom then
             return (BASE_TRM_ATTS[entry.Class].Scope.Zoom or 1)
         end 
     end
     return false
 end
 
-function SWEP:AdjustMouseSensitivity(defaultSensitivity, localFOV, defaultFOV)
+function SWEP:AdjustMouseSensitivity(defaultSensitivity, localFOV, _ )
+    local defaultFOV = GetConVar("fov_desired"):GetInt()
     local currentFOV = localFOV 
     local scope = HasScope(self)
+    local aim = self:GetAimDelta()
     if scope then
-        currentFOV = Lerp(self:GetAimDelta(), defaultFOV, defaultFOV / (scope or 1))
+        currentFOV = Lerp(aim, defaultFOV, defaultFOV / (scope or 1))
+    else
+        currentFOV = Lerp(aim, defaultFOV, localFOV / self.Aim.Scale)
     end
-    --self:GetOwner():ChatPrint(currentFOV.."||"..defaultFOV)
+    --chat.AddText(scope)
     return MDVSensitivity(currentFOV, defaultFOV, cvar_mdv:GetFloat())
 end
 

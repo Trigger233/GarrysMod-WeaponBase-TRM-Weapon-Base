@@ -104,7 +104,7 @@ SWEP.Primary.RPM = 600
 SWEP.Primary.Automatic = false
 -- SWEP.Primary.Trigger = {
 --     Time = 0 ,
---     Type = "Hold", -- or "Tap" 
+--     Type = "Hold", -- or "Tap"
 --     Sound = Sound() ,
 -- }
 
@@ -221,7 +221,7 @@ SWEP.Recoil = {
     KickDown = 0.4,
     Shake = 0.1,
     Recover = 0.01,
-    Factor = 0.2 ,
+    Factor = 0.2,
     Functional = {
         Increase = 0.2,
         Recover = 0.4,
@@ -511,12 +511,13 @@ function SWEP:Deploy()
     self:GetOwner():SetSaveValue("m_flNextAttack", 0)
     self:SetNextAnimationTime(0)
     self:SetCurrentTask("Deploy")
-
-    self:OnAttachmentChanged()
-    -- 确保客户端知道当前配件（预设由初始化 / Equip / Restore 加载）
-    self:SyncAllAttachments()
-    self:BuildCustomizedGun()
-end
+    timer.Simple(0.1, function()
+        self:OnAttachmentChanged()
+        -- 确保客户端知道当前配件（预设由初始化 / Equip / Restore 加载）
+        self:SyncAllAttachments()
+        self:BuildCustomizedGun()
+    end)
+end 
 
 -- 读档后恢复配件数据
 function SWEP:Restore()
@@ -578,7 +579,7 @@ function SWEP:OnReloaded()
 
     --print("[TRMBase] Client files reloaded!")
 end
- 
+
 function SWEP:OnRestore()
     timer.Simple(FrameTime() * 5, function()
         self:OnReloaded()
@@ -611,13 +612,11 @@ function SWEP:PrimaryAttack()
         end
         return false
     end
-    if self.Primary.Trigger  then
+    if self.Primary.Trigger then
         self:SetCurrentTask("Charge")
     else
         self:SetCurrentTask("PrimaryFire")
-
     end
-
 end
 
 function SWEP:SecondaryAttack()

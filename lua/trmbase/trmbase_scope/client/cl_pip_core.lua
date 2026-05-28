@@ -112,20 +112,6 @@ function P.GetAttachmentProfile(att, class)
     return out
 end
 
-function P.GetScopeAttachmentEntry(wep)
-    if not IsValid(wep) then return nil end
-    if not wep.CurrentAttachments then return nil end
-
-    for slot, entry in pairs(wep.CurrentAttachments) do
-        if entry and entry.Class == P.Config.ElcanClass then
-            local att = BASE_TRM_ATTS and BASE_TRM_ATTS[entry.Class]
-            return entry, att, slot
-        end
-    end
-
-    return nil
-end
-
 function P.GetPiPAttachmentEntry(wep)
     if not IsValid(wep) then return nil end
     if not wep.CurrentAttachments then return nil end
@@ -144,14 +130,11 @@ function P.GetPiPAttachmentEntry(wep)
 end
 
 function P.HasScopeEquipped(wep)
-    local entry, att = P.GetScopeAttachmentEntry(wep)
-    return entry ~= nil and att ~= nil and att.HasPiP == true
+    local entry, att = P.GetPiPAttachmentEntry(wep)
+    return (att and att.Scope or false)
 end
 
-function P.HasPiPEquipped(wep)
-    local entry, att = P.GetPiPAttachmentEntry(wep)
-    return entry ~= nil and att ~= nil
-end
+
 
 function P.IsWeaponCustomizing(wep)
     if IsValid(TRM_AttachMenu_Instance) then return true end
@@ -160,13 +143,10 @@ function P.IsWeaponCustomizing(wep)
 end
 
 function P.IsPlayerAimingWithScope(ply, wep)
-    if not P.GetBool("enable", true) then return false end
-    if P.ForceTest then return P.HasPiPEquipped(wep) end
     if not IsValid(ply) or not ply:Alive() then return false end
     if not IsValid(wep) or wep ~= ply:GetActiveWeapon() then return false end
     if P.IsWeaponCustomizing(wep) then return false end
-    if not P.HasPiPEquipped(wep) then return false end
-
+    if not P.HasScopeEquipped(wep) then return false end
     local vm = ply:GetViewModel()
     if not IsValid(vm) then return false end
 
@@ -420,7 +400,7 @@ function P.RenderScopeView()
 
     local size =  P.GetResolution()
     local fov = GetConVar("fov_desired"):GetInt()
-    local zoomfov = fov / att:GetScopeMagnification()
+    local zoomfov = fov / (att:GetScopeMagnification() or 1)
     local origin, angles = P.GetCamera(ply, wep, entry, att, model)
     local textureRoll = P.GetScopeTextureRoll(wep, profile)
 

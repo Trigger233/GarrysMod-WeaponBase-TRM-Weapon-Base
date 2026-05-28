@@ -1,53 +1,80 @@
--- =============================================
--- TRMBase 配件自动保存/加载系统
--- 
--- 保存路径: data/trm_weapon_base/preset/save_attachment/{武器类名}/save.json
--- 保存时机: EquipAttachment / UnEquipAttachment
--- 加载时机: 初始化 / Deploy
--- =============================================
-
 local PRESET_ROOT = "trm_weapon_base/preset/save_attachment/"
+local LOADOUT_ROOT = "trm_weapon_base/preset/loadouts/"
+if SERVER then
+    AddCSLuaFile()
 
---- 装上所有定义了 Default 的配件
+    util.AddNetworkString("TRMBase_LoadLoadout")
+    util.AddNetworkString("TRMBase_SaveLoadout")
+end
+local function PresetSlot(slot)
+    slot = math.floor(tonumber(slot) or 1)
+    return math.Clamp(slot, 1, 5)
+end
+
+local function SerializeAttachments(weapon)
+    local data = {}
+
+    if weapon.Attachments then
+        for i = 1, #weapon.Attachments do
+            local slotKey = tostring(i)
+            local entry = weapon.CurrentAttachments and weapon.CurrentAttachments[slotKey]
+            data[i] = entry and entry.Class or "None"
+        end
+    end
+
+    return data
+end
+
+local function ApplyAttachmentTable(weapon, data)
+    if not data or not istable(data) then return false end
+
+    weapon.CurrentAttachments = weapon.CurrentAttachments or {}
+    for slotKey in pairs(weapon.CurrentAttachments) do
+        weapon.CurrentAttachments[slotKey] = nil
+    end
+
+    for i, attClass in ipairs(data) do
+        local slotKey = tostring(i)
+        if weapon.Attachments and weapon.Attachments[i] and attClass ~= "None" and BASE_TRM_ATTS and BASE_TRM_ATTS[attClass] then
+            weapon.CurrentAttachments[slotKey] = { Class = attClass }
+        end
+    end
+
+    if weapon.SyncAllAttachments then weapon:SyncAllAttachments() end
+    if weapon.ChangeWeaponStats then weapon:ChangeWeaponStats() end
+    if weapon.BuildCustomizedGun then weapon:BuildCustomizedGun() end
+
+    return true
+end
+
 function SWEP:EquipDefaultAttachments()
     if not SERVER then return end
     if not self.Attachments then return end
-    if not self.CurrentAttachments then
-        self.CurrentAttachments = {}
-    end
+
+    self.CurrentAttachments = self.CurrentAttachments or {}
     for i, slot in ipairs(self.Attachments) do
         if slot.Default and BASE_TRM_ATTS[slot.Default] then
-            local slotKey = tostring(i)
-            self.CurrentAttachments[slotKey] = {Class = slot.Default}
+            self.CurrentAttachments[tostring(i)] = { Class = slot.Default }
         end
     end
+
     self:ChangeWeaponStats()
 end
 
---- 把当前武器的配件配置保存为 JSON
 function SWEP:SaveAttachmentPreset()
     if not SERVER then return end
+
     local class = self:GetClass()
     if not class or class == "" then return end
-    
-    -- 改用数组格式
-    local data = {}
-    if self.Attachments then
-        for i = 1, #self.Attachments do
-            local slotKey = tostring(i)
-            local entry = self.CurrentAttachments and self.CurrentAttachments[slotKey]
-            data[i] = entry and entry.Class or "None"  -- 用数字索引
-        end
-    end
-    
+
     local path = PRESET_ROOT .. class .. "/save.json"
     file.CreateDir(PRESET_ROOT .. class)
-    file.Write(path, util.TableToJSON(data))
+    file.Write(path, util.TableToJSON(SerializeAttachments(self)))
 end
 
---- 从 JSON 加载配件配置并应用到武器
 function SWEP:LoadAttachmentPreset()
     if not SERVER then return end
+
     local class = self:GetClass()
     if not class or class == "" then return end
 
@@ -55,26 +82,74 @@ function SWEP:LoadAttachmentPreset()
     if not json or json == "" then return end
 
     local data = util.JSONToTable(json)
-    if not data or not istable(data) then return end
+    ApplyAttachmentTable(self, data)
+end
 
-    self.CurrentAttachments = self.CurrentAttachments or {}
-    for slotKey in pairs(self.CurrentAttachments) do
-        self.CurrentAttachments[slotKey] = nil
-    end
+function SWEP:SaveAttachmentLoadout(slot)
+    if not SERVER then return end
 
-    -- 改为 ipairs 迭代数组
-    for i, attClass in ipairs(data) do
-        local slotKey = tostring(i)
-        if self.Attachments and self.Attachments[i] then
-            if attClass == "None" then continue end
-            if BASE_TRM_ATTS and BASE_TRM_ATTS[attClass] then
-                -- ... 其余验证代码不变
-                self.CurrentAttachments[slotKey] = {Class = attClass}
-            end
-        end
-    end
+    local class = self:GetClass()
+    if not class or class == "" then return end
 
-    self:SyncAllAttachments()
-    self:ChangeWeaponStats()
+    slot = PresetSlot(slot)
+    local dir = LOADOUT_ROOT .. class
+    local path = dir .. "/preset_" .. slot .. ".json"
 
+    file.CreateDir(dir)
+    file.Write(path, util.TableToJSON(SerializeAttachments(self), true))
+end
+
+function SWEP:LoadAttachmentLoadout(slot)
+    if not SERVER then return false end
+
+    local class = self:GetClass()
+    if not class or class == "" then return false end
+
+    slot = PresetSlot(slot)
+    local path = LOADOUT_ROOT .. class .. "/preset_" .. slot .. ".json"
+    local json = file.Read(path, "DATA")
+    if not json or json == "" then return false end
+
+    local data = util.JSONToTable(json)
+    return ApplyAttachmentTable(self, data)
+end
+
+if SERVER then
+    net.Receive("TRMBase_SaveLoadout", function(_, ply)
+        local weapon = net.ReadEntity()
+        local slot = net.ReadUInt(3)
+
+        if not IsValid(ply) or not IsValid(weapon) or weapon:GetOwner() ~= ply then return end
+        if not weapon.SaveAttachmentLoadout then return end
+
+        weapon:SaveAttachmentLoadout(slot)
+    end)
+
+    net.Receive("TRMBase_LoadLoadout", function(_, ply)
+        local weapon = net.ReadEntity()
+        local slot = net.ReadUInt(3)
+
+        if not IsValid(ply) or not IsValid(weapon) or weapon:GetOwner() ~= ply then return end
+        if not weapon.LoadAttachmentLoadout then return end
+
+        weapon:LoadAttachmentLoadout(slot)
+    end)
+
+    concommand.Add("trmbase_save_loadout", function(ply, _, args)
+        if not IsValid(ply) then return end
+
+        local weapon = ply:GetActiveWeapon()
+        if not IsValid(weapon) or not weapon.SaveAttachmentLoadout then return end
+
+        weapon:SaveAttachmentLoadout(args and args[1] or 1)
+    end)
+
+    concommand.Add("trmbase_load_loadout", function(ply, _, args)
+        if not IsValid(ply) then return end
+
+        local weapon = ply:GetActiveWeapon()
+        if not IsValid(weapon) or not weapon.LoadAttachmentLoadout then return end
+
+        weapon:LoadAttachmentLoadout(args and args[1] or 1)
+    end)
 end
