@@ -33,7 +33,7 @@ function SWEP:bDownThink()
         self:SetCurrentTask("Rechamber") 
     end
 
-    if owner and not owner:KeyDown(IN_ATTACK) and task ~= "Charge" then
+    if owner and (not owner:KeyDown(IN_ATTACK) or self:IsEmpty() )and task ~= "Charge" then
         self.m_NextFireTime = nil
         self.s_TriggerSound = false
     end

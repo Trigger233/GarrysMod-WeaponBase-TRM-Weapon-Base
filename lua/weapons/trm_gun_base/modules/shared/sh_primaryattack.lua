@@ -8,6 +8,7 @@ end
 
 function SWEP:Task_Charge()
 	local stat = self.Primary.Trigger
+	local aim = self:GetAimDelta() > 0.5 and 1 or 0
 	if not stat then return end
 
 	if stat.Sound and not self.s_TriggerSound then
@@ -21,7 +22,9 @@ function SWEP:Task_Charge()
 	end
 
 	local anim = self.Animations
-	if anim and anim.Charge then
+	if anim.Iron_Charge and aim then
+		self:PlayAnimation("Iron_Charge", true)
+	elseif anim.Charge then
 		self:PlayAnimation("Charge", true)
 	end
 
@@ -112,8 +115,8 @@ function SWEP:FirePrimaryBullet()
 		end
 		self.r_shakeDir = -self.r_shakeDir
 
-		local shake = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 1) * self.r_shakeDir *
-			math.random(0, 1)
+		local shake = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 1) * self.r_shakeDir 
+			
 		owner:SetViewPunchAngles(Angle(0, 0, shake))
 		owner:SetViewPunchVelocity(Angle(0, 0, shake * 100))
 	end
@@ -172,15 +175,15 @@ function SWEP:FirePrimaryBullet()
 end
 
 function SWEP:DoImpactEffect(tr, dmgType)
+	self:CallOnClient("DoImpactEffect")
+
 	self:ImpactEffects(tr, dmgType)
 	return false
 end
 
 function SWEP:ImpactEffects(tr, type)
-	if not self.CurrentAttachments then
-		self.CurrentAttachments = {}
-	end
-	for slot, entry in pairs(self.CurrentAttachments) do
+
+	for slot, entry in pairs(self.CurrentAttachments or {}) do
 		if entry and entry.Class and BASE_TRM_ATTS[entry.Class].DoImpactEffect then
 			BASE_TRM_ATTS[entry.Class]:DoImpactEffect(tr, type)
 		end
@@ -257,7 +260,7 @@ function SWEP:DoVisualRecoil()
 		self.m_VRecoilBack = 0
 	end
 
-	local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2]) * AdsScale
+	local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2]) 
 	self.m_VRecoilBack = self.m_VRecoilBack + baseBack + progBack
 
 	-- 限制最大值
@@ -358,7 +361,7 @@ function SWEP:DoCameraRecoil()
 	local isFiring = CurTime() - nextRecoil < 0.0
 	local NextAngle = Angle(0, 0, 0)
 	local stat = self.Recoil
-	
+
 	if not self.m_RecoilSum then
 		self.m_RecoilSum = Angle(0, 0, 0)
 		self.m_RecoilDelta = 0
@@ -366,23 +369,23 @@ function SWEP:DoCameraRecoil()
 	end
 
 	-- 计算玩家压枪输入（视角向下移动的量）
-	local playerPitchDelta = self.m_LastEyePitch  - eyeAngles.pitch
+	local playerPitchDelta = self.m_LastEyePitch - eyeAngles.pitch
 
 	local current = self:GetRecoil()
 	self.m_RecoilSum:Add(current)
 	self.m_RecoilDelta = self.m_RecoilDelta + current.pitch
 	self:SetRecoil(Angle(0, 0, 0))
-	local t = math.Clamp((CurTime() - nextRecoil )/ delay, 0, 1)
+	local t = math.Clamp((CurTime() - nextRecoil) / delay, 0, 1)
 	if isFiring then
 		-- 射击时：应用后坐力，然后用玩家压枪输入抵消
 		NextAngle = self.m_RecoilSum * stat.Factor
-		NextAngle.p = NextAngle.p  + stat.KickDown * (t < 0.5 and t or 1 - t) 
+		NextAngle.p = NextAngle.p + stat.KickDown * (t < 0.5 and t or 1 - t)
 		self.m_RecoilSum:Add(-NextAngle)
 		-- 玩家压枪抵消后坐力累积
-		self.m_RecoilDelta = self.m_RecoilDelta - math.min( playerPitchDelta , 0)
+		self.m_RecoilDelta = self.m_RecoilDelta - math.min(playerPitchDelta, 0)
 	else
 		-- 停火后：回正剩余的后坐力
-		if self.m_RecoilDelta * (current.pitch > 0 and 1 or -1) > 1 then
+		if self.m_RecoilDelta * (current.pitch > 0 and 1 or -1) > 0.1 then
 			NextAngle.pitch = -self.m_RecoilDelta * stat.Recover
 			self.m_RecoilDelta = self.m_RecoilDelta + NextAngle.pitch
 		else
@@ -392,7 +395,7 @@ function SWEP:DoCameraRecoil()
 	end
 	eyeAngles:Add(NextAngle)
 	owner:SetEyeAngles(eyeAngles)
- 
+
 	-- 记录当前视角供下一帧使用
 	self.m_LastEyePitch = eyeAngles.pitch
 end

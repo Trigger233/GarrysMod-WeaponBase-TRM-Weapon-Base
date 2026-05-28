@@ -131,7 +131,7 @@ end
 
 function P.HasScopeEquipped(wep)
     local entry, att = P.GetPiPAttachmentEntry(wep)
-    return (att and att.Scope or false)
+    return (att and att.Scope and att.Scope.Zoom and true or false)
 end
 
 

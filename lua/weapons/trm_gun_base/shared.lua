@@ -42,7 +42,7 @@ end
 
 IncludeClientFiles()
 
-
+SWEP.IsTRMWeapon = true
 
 SWEP.Category = "TriggerBase Weapon"
 SWEP.Spawnable = false
@@ -215,13 +215,13 @@ SWEP.DamageScale = {
 
 
 SWEP.Recoil = {
-    Vertical = { 3.5, 3.5 },
+    Vertical = { 5.5, 5.5 },
     Horizonal = { -0.0, 0.0 },
     AdsMultiplier = 0.7,
-    KickDown = 0.4,
-    Shake = 0.1,
-    Recover = 0.01,
-    Factor = 0.2,
+    KickDown = 1,
+    Shake = 1,
+    Recover = 0.05,
+    Factor = 0.5,
     Functional = {
         Increase = 0.2,
         Recover = 0.4,
@@ -239,7 +239,7 @@ SWEP.VisualRecoil = {
     Vertical = { 3, 3 },
     Horizonal = { -0, 0 },
     Backward = { 5, 5, 10 }, --random 1 and 2 , max 3
-    RecoverSpeed = 0.3,
+    RecoverSpeed = 0.6,
     AdsMultiplier = 0.7,
     -- Functional = {
     --     Increase = 0.2 ,
@@ -749,3 +749,5 @@ end
 function SWEP:OnDrop(owner)
     self:SyncAllAttachments()
 end
+
+

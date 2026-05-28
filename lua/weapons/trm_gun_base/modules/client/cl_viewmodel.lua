@@ -1,5 +1,9 @@
 ﻿if SERVER then return end
 
+local offsetX = CreateClientConVar("trmbase_vm_offsetX",0,true,true,"ViewModel X Offset", -10, 10)
+local offsetY = CreateClientConVar("trmbase_vm_offsetY",0,true,true,"ViewModel Y Offset", -10, 10)
+local offsetZ = CreateClientConVar("trmbase_vm_offsetZ",0,true,true,"ViewModel Z Offset", -10, 10)
+
 function SWEP:CustomBob()
     if not CLIENT then
         return
@@ -82,7 +86,7 @@ function SWEP:Sway()
 
     -- ===== 侧向移动滚动 =====
     local sideSpeed = velo:Dot(owner:GetRight())
-    local targetRoll = math.Clamp(sideSpeed * 0.22, -15, 15)
+    local targetRoll = math.Clamp(sideSpeed * 0.05  , -15, 15)
     self.m_SwayAngle.roll = Lerp(ft * 10, self.m_SwayAngle.roll, targetRoll)
     -- ========================
 
@@ -122,7 +126,7 @@ function SWEP:GetClientVisualRecoil()
     if not self.m_Client_VisualRecoil then
         self.m_Client_VisualRecoil = source
     end
-    self.m_Client_VisualRecoil = LerpAngle(RealFrameTime() * 50, self.m_Client_VisualRecoil, source)
+    self.m_Client_VisualRecoil = LerpAngle(RealFrameTime() * 10, self.m_Client_VisualRecoil, source)
 
     return self.m_Client_VisualRecoil
 end
@@ -216,7 +220,7 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     --Idle Offset
     if not self.m_IdleDelta then self.m_IdleDelta = 1 end
     self.m_IdleDelta = Lerp(RealFrameTime() * 10, self.m_IdleDelta or 0, self:IsInspecting() and 0 or 1) * (1 - aimdelta)
-    CachePos = (self.VMOffset.Idle.Pos.x * angles:Right() + self.VMOffset.Idle.Pos.y * angles:Forward() - self.VMOffset.Idle.Pos.z * angles:Up()) *
+    CachePos = ((self.VMOffset.Idle.Pos.x + GetConVar("trmbase_vm_offsetX"):GetFloat()) * angles:Right() + (self.VMOffset.Idle.Pos.y + GetConVar("trmbase_vm_offsetY"):GetFloat()) * angles:Forward() - (self.VMOffset.Idle.Pos.z + GetConVar("trmbase_vm_offsetZ"):GetFloat()) * angles:Up()) *
     self.m_IdleDelta
     CacheAngle = self.VMOffset.Idle.Ang * self.m_IdleDelta
 

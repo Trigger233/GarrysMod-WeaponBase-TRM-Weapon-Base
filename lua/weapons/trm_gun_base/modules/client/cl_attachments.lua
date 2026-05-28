@@ -1984,6 +1984,8 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
         self:RefreshPreview()
         self:RefreshAll()
     end
+
+    
 end
 
 function PANEL:Close()

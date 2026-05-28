@@ -11,7 +11,7 @@ CreateConVar("trmbase_replace_weapon", "0", FCVAR_ARCHIVE)
 CreateConVar("trmbase_replace_chance", "100", FCVAR_ARCHIVE)
 CreateConVar("trmbase_random_attachments", "0", FCVAR_ARCHIVE)
 
-local refresh = 0.1 -- 固定延迟，确保实体完全初始化
+local refresh = 1 -- 固定延迟，确保实体完全初始化
 
 if CLIENT and not SERVER then return end
 
@@ -116,7 +116,7 @@ local function RandomizeAttachments(ent)
         if #available == 0 then continue end
 
         -- 每个槽 50% 概率装一个随机配件
-        if math.random() < 0.5 then
+        if  RollChance() then
             local chosen = available[math.random(#available)]
             if chosen ~= slot.Default then
                 ent:EquipAttachment(tostring(i), chosen)
@@ -131,7 +131,6 @@ local function DoNPCReplace(npc)
 
     local cv = GetConVar("trmbase_replace_npc")
     if not cv or not cv:GetBool() then return end
-    if not RollChance() then return end
 
     local wep = npc:GetActiveWeapon()
     if not IsValid(wep) or wep.Base == "trm_gun_base" then return end
@@ -169,7 +168,6 @@ local function DoWeaponReplace(ent)
     if not ent:IsWeapon() then return end
     if ent.Base == "trm_gun_base" then return end
     if IsValid(ent:GetOwner()) then return end
-    if not RollChance() then return end
 
     local candidates = FindAllTRMByAmmo(ent)
     if not candidates or #candidates == 0 then return end
@@ -252,6 +250,8 @@ local function ReplaceAmmoBox(ent)
     return false
 end
 -- ===== 主替换函数 =====
+local cv = GetConVar("trmbase_replace_weapon")
+
 local function replace(ent)
     if not IsValid(ent) then return end
 
@@ -264,7 +264,6 @@ local function replace(ent)
     if ent:IsNPC() then
         DoNPCReplace(ent)
     elseif ent:IsWeapon()  then
-        local cv = GetConVar("trmbase_replace_weapon")
         if cv and cv:GetBool() then
             DoWeaponReplace(ent)
         end
@@ -297,10 +296,10 @@ end)
 -- 定期扫描（处理地图预放置的实体）
 local LastThink = 0
 hook.Add("Think", "TRMBASE_ReplacerThink", function()
-    if CurTime() - LastThink < refresh then return end
+    if CurTime() - LastThink < refresh  then return end
     LastThink = CurTime()
 
-    for _, ent in pairs(ents.GetAll()) do
+    for _, ent in ents.Iterator() do
         if not IsValid(ent) then continue end
 
         -- 检查是否需要处理
@@ -314,8 +313,8 @@ end)
 
 -- 读档后重新扫描
 hook.Add("Restored", "TRMBASE_ReplaceRestored", function()
-    timer.Simple(refresh * 10, function()
-        for _, ent in pairs(ents.GetAll()) do
+    timer.Simple(refresh, function()
+        for _, ent in ents.Iterator() do
             if not IsValid(ent) then continue end
             if ent:IsNPC() or
                 (ent:IsWeapon() and ent:GetOwner() == NULL) or

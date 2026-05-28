@@ -16,7 +16,7 @@ ATTACHMENT.Sight = {
 
 ATTACHMENT.Scope = {
     Align = "scope_origin",
-    Zoom = 2,
+    Zoom = 3.5,
     RTSize = 512,
     Offset = Vector(0,0,0) ,
     Angle = Angle(0,0,-90),

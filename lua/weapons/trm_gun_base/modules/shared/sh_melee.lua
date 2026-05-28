@@ -68,10 +68,12 @@ function SWEP:DealMeleeDamage()
     end
     if CLIENT then return end
 
-    if IsValid(ent) and ent.TakeDamageInfo then
-        ent:TakeDamageInfo(dmginfo)
-        --self:ImpactEffects(tr,type)
+    if IsValid(ent)  then
+        if ent.TakeDamageInfo then
+            ent:TakeDamageInfo(dmginfo)
+        end
     end
+        self:MeleeImpactEffects(tr)
 
     local phys
 
@@ -105,5 +107,30 @@ function SWEP:MeleeDoor(tr)
 				ent:SetKeyValue("Speed", "100")
 			end
 	end)
+
+end
+
+function SWEP:MeleeImpactEffects(tr)
+
+        if IsValid(tr.Entity) && tr.Entity.TakeDamageInfo then
+            local bloodColor = tr.Entity:GetBloodColor()
+            if bloodColor && bloodColor >= 0 then
+                local blood = EffectData()
+                blood:SetColor(bloodColor)
+                blood:SetNormal(tr.Normal)
+                blood:SetOrigin(tr.HitPos)
+                blood:SetScale(1)
+                util.Effect("BloodImpact", blood)
+            end
+        else
+            local impact = EffectData()
+            impact:SetOrigin(tr.HitPos)
+            impact:SetStart(tr.StartPos)
+            impact:SetSurfaceProp(tr.SurfaceProps)
+            impact:SetEntity(tr.Entity)
+            impact:SetHitBox(tr.HitBoxBone || 0)
+            impact:SetDamageType(DMG_CLUB)
+            util.Effect("Impact", impact)
+        end
 
 end

@@ -52,7 +52,7 @@ function SWEP:PrecacheViewModel()
     self.m_BodyGroupCache = {}
     self.m_PoseParameter = {}
     self.m_PoseParameter2 = {}
-    
+
 
     for _, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
@@ -380,7 +380,7 @@ function SWEP:EquipAttachment(slot, attClass)
         net.WriteEntity(self)
         net.WriteString(slot)
         net.WriteString(attClass)
-        net.SendPVS(self:GetPos())
+        net.Broadcast()
 
         -- 同时发送被自动卸载的槽位同步（告诉客户端这些槽已清空）
         for _, removedKey in ipairs(removedSlots) do
@@ -388,11 +388,11 @@ function SWEP:EquipAttachment(slot, attClass)
             net.WriteEntity(self)
             net.WriteString(removedKey)
             net.WriteString("None")
-            net.SendPVS(self:GetPos())
+            net.Broadcast()
         end
     end
 
- 
+
     self:OnAttachmentChanged()
 
     --print("Equipped:", slot, attClass)
@@ -411,12 +411,12 @@ function SWEP:UnEquipAttachment(slot)
 
     -- 注：不再自动装默认配件，让用户从列表中自行选择"无"或默认配件
 
-    -- 发一次同步
+    -- 发一次同步 
     net.Start("TRMBase_SyncAttachment")
     net.WriteEntity(self)
     net.WriteString(slot)
     net.WriteString("None")
-    net.SendPVS(self:GetPos())
+    net.Broadcast()
 
     self:OnAttachmentChanged()
     self:SaveAttachmentPreset()

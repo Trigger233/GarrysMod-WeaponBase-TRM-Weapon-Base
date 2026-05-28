@@ -30,7 +30,7 @@ hook.Add("HUDPaint", "TRMBase_HUD", function()
     if not IsValid(ply) then return end
     local wep = ply:GetActiveWeapon()
     if not IsValid(wep) then return end
-    if wep.Base ~= "trm_gun_base" and wep:GetClass() ~= "trm_gun_base" then return end
+    if not util.IsTRMBase(wep) then return end
 
     DebugHUD(ply, wep)
     DrawCustomCrosshair(ply, wep)
@@ -41,34 +41,7 @@ function DebugHUD(ply, wep)
     if cv_debug:GetInt() == 0 then return end
     draw.SimpleText("Current Task: " .. (wep.GetCurrentTask and wep:GetCurrentTask() or "None"), "Default", ScrW() / 2,
         ScrH() * 0.74, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    local aimdelta = wep:GetAimDelta()
-    draw.SimpleText("Aim Delta: " .. (aimdelta and math.Round(aimdelta, 2) or "None"), "Default", ScrW() / 2,
-        ScrH() * 0.76, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    local sequence = wep.m_CurrentSequence or wep:GetPlayingSequence() or "None"
-    draw.SimpleText("Sequence: " .. (sequence and sequence or "None"), "Default", ScrW() / 2, ScrH() * 0.78,
-        Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    local text = wep:CanPrimaryAttack() and "1" or "0"
-    draw.SimpleText("Can: " .. (text and text or "None"), "Default", ScrW() / 2, ScrH() * 0.68, Color(255, 255, 255),
-        TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    local text = wep:GetOwner():GetViewModel(0):GetCycle()
-    text = math.Round(text, 2)
-    draw.SimpleText("Cycle: " .. (text and text or "None"), "Default", ScrW() / 2, ScrH() * 0.65, Color(255, 255, 255),
-        TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    draw.RoundedBox(0, ScrW() / 2, ScrH() / 2 * 1.5, 500, 20, Color(0, 0, 0, 255))
-    draw.RoundedBox(0, ScrW() / 2, ScrH() / 2 * 1.5, 500 * text, 20, Color(255, 255, 255, 255))
-    local text = CurTime() - wep:GetNextPrimaryFire() >= 0 and "true" or "false"
-    draw.SimpleText("Next: " .. (text and text or "None"), "Default", ScrW() / 2, ScrH() * 0.25, Color(255, 255, 255),
-        TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    local text = ply:GetViewModel(0):SequenceDuration()
-    text = math.Round(text, 2)
-    draw.SimpleText("SeqDur: " .. (text and text or "None"), "Default", ScrW() / 2, ScrH() * 0.22, Color(255, 255, 255),
-        TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    local vRecoil = wep.m_VRecoil or Angle(0, 0, 0)
-    local back = wep:GetVisualRecoilBackward()
-    draw.SimpleText(string.format("Visual Recoil: P=%.2f Y=%.2f", vRecoil.pitch, vRecoil.yaw), "Default", ScrW() / 2,
-        ScrH() * 0.80, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    draw.SimpleText(string.format("Visual Recoil Backward: %.2f", back), "Default", ScrW() / 2, ScrH() * 0.82,
-        Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    
 end
 
 function DrawCustomCrosshair(ply, wep)

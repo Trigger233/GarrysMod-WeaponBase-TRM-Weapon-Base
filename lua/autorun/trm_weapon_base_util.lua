@@ -1,6 +1,8 @@
 module("trm_weapon_base_util",package.seeall)
+
+
 function util.IsTRMBase(weapon)
-    return IsValid(weapon) and (weapon.Base == "trm_gun_base" or weapon:GetClass() == "trm_gun_base")
+    return IsValid(weapon) and (weapon.IsTRMWeapon)
 end
 
 function trm_weapon_base_util.IsDucking(ply)

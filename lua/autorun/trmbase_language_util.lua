@@ -61,7 +61,12 @@ TRMBase.Language.cn = {
     ["TRMBase_CrosshairStyle"]     = "准星样式",
     ["TRMBase_CrosshairDot"]       = "准星中心点",
     ["TRMBase_HideHUDInspect"]     = "检视时隐藏 HUD",
-    ["TRMBase_MDV"] = "灵敏度缩放系数" ,
+    ["TRMBase_ToggleAim"]          = "切换式瞄准",
+    ["TRMBase_MDV"]                = "灵敏度缩放系数",
+
+    ["TRMBase_OffsetX"]         = "X轴偏移",
+    ["TRMBase_OffsetY"]          = "Y轴偏移",
+    ["TRMBase_OffsetZ"]          = "Z轴偏移",
 }
 
 -- 英文
@@ -111,8 +116,13 @@ TRMBase.Language.en = {
     ["TRMBase_CrosshairStyle"]     = "Crosshair Style",
     ["TRMBase_CrosshairDot"]       = "Crosshair Dot",
     ["TRMBase_HideHUDInspect"]     = "Hide HUD When Inspect",
+    ["TRMBase_ToggleAim"]          = "Toggle Aim",
+
     ["TRMBase_MDV"]                = "MDV Sensitivity",
 
+    ["TRMBase_OffsetX"]            = "Offset X",
+    ["TRMBase_OffsetY"]            = "Offset Y",
+    ["TRMBase_OffsetZ"]            = "Offset Z",
 }
 
 -- 获取当前语言
@@ -132,5 +142,8 @@ local function refreshLang()
 end
 refreshLang()
 function LanguageChanged(lang)
-    refreshLang()
 end
+
+hook.Add("OnReloaded", "TRMBASE_ImmediatelyUpdateLang", function()
+    refreshLang()   
+end)
