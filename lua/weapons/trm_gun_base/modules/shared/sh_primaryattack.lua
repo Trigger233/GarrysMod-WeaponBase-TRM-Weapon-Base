@@ -1,3 +1,8 @@
+if SERVER then
+	util.AddNetworkString("TRMBase_TracerEffect")
+end
+
+
 function SWEP:CanPrimaryFire()
 	-- local seq =	self:GetPlayingSequence()
 	if self.BoltAction and self.Animations.Rechamber and self:GetChamberAmmo() <= 0 and not self:IsEmpty() and self:GetNextPrimaryFire() <= CurTime() then
@@ -88,6 +93,7 @@ function SWEP:DoFireSound()
 	end
 end
 
+
 function SWEP:FirePrimaryBullet()
 	if CLIENT then
 		-- 枪焰：总是播（确保每次开火都有）
@@ -141,15 +147,21 @@ function SWEP:FirePrimaryBullet()
 		Dir = aimDir,
 		Distance = self.Primary.Range,
 		Spread = spread,
-		Tracer = 1,
+		Tracer = 0,
 		Force = self.Primary.Force / self.Primary.NumBullets,
 		Damage = self.Primary.Damage * self.Primary.NumBullets,
 		AmmoType = self.Primary.Ammo,
 		Callback = function(attacker, tr, dmginfo)
-			if CLIENT then
-				self:Tracer(tr)
-			end
 			self:BulletCallback(attacker, tr, dmginfo)
+			if CLIENT and IsFirstTimePredicted() then
+				self:DoTracer(owner:GetShootPos(),tr.HitPos)
+			elseif SERVER and game.SinglePlayer() then
+				net.Start("TRMBase_TracerEffect")
+				net.WriteEntity(self)
+				net.WriteVector(owner:GetShootPos())
+				net.WriteVector(tr.HitPos)
+				net.Broadcast()
+			end
 		end,
 	}
 	if not owner:IsPlayer() then
@@ -311,43 +323,41 @@ end
 
 function SWEP:DoRecoil()
 	if CLIENT and not IsFirstTimePredicted() then return end
-	if not self.m_Recoil then
-		self.m_Recoil = Angle(0, 0, 0)
-	end
+	local Recoil = Angle(0,0,0)
+	local stats = self.Recoil
 	local delay = 60 / self.Primary.RPM
-	-- delay = 0.1
+	
+	if stats.KickDown then
+		delay = delay * (1 - stats.KickDown)
+	end	
 
 
+	Recoil = self:GetRecoil()
+	local AdsScale = Lerp(self:GetAimDelta(), 1, stats.AdsMultiplier) * 1
 
-	self.m_Recoil = self:GetRecoil()
-	local AdsScale = Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier) * 1
+	local Vertical  = math.Rand(stats.Vertical[1], stats.Vertical[2]) * AdsScale
+	local Horizonal = math.Rand(stats.Horizonal[1], stats.Horizonal[2]) * AdsScale
 
-
-	local Vertical  = math.Rand(self.Recoil.Vertical[1], self.Recoil.Vertical[2]) * AdsScale
-	local Horizonal = math.Rand(self.Recoil.Horizonal[1], self.Recoil.Horizonal[2]) * AdsScale
-
-
-	self.m_Recoil:Set(Angle(-Vertical, Horizonal, 0))
-
+	Recoil:Set(Angle(-Vertical, Horizonal, 0))
 	--functional
 	if self.Recoil.Functional then
-		self.m_RecoilFunctionProgress = self:GetRecoilProgress()
+		local progress = self:GetRecoilProgress()
 
 		-- 修复：用 Functional.Func
-		local func = self.Recoil.Functional.Func
+		local func = stats.Functional.Func
 		if func then
-			local pitch, yaw = func(self, self.m_RecoilFunctionProgress)
-			self.m_RecoilFunctionProgress = math.Clamp(
-				self.m_RecoilFunctionProgress + self.Recoil.Functional.Increase,
+			local pitch, yaw = func(self, progress)
+			progress = math.Clamp(
+				progress + self.Recoil.Functional.Increase,
 				0, 1
 			)
-			self.m_Recoil:Add(Angle(pitch, yaw, 0))
-			self:SetRecoilProgress(self.m_RecoilFunctionProgress)
+			Recoil:Add(Angle(pitch, yaw, 0))
+			self:SetRecoilProgress(progress)
 		end
 	end
-	self.m_Recoil:Normalize()
+	Recoil:Normalize()
 
-	self:SetRecoil(self.m_Recoil)
+	self:SetRecoil(Recoil)
 	self:SetNextRecoil(CurTime() + delay)
 end
 

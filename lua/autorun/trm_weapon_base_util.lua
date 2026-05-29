@@ -12,26 +12,6 @@ function trm_weapon_base_util.IsDucking(ply)
 end
 
 CreateConVar("trmbase_load_attachment_on_pickup",1,{FCVAR_ARCHIVE})
-if (CLIENT) then
-    -- local FullUpdate = {}
-    -- --PrintTable(FullUpdate)
-    -- function trm_weapon_base_util.DealFullUpdate(ent)
-    --     FullUpdate[ent] = true 
-    -- end 
-    -- hook.Add("PreRender","TrmBase_Model_ReParent",function()
-    --     if FullUpdate then
-    --         for ent , _ in pairs(FullUpdate) do
-    --             if not IsValid(ent) then
-    --                 FullUpdate[ent] = nil 
-    --                 continue 
-    --             end
-                
-    --             local fullUpdateParent = ent:GetInternalVariable("m_hNetworkMoveParent")
-                
-    --             if (!IsValid(ent:GetParent()) && IsValid(fullUpdateParent)) then
-    --                 ent:SetParent(fullUpdateParent)
-    --             end 
-    --         end
-    --     end
-    -- end)
-end
+
+hook.Add("PostDrawTranslucentRenderables", "test", function(bDrawingDepth, bDrawingSkybox, isDraw3DSkybox)
+end)

@@ -143,6 +143,10 @@ SWEP.Effects = {
     Muzzle = {
         effect = "MuzzleEffect",
         attachment = "muzzle",
+        Tracer = {
+            Name = "Tracer" ,
+            IsParticle = false ,
+        }
     },
     Shell = {
         attachment = "shell",  -- Attachment 名称
@@ -726,21 +730,7 @@ function SWEP:GetPlayerMoveMult(ply)
     return runMult, walkMult
 end
 
-function SWEP:GetTracerOrigin()
-    -- 非第一人称 / NPC 不干涉，让引擎自己处理
-    local owner = self:GetOwner()
-    if not IsValid(owner) or not owner:IsPlayer() then return end
-    local vm = self:GetViewModel()
-    if not IsValid(vm) or owner:ShouldDrawLocalPlayer() then return end
 
-    -- 第一人称：从 ViewModel 取枪口位置
-    local name = self.Effects and self.Effects.Muzzle and self.Effects.Muzzle.attachment or "muzzle"
-    local attData = self:GetAttachmentData(name)
-    if attData and attData.Ent and IsValid(attData.Ent) then
-        local muzzle = attData.Ent:GetAttachment(attData.id)
-        if muzzle then return muzzle.Pos end
-    end
-end
 
 function SWEP:ShouldDropOnDie(arguments)
     return true

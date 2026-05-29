@@ -48,7 +48,7 @@ end
 
 function SWEP:PrecacheViewModel()
     self.m_ViewmodelCache = nil
-    self.m_SkinCache = nil
+    self.m_SkinCache = 0
     self.m_BodyGroupCache = {}
     self.m_PoseParameter = {}
     self.m_PoseParameter2 = {}
@@ -144,7 +144,7 @@ function SWEP:ChangeWeaponStats()
 
 
     if SERVER then
-        if self:Clip1() > self.Primary.ClipSize then
+        if self:Clip1() > (self.Primary.ClipSize + self.Primary.Chamber) then
             self:SetClip1(self.Primary.ClipSize)
         end
         if self:Clip2() > self.Secondary.ClipSize then
@@ -239,13 +239,15 @@ function SWEP:BuildViewModelData()
             self.m_Attachment[Modelattachment.name] = data
             self.m_Attachment[Modelattachment.name].id = Modelattachment.id
             self.m_Attachment[Modelattachment.name].Ent = vm
+            self.m_Attachment[Modelattachment.name].LastUpdate = CurTime()
         end
     end
 
     -- 配件模型的 Attachments（只有 Bonemerge 模式的配件才需要）
-    for _, entry in pairs(self.CurrentAttachments or {}) do
+    for slot, entry in pairs(self.CurrentAttachments or {}) do
         local model = entry.m_Model
-        if not IsValid(model) then continue end
+        if not IsValid(model)  then continue end
+
 
         local attID = entry.Class
         if not attID then continue end
@@ -259,6 +261,8 @@ function SWEP:BuildViewModelData()
                 self.m_Attachment[att.name] = data
                 self.m_Attachment[att.name].id = att.id
                 self.m_Attachment[att.name].Ent = model
+                self.m_Attachment[att.name].LastUpdate = CurTime()
+                
             end
         end
     end
@@ -313,18 +317,30 @@ function SWEP:BuildViewModelData()
         end
     end
 
-    if CurTime() - (self.lastdebug or 0) > 10 and GetConVar("developer"):GetInt() == 1 then
-        PrintTable(self.m_Bone)
-        self.lastdebug = CurTime()
-    end
+    -- if CurTime() - (self.lastdebug or 0) > 10 and GetConVar("developer"):GetInt() == 1 then
+    --     PrintTable(self.m_Bone)
+    --     self.lastdebug = CurTime()
+    -- end
+end
+
+function SWEP:RefreshVMAttachment(name)
+
+    local cache = self.m_Attachment[name]
+    if not cache or (CurTime() - cache.LastUpdate <( FrameTime() * 1)) then return false end
+    local ref = cache.Ent:GetAttachment(cache.id)
+    cache.Pos = ref.Pos
+    cache.Ang = ref.Ang
+    cache.LastUpdate = CurTime()
+    self.m_Attachment[name] = cache
 end
 
 function SWEP:GetAttachmentData(name)
-    return self.m_Attachment[name]
+    self:RefreshVMAttachment(name)
+    return self.m_Attachment[name] or false
 end
 
 function SWEP:GetBoneData(name)
-    return self.m_Bone[name]
+    return self.m_Bone[name] or false
 end
 
 ---CustomizeSystem
@@ -467,6 +483,9 @@ function SWEP:BuildCustomizedGun()
                 model:SetNotSolid(true)
                 model:SetMoveType(MOVETYPE_NONE)
                 model:SetOwner(vm)
+                model:InvalidateBoneCache()
+                model:SetupBones()
+                
                 entry.m_Model = model
             end
         end

@@ -317,25 +317,26 @@ function SWEP:ViewModelDrawn(vm)
     vm:InvalidateBoneCache()
     vm:SetupBones()
 
-    -- -- 检测配件模型是否缺失（换关后 ClientsideModel 被销毁需要重建）
-    -- if not self.m_NeedsBuild then
-    --     for _, entry in pairs(self.CurrentAttachments or {}) do
-    --         if entry.Class and BASE_TRM_ATTS[entry.Class].Model and not IsValid(entry.m_Model) then
-    --             self.m_NeedsBuild = true
-    --             break
-    --         end
-    --     end
-    -- end
+    -- 检测配件模型是否缺失（换关后 ClientsideModel 被销毁需要重建）
+    if not self.m_NeedsBuild then
+        for _, entry in pairs(self.CurrentAttachments or {}) do
+            if entry.Class and BASE_TRM_ATTS[entry.Class].Model and not IsValid(entry.m_Model) then
+                self.m_NeedsBuild = true
+                break
+            end
+        end
+    end
 
     if self.m_NeedsBuild and self.BuildCustomizedGun then
         -- print(CurTime())
         self:BuildCustomizedGun()
         self.m_NeedsBuild = false
     end
-
+ 
+    --self:UpdateViewmodelData(vm)
     if not self.m_LastBuild then
         self.m_LastBuild = CurTime()
-    elseif CurTime() - self.m_LastBuild > 120 then
+    elseif CurTime() - self.m_LastBuild > 240 then
         self.m_LastBuild = CurTime()
         self.m_NeedsBuild = true
     end
@@ -355,9 +356,10 @@ function SWEP:PostDrawViewModel()
 
 end
 
-function SWEP:PreDrawViewModel()
-
+function SWEP:PreDrawViewModel(vm)
 end
+
+
 
 local cvar_mdv = CreateClientConVar("trmbase_sight_mdv", 1.33 , true, false, "None Description", 0, 3)
 local function MDVSensitivity(curFOV, defFOV, mdv)

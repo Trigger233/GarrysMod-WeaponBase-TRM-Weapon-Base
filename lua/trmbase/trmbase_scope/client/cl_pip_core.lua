@@ -461,4 +461,5 @@ end
 hook.Add("PreRender", "TRM_ScopePiP_UpdateRT", function()
     if P.Rendering then return end
     P.RenderScopeView()
+    return false
 end)

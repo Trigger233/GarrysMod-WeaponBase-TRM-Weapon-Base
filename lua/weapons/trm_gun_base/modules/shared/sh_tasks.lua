@@ -1,17 +1,4 @@
-SWEP.Tasks = {}
 
-
-
-function SWEP:TaskThink()
-    local vm = self:GetViewModel()
-    if not IsValid(vm) or (CLIENT and game.SinglePlayer()) and not IsFirstTimePredicted() then
-        return
-    end
-
-    local task = self:GetCurrentTask()
-    local cycle = vm:GetCycle()
-
-    -- 任务映射表
     local taskMap = {
         Deploy = "Task_Deploy",
         Holster = "Task_Holster",
@@ -30,6 +17,18 @@ function SWEP:TaskThink()
         ReloadEnd = "Task_ReloadEnd",
         Sprint = "Task_Sprint",
     }
+
+function SWEP:TaskThink()
+    local vm = self:GetViewModel()
+    if not IsValid(vm) or (CLIENT and game.SinglePlayer()) and not IsFirstTimePredicted() then
+        return
+    end
+
+    local task = self:GetCurrentTask()
+    local cycle = vm:GetCycle()
+
+    -- 任务映射表
+
 
     local funcName = taskMap[task]
     if funcName and self[funcName] then
