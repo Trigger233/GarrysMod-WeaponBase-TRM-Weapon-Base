@@ -152,3 +152,7 @@ function SWEP:ChooseAnim(animationClass)
 
     return AnimName
 end
+
+function SWEP:IsAnimFinished()
+    return self:GetNextAnimationTime() < CurTime()
+end

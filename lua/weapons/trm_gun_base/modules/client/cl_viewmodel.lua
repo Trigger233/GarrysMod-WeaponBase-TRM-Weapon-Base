@@ -19,13 +19,13 @@ function SWEP:CustomBob()
 
     -- 移动时累积，停止时衰减
     if speed > 10 and owner:OnGround() then
-        self.Bob_t = (self.Bob_t or 0) + RealFrameTime() * speed * 0.05
+        self.Bob_t = (self.Bob_t or 0) + RealFrameTime() * math.min(speed , 200) * 0.05
         -- 不限制范围，让 sin 自然循环
     elseif speed < 10 then
         self.Bob_t = (self.Bob_t or 0) * 0.95 -- 停止时归零
     end
-    local t = math.sin(self.Bob_t or 0) * (speed / 300)
-    local mult = math.min(speed / 300, 1)
+    local t = math.sin(self.Bob_t or 0) * (speed / 200)
+    local mult = math.min(speed / 200, 1)
     -- 位置偏移
     local pos = Vector(
         math.sin(self.Bob_t) * -0.9 * mult,          -- 左右

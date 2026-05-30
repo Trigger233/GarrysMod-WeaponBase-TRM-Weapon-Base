@@ -80,4 +80,16 @@ function SWEP:UpdatePoseParameters()
             vm:SetPoseParameter(poseName, self:LookupRangeCache(poseName) * self.m_grippose2)
         end
     end
+
+    --firemode 
+    local firemode  = self:GetFiremodeIndex()
+    local stat = self.Firemode
+    if stat then
+        local info = stat[firemode] 
+        if info and info.PoseParameter then
+            for pose , value in pairs(info.PoseParameter or {}) do
+                vm:SetPoseParameter(pose,value)
+            end
+        end      
+    end
 end

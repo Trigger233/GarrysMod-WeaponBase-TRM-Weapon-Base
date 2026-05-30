@@ -9,14 +9,9 @@ end
 local cvar_firebreakreload = CreateConVar("trmbase_fire_interupt_reload",0,FCVAR_ARCHIVE)
 
 function SWEP:MagzineReload()
-    local Empty = self:Clip1() == 0 and true or false
 	self:SetNextAnimationTime(0)
 
-    if Empty and self.Animations.Reload_Empty then
-        self:PlayAnimation("Reload_Empty" ,true)
-    else
-        self:PlayAnimation("Reload" ,true)
-    end
+self:PlayAnimation(self:ChooseAnim("Reload"), true)
     self:SetCurrentTask("Finished")
 	if cvar_firebreakreload:GetInt() >= 1 then
 		self:SetNextFireTime(60/self.Primary.RPM) 

@@ -21,4 +21,6 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Angle", "VisualRecoil")
     self:NetworkVar("Float", "VisualRecoilProgress") -- for custom recoil
     self:NetworkVar("Float", "VisualRecoilBackward")
+
+    self:NetworkVar("Int","FiremodeIndex")
 end

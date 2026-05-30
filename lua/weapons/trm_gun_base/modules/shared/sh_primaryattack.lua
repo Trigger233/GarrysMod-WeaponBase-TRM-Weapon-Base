@@ -13,7 +13,6 @@ end
 
 function SWEP:Task_Charge()
 	local stat = self.Primary.Trigger
-	local aim = self:GetAimDelta() > 0.5 and 1 or 0
 	if not stat then return end
 
 	if stat.Sound and not self.s_TriggerSound then
@@ -27,11 +26,7 @@ function SWEP:Task_Charge()
 	end
 
 	local anim = self.Animations
-	if anim.Iron_Charge and aim then
-		self:PlayAnimation("Iron_Charge", true)
-	elseif anim.Charge then
-		self:PlayAnimation("Charge", true)
-	end
+	self:PlayAnimation(self:ChooseAnim("Charge"), true)
 
 	local owner = self:GetOwner()
 	if not IsValid(owner) then return end
@@ -153,9 +148,12 @@ function SWEP:FirePrimaryBullet()
 		AmmoType = self.Primary.Ammo,
 		Callback = function(attacker, tr, dmginfo)
 			self:BulletCallback(attacker, tr, dmginfo)
+			-- 生成曳光弹
 			if CLIENT and IsFirstTimePredicted() then
-				self:DoTracer(owner:GetShootPos(),tr.HitPos)
-			elseif SERVER and game.SinglePlayer() then
+				-- 客户端预测（给自己看）
+				self:DoTracer(owner:GetShootPos(), tr.HitPos)
+			elseif SERVER then
+				-- 服务器广播给所有玩家（包括自己）
 				net.Start("TRMBase_TracerEffect")
 				net.WriteEntity(self)
 				net.WriteVector(owner:GetShootPos())
