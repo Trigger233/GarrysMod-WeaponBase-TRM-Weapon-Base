@@ -3,7 +3,7 @@
 local offsetX = CreateClientConVar("trmbase_vm_offsetX",0,true,true,"ViewModel X Offset", -10, 10)
 local offsetY = CreateClientConVar("trmbase_vm_offsetY",0,true,true,"ViewModel Y Offset", -10, 10)
 local offsetZ = CreateClientConVar("trmbase_vm_offsetZ",0,true,true,"ViewModel Z Offset", -10, 10)
-
+local rft = RealFrameTime()
 function SWEP:CustomBob()
     if not CLIENT then
         return
@@ -313,7 +313,6 @@ end
 function SWEP:ViewModelDrawn(vm)
     if not IsValid(vm) then return end
 
-    if self ~= (IsValid(LocalPlayer()) and LocalPlayer():GetActiveWeapon()) then return end
     vm:InvalidateBoneCache()
     vm:SetupBones()
 
@@ -350,7 +349,10 @@ function SWEP:ViewModelDrawn(vm)
             data:Render(self, model)
         end
     end
+
 end
+
+
 
 function SWEP:PostDrawViewModel()
 

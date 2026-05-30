@@ -6,23 +6,8 @@ if not CLIENT then return end
 --   基于玩家右手骨骼 + SetRenderOrigin
 -- =============================================
 
---- 应用世界模型变换
--- function SWEP:RenderOverride()
---     local bone = self:LookupBone(self.WorldModelOffsets.Bone)
 
---     if (bone != nil && bone > 0) then
---         if (IsValid(self:GetOwner())) then
---             self:ManipulateBoneAngles(bone, self.WorldModelOffsets.Angles)
---             self:ManipulateBonePosition(bone, self.WorldModelOffsets.Pos)
---         else
---             self:ManipulateBoneAngles(bone, Angle(0,0,0))
---             self:ManipulateBonePosition(bone, Vector(0,0,0))
---         end
---     end
---     self:DrawModel()
---     self:SetupBones()
 
--- end
 
 -- =============================================
 -- DrawWorldModel — 每帧由引擎调用
@@ -41,10 +26,9 @@ function SWEP:DrawWorldModel(flags)
             self:ManipulateBoneAngles(bone, self.WorldModelOffsets.Angles)
             self:ManipulateBonePosition(bone, self.WorldModelOffsets.Pos)
         end
-        else
-            self:SetRenderOrigin(self.WorldModelOffsets.Pos)
-            self:SetRenderAngles(self.WorldModelOffsets.Angles)
-        
+    else
+        self:SetRenderOrigin(self.WorldModelOffsets.Pos)
+        self:SetRenderAngles(self.WorldModelOffsets.Angles)
     end
     self:DrawModel(flags)
     if self.CurrentAttachments then

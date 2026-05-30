@@ -40,11 +40,8 @@ end
 
 function SWEP:Task_SprintIn(cycle)
     self:SetNextAnimationTime(0)
-    if self:IsEmpty() and self.Animations.SprintIn_Empty then
-        self:PlayAnimation("SprintIn_Empty"  )
-    elseif self.Animations.SprintIn then
-        self:PlayAnimation("SprintIn"  )
-    end
+    
+    self:PlayAnimation(self:ChooseAnim("SprintIn"),true)
     
     self:SetCurrentTask("Sprint")
 end

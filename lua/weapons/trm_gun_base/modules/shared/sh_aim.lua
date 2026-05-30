@@ -6,12 +6,8 @@ end
 
 function SWEP:AimIn()
     self.m_AimDelta = math.Approach(self.m_AimDelta, 1, FrameTime() / self.m_AimTime)
-    if not self.m_Aiming then
-        if not self:IsReloading() then
-            self:PlayAnimation("Ads_In")
-            self:SetNextAnimationTime(0)
-        end
-
+    if not self.m_Aiming and not self:IsReloading() then
+        self:SetCurrentTask("AdsIn")
         self.m_Aiming = true
     end
     local seq = self.m_CurrentSequence or self:GetPlayingSequence()
@@ -24,12 +20,8 @@ end
 
 function SWEP:AimOut()
     self.m_AimDelta = math.Approach(self.m_AimDelta, 0, FrameTime() / self.Aim.Time)
-    if self.m_Aiming then
-        if not self:IsReloading() then
-            self:PlayAnimation("Ads_Out")
-            self:SetNextAnimationTime(0)
-        end
-
+    if self.m_Aiming and not self:IsReloading() then
+        self:SetCurrentTask("AdsOut")
         self.m_Aiming = false
     end
 
@@ -74,4 +66,20 @@ function SWEP:AimThink()
     if SERVER and IsFirstTimePredicted() then
         self:AimLogic()
     end
+end
+ 
+function SWEP:Task_AdsIn(cycle)
+    if not  self:IsReloading() and self:CanAim() then
+        self:SetNextAnimationTime(0)
+        self:PlayAnimation(self:ChooseAnim("Ads_In"), false)
+    end
+    self:SetCurrentTask("Finished")
+end
+
+function SWEP:Task_AdsOut(cycle)
+    if not  self:IsReloading() and self:CanAim() then
+        self:SetNextAnimationTime(0)
+        self:PlayAnimation(self:ChooseAnim("Ads_Out"), false)
+    end
+    self:SetCurrentTask("Finished")
 end

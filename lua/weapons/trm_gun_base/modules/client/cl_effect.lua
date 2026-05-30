@@ -1,11 +1,11 @@
 if not CLIENT then return end
-local tracerName = "AR2Tracer"
-local Tracerscale = 5000
+local tracerName = "Tracer"
+local Tracerscale = 10000
 local tracerStart
 function SWEP:DoTracer(startpos,endpos)
     if not CLIENT then return end
     tracerStart = self:GetMuzzlePos() or startpos
-   
+    tracerName = self.Effects.Muzzle.Tracer.Name or tracerName
     local owner = self:GetOwner()
     local effect = EffectData()
 

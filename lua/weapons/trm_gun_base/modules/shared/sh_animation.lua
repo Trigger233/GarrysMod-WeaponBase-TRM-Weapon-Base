@@ -130,3 +130,25 @@ function SWEP:ApplySpecialAnimationStat(vm, sequenceClass, duration, animData)
         vm:SetPlaybackRate(AdsSpeed)
     end
 end
+
+function SWEP:ChooseAnim(animationClass)
+    local empty = self:IsEmpty()
+    local aim = self:GetAimDelta() > 0.5 and true or false
+    local function hasAnim(Class) 
+        local anim = self.Animations 
+        return anim and anim[Class] and true or false
+    end
+    local AnimName = animationClass
+
+    if not hasAnim(AnimName) then
+        AnimName = "Idle"
+    end
+    if empty and hasAnim(AnimName.."_Empty") then
+        AnimName = AnimName.."_Empty"
+    end
+    if aim and hasAnim("Iron_"..AnimName) then
+        AnimName = "Iron_"..AnimName
+    end
+
+    return AnimName
+end
