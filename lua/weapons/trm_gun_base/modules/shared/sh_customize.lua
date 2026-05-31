@@ -1,7 +1,12 @@
 function SWEP:RefreshAttTable()
 
-end
+    for slot, entry in pairs(self.CurrentAttachments) do
+        if not self:CanAttach(slot) then
+            self:UnEquipAttachment(slot)
+        end
+    end
 
+end
 --- 检查指定槽位能否安装配件
 --- 返回 false 表示被排除（不可用），true 表示可用
 --- 排除条件：
@@ -144,6 +149,8 @@ function SWEP:ChangeWeaponStats()
     self:CallOnClient("ChangeWeaponStats")
     self:GetOriginStat()
     self:DeepObjectCopy(self.m_OriginalStat, self)
+    self.m_Anim = table.Copy(self.Animations)
+    
 
     for _, entry in pairs(self.CurrentAttachments or {}) do
         if entry and entry.Class and BASE_TRM_ATTS[entry.Class].ChangeWeaponStats then
@@ -151,11 +158,13 @@ function SWEP:ChangeWeaponStats()
         end
     end
 
-    -- local firemodeIndex = self:GetFiremodeIndex()
-    -- local firemode = self.Firemode
-    -- if firemode and firemode[firemodeIndex] and firemode[firemodeIndex].OnSet then
-    --     firemode[firemodeIndex].OnSet(self)
-    -- end
+    --Animation Protect 
+    for Class, Data in pairs(self.m_Anim ) do
+        if self.Animations[Class] == nil then
+            self.Animations[Class] = Data
+        end
+    end
+ 
 
     if SERVER then
         if self:Clip1() > (self.Primary.ClipSize + self.Primary.Chamber) then
@@ -418,7 +427,7 @@ function SWEP:EquipAttachment(slot, attClass)
             net.Broadcast()
         end
     end
-
+    self:RefreshAttTable()
 
     self:OnAttachmentChanged()
 

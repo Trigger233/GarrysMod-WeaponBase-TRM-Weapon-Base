@@ -398,7 +398,7 @@ function P.RenderScopeView()
     if P.NextRender and now < P.NextRender then return end
     P.NextRender = now + (1 / fps)
 
-    local size =  P.GetResolution()
+    local size = P.GetResolution()
     local fov = GetConVar("fov_desired"):GetInt()
     local zoomfov = fov / (att:GetScopeMagnification() or 1)
     local origin, angles = P.GetCamera(ply, wep, entry, att, model)

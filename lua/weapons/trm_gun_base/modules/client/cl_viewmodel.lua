@@ -350,6 +350,7 @@ function SWEP:ViewModelDrawn(vm)
         end
     end
 
+
 end
 
 

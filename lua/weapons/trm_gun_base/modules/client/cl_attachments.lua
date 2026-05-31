@@ -915,7 +915,7 @@ function PANEL:SetupModel()
 
     ent:InvalidateBoneCache()
     ent:SetupBones()
-    ent:SetPredictable(true)
+    --ent:SetPredictable(true)
     -- 缓存预览用骨骼数据
     self.m_PreviewBones = {}
     for i = 0, ent:GetBoneCount() do
@@ -1196,7 +1196,6 @@ function PANEL:RefreshPreview()
 
     local ent = self.m_ModelPanel:GetEntity()
     if not IsValid(ent) then return end
-
 
     for slotKey, entry in pairs(self.m_Weapon.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end

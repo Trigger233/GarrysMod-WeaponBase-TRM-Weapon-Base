@@ -1,3 +1,33 @@
+local function resetEvents(wep, animation)
+    local anim = wep.Animations[animation]
+    if not anim then return end
+
+    if anim.events then
+        for _, event in pairs(anim.events) do
+            event.Triggered = false
+            --print(event.time)
+        end
+    end
+end
+
+local function applyEvents(weapon, animation, cycle)
+    local anim = weapon.Animations[animation]
+    if not anim then return end
+    if anim.events then
+        for _, event in pairs(anim.events) do
+            if not event or event.Triggered then
+                continue
+            end
+
+            if cycle >= event.time then
+                if event.callback then
+                    event.callback(weapon)
+                end
+                event.Triggered = true
+            end
+        end
+    end
+end
 function SWEP:PlayAnimation(sequenceClass, useInternalDuration)
     if not (IsFirstTimePredicted() and SERVER) then return end
     local vm = self:GetViewModel()
@@ -29,11 +59,9 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration)
     vm:SetCycle(0)
 
 
-    if animData.events then -- 修复3：从 animData 取 events
-        for _, event in pairs(animData.events) do
-            event.Triggered = false
-        end
-    end
+    resetEvents(self, sequenceClass)
+
+
     local speed = (animData.Speed or 1)
     vm:SetPlaybackRate(speed)
 
@@ -48,7 +76,7 @@ end
 
 function SWEP:DoAnimationEvents()
     local vm = self:GetViewModel()
-    if not vm or not IsValid(vm) then
+    if not vm or not IsValid(vm) or not IsFirstTimePredicted() then
         return
     end
 
@@ -59,18 +87,7 @@ function SWEP:DoAnimationEvents()
         return
     end
 
-    for _, event in pairs(self.Animations[sequenceClass].events) do
-        if not event or event.Triggered then
-            continue
-        end
-
-        if progress >= event.time then
-            if event.callback then
-                event.callback(self)
-            end
-            event.Triggered = true
-        end
-    end
+    applyEvents(self, sequenceClass, progress)
 end
 
 function SWEP:PlayWorldAnimation(sequenceClass)
@@ -86,6 +103,8 @@ function SWEP:PlayWorldAnimation(sequenceClass)
         ["Iron_Fire"] = PLAYER_ATTACK1,
         ["Iron_Fire_Last"] = PLAYER_ATTACK1,
 
+        ["Rechamber"] = PLAYER_ATTACK1,
+        ["Iron_Rechamber"] = PLAYER_ATTACK1,
         -- 换弹类
         ["Reload"] = PLAYER_RELOAD,
         ["Reload_Empty"] = PLAYER_RELOAD,
@@ -117,7 +136,6 @@ function SWEP:PlayWorldAnimation(sequenceClass)
     }
 
 
-
     local act = animationTable[sequenceClass]
     if act then
         owner:SetAnimation(act)
@@ -129,13 +147,19 @@ function SWEP:ApplySpecialAnimationStat(vm, sequenceClass, duration, animData)
         local AdsSpeed = (animData.Length or 1) * (animData.RealLength or duration) / self.Aim.Time
         vm:SetPlaybackRate(AdsSpeed)
     end
+
+    if string.find(sequenceClass,"Rechamber") then
+        local delay = 60 / self.Primary.RPM 
+        self:SetNextAnimationTime(CurTime() + delay)
+        self:SetNextFireTime(delay)
+    end
 end
 
 function SWEP:ChooseAnim(animationClass)
     local empty = self:IsEmpty()
     local aim = self:GetAimDelta() > 0.5 and true or false
-    local function hasAnim(Class) 
-        local anim = self.Animations 
+    local function hasAnim(Class)
+        local anim = self.Animations
         return anim and anim[Class] and true or false
     end
     local AnimName = animationClass
@@ -143,11 +167,11 @@ function SWEP:ChooseAnim(animationClass)
     if not hasAnim(AnimName) then
         AnimName = "Idle"
     end
-    if empty and hasAnim(AnimName.."_Empty") then
-        AnimName = AnimName.."_Empty"
+    if empty and hasAnim(AnimName .. "_Empty") then
+        AnimName = AnimName .. "_Empty"
     end
-    if aim and hasAnim("Iron_"..AnimName) then
-        AnimName = "Iron_"..AnimName
+    if aim and hasAnim("Iron_" .. AnimName) then
+        AnimName = "Iron_" .. AnimName
     end
 
     return AnimName
@@ -156,3 +180,4 @@ end
 function SWEP:IsAnimFinished()
     return self:GetNextAnimationTime() < CurTime()
 end
+

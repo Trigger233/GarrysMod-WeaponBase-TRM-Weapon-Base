@@ -39,9 +39,11 @@ end)
 
 function DebugHUD(ply, wep)
     if cv_debug:GetInt() == 0 then return end
+
     draw.SimpleText("Current Task: " .. (wep.GetCurrentTask and wep:GetCurrentTask() or "None"), "Default", ScrW() / 2,
         ScrH() * 0.74, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    
+    draw.SimpleText("Chamber : "..wep:GetChamberAmmo(), "Default", ScrW() / 2,
+        ScrH() * 0.70, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
 function DrawCustomCrosshair(ply, wep)

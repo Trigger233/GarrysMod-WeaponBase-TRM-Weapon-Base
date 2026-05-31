@@ -5,7 +5,7 @@ end
 
 function SWEP:CanPrimaryFire()
 	-- local seq =	self:GetPlayingSequence()
-	if self.BoltAction and self.Animations.Rechamber and self:GetChamberAmmo() <= 0 and not self:IsEmpty() and self:GetNextPrimaryFire() <= CurTime() then
+	if self.Primary.BoltAction and self.Animations.Rechamber and self:GetChamberAmmo() <= 0 and not self:IsEmpty() and self:GetNextPrimaryFire() <= CurTime() then
 		return false
 	end
 	return (not self:IsEmpty() and (self:GetNextPrimaryFire() <= CurTime()))
@@ -88,7 +88,6 @@ function SWEP:DoFireSound()
 	end
 end
 
-
 function SWEP:FirePrimaryBullet()
 	if CLIENT then
 		-- 枪焰：总是播（确保每次开火都有）
@@ -116,8 +115,8 @@ function SWEP:FirePrimaryBullet()
 		end
 		self.r_shakeDir = -self.r_shakeDir
 
-		local shake = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 1) * self.r_shakeDir 
-			
+		local shake = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 1) * self.r_shakeDir
+
 		owner:SetViewPunchAngles(Angle(0, 0, shake))
 		owner:SetViewPunchVelocity(Angle(0, 0, shake * 100))
 	end
@@ -176,7 +175,7 @@ function SWEP:FirePrimaryBullet()
 	self:SetLastFireTime(CurTime())
 	self:SetClip1(self:Clip1() - 1)
 
-	if self.BoltAction and self.Animations.Rechamber then
+	if self.Primary.BoltAction and self.Animations.Rechamber then
 		local amount = self:GetChamberAmmo()
 		amount = math.max(amount - 1, 0)
 		self:SetChamberAmmo(amount)
@@ -192,7 +191,6 @@ function SWEP:DoImpactEffect(tr, dmgType)
 end
 
 function SWEP:ImpactEffects(tr, type)
-
 	for slot, entry in pairs(self.CurrentAttachments or {}) do
 		if entry and entry.Class and BASE_TRM_ATTS[entry.Class].DoImpactEffect then
 			BASE_TRM_ATTS[entry.Class]:DoImpactEffect(tr, type)
@@ -270,7 +268,7 @@ function SWEP:DoVisualRecoil()
 		self.m_VRecoilBack = 0
 	end
 
-	local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2]) 
+	local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2])
 	self.m_VRecoilBack = self.m_VRecoilBack + baseBack + progBack
 
 	-- 限制最大值
@@ -321,17 +319,17 @@ end
 
 function SWEP:DoRecoil()
 	if CLIENT and not IsFirstTimePredicted() then return end
-	local Recoil = Angle(0,0,0)
+	local Recoil = Angle(0, 0, 0)
 	local stats = self.Recoil
 	local delay = 60 / self.Primary.RPM
-	
+
 	if stats.KickDown then
 		delay = delay * (1 - stats.KickDown)
-	end	
+	end
 
 
-	Recoil = self:GetRecoil()
-	local AdsScale = Lerp(self:GetAimDelta(), 1, stats.AdsMultiplier) * 1
+	Recoil          = self:GetRecoil()
+	local AdsScale  = Lerp(self:GetAimDelta(), 1, stats.AdsMultiplier) * 1
 
 	local Vertical  = math.Rand(stats.Vertical[1], stats.Vertical[2]) * AdsScale
 	local Horizonal = math.Rand(stats.Horizonal[1], stats.Horizonal[2]) * AdsScale

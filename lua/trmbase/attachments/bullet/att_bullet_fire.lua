@@ -30,6 +30,7 @@ function ATTACHMENT:DoImpactEffect(tr,type)
     effect:SetAngles(tr.HitNormal:Angle())
     effect:SetMagnitude(1)
     effect:SetScale(1)
+    effect:SetRadius(10)
     effect:SetFlags(0)
-    util.Effect("ManhackSparks", effect)
+    util.Effect("Sparks", effect)
 end

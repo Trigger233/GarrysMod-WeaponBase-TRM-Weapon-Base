@@ -20,27 +20,7 @@ P.Config.DefaultLensRadius = 0.49
 P.Config.DefaultReticleRadius = 0.72
 P.Config.DefaultEdgeSoftness = 0.09
 P.Config.DefaultReticleOffset = Vector(0, 0, 0)
-P.Config.ScopeProfiles = {
-    -- att_ins_elcan = {
-    --     FOV = 14,
-    --     LensNeedles = { "lense_rt", "optic_lense" },
-    --     Reticle = "models/weapons/tfa_ins2/optics/elcan_reticule",
-    --     FlipX = false,
-    --     FlipY = false,
-    --     LensRadius = 0.49,
-    --     ReticleRadius = 0.72,
-    --     ReticleOffset = Vector(0, 0.00, 0),
-    --     EdgeSoftness = 0.09,
-    --     EdgeAlpha = 190,
-    --     CounterRollScale = 0.25,
-    --     CounterRollMax = 4,
-    --     CounterRollSmooth = 8,
-    --     AutoRecoilBackScale = 0.04,
-    --     AutoRecoilAngleScale = 0.08,
-    --     AutoRecoilMaxBack = 0.025,
-    --     AutoRecoilSmooth = 42
-    -- }
-}
+P.Config.ScopeProfiles = {}
 
 P.CVars = P.CVars or {
     enable = CreateClientConVar("cl_youraddon_elcan_pip_enable", "1", true, false,

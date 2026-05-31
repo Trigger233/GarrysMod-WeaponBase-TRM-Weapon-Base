@@ -118,10 +118,11 @@ local function RandomizeAttachments(ent)
         -- 每个槽 50% 概率装一个随机配件
         if  RollChance() then
             local chosen = available[math.random(#available)]
-            if chosen ~= slot.Default then
+            if chosen ~= slot.Default and ent:CanAttach(chosen) then
                 ent:EquipAttachment(tostring(i), chosen)
             end
         end
+        ent:ChangeWeaponStats()
     end
 end
 

@@ -54,14 +54,15 @@ function SWEP:Task_ReloadEnd(cycle)
     self:SetCurrentTask("Finished")
 end
 
+local cvar_debug_reload = CreateConVar("trmbase_debug_reload", 0, FCVAR_ARCHIVE, "Force reload for 2 round", 0, 1)
 
 function SWEP:CanReload()
 	local reserveAmmo = self:GetOwner():GetAmmoCount(self:GetPrimaryAmmoType())
     local seq =  self:GetPlayingSequence() 
     
 
-	local max = self.Primary.ClipSize +
-	(self.ReloadType == "Single" and self:GetChamberAmmo() or self.Primary.Chamber)
+	local max = cvar_debug_reload:GetBool() and 2 or  (self.Primary.ClipSize +
+	(self.Primary.BoltAction and self:GetChamberAmmo() or self.Primary.Chamber)) 
 	if string.find(seq, "Reload") then return false end
 	if not  GetConVar("trmbase_allow_sprintreload"):GetBool() and  string.find(seq , "Sprint") and not string.find(seq , "SprintOut") then return false end
 	if (cvar_infinite_reserve:GetBool()) then 
@@ -78,7 +79,10 @@ function SWEP:MagzineLoaded()
 	local reserveAmmo = owner:GetAmmoCount(self:GetPrimaryAmmoType())
 	local max = self:GetMaxClip1() 	 	
 	if not self:IsEmpty() then
-		max = max + (self.Primary.Chamber)
+		max = max + (self.Primary.BoltAction and self:GetChamberAmmo() or  self.Primary.Chamber)
+	end
+	if cvar_debug_reload:GetBool() then
+		max = 2
 	end
 	local FinalClip1 = 0
 

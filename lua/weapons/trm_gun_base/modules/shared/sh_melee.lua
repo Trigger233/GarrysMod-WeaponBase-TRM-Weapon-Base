@@ -102,6 +102,7 @@ function SWEP:MeleeDoor(tr)
     ent:SetKeyValue("Open Direction", "Both directions")
     ent:SetKeyValue("opendir", "0")
     ent:Fire("openawayfrom", self:GetOwner():EntIndex(), 0.1)
+    ent:Fire("Open","",0.1)
     timer.Simple(0.3, function()
 			if IsValid(ent) then
 				ent:SetKeyValue("Speed", "100")

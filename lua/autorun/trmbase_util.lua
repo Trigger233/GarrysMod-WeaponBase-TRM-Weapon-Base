@@ -13,5 +13,3 @@ end
 
 CreateConVar("trmbase_load_attachment_on_pickup",1,{FCVAR_ARCHIVE})
 
-hook.Add("PostDrawTranslucentRenderables", "test", function(bDrawingDepth, bDrawingSkybox, isDraw3DSkybox)
-end)

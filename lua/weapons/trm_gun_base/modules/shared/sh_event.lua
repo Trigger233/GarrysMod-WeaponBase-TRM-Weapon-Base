@@ -54,7 +54,7 @@ end
 
 
 function SWEP:DoShell()
-    if not (CLIENT ) then
+    if not (CLIENT  ) then
         self:CallOnClient("DoShell")     
     return end
     local vm = self:GetViewModel()
@@ -68,8 +68,8 @@ function SWEP:DoShell()
     effect:SetEntity(att_shell.Ent)
     effect:SetAttachment(att_shell.id)
     effect:SetFlags(0)
-    effect:SetMagnitude(1)
-    util.Effect(self.Effects.Shell.effect,effect)
+    effect:SetMagnitude(self.Effects.Shell.Magnitude or 1)
+    util.Effect(self.Effects.Shell.effect, effect)
 end
 
 

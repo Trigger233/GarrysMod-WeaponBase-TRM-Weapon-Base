@@ -40,5 +40,6 @@ end
 
 function ATTACHMENT:GetScopeMagnification()
     local scope = GetScopeConfig(self)
+    
     return scope.Zoom or 1
 end

@@ -21,6 +21,10 @@ TRMBase.Language.cn = {
     ["Grip"]                       = "后握把",
     ["UnderBarrel"]                = "下挂",
     ["Misc"]                       = "杂项",
+    ["Pump"]                       = "泵把",
+    ["Sight"]                      = "瞄具",
+    ["Tactical"]                   = "战术配件",
+    ["Ammo"]                   = "弹药",
 
     -- VGUI
     ["TRMBase_Installed"]          = "已安装",

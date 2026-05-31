@@ -108,7 +108,7 @@ SWEP.Primary.Automatic = false
 --     Sound = Sound() ,
 -- }
 
-SWEP.BoltAction = false
+SWEP.Primary.BoltAction = false
 
 SWEP.m_EjectDelay = 0.0
 
@@ -417,7 +417,7 @@ function SWEP:Initialize()
     self.m_HoldType = self.HoldType
     self:SetHoldType(self.m_HoldType)
     self.m_FirstDeployed = true
-    self.WepSelectIcon = Material("vgui/hud/" .. self:GetClass())
+    
     -- self:UpdateSelectIcon()
     self.m_LastEmptySoundTime = 0
     self.m_ViewModelFOV = self.ViewModelFOV
@@ -449,6 +449,10 @@ function SWEP:Initialize()
     self.m_MoveSpeedRun = self.MoveSpeed.Run
     self.m_MoveSpeedAim = self.MoveSpeed.Aim
     self:ResetChamberRound()
+
+    self:SetFiremodeIndex(1)
+    self:FireModeStat(1)
+
 
 
     self.m_Attachment = {}

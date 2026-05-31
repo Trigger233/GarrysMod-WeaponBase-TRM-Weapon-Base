@@ -11,7 +11,7 @@ function SWEP:ResetChamberRound(amount)
         amount = self.Primary.ChamberSize
     end
     
-    self:SetChamberAmmo(math.min(amount,self:Clip1()))
+    self:SetChamberAmmo(amount)
 end
 
 function SWEP:CanRechamber()

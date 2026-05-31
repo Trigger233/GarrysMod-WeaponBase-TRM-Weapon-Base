@@ -48,4 +48,5 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
         RunConsoleCommand("+trmbase_cycle_firemode")
         return true
     end
+    
 end)
