@@ -127,7 +127,14 @@ function SWEP:ApplyViewModelChange()
         changeBodyGroup(vm, bodygroup, sub)
         for _, entry in pairs(self.CurrentAttachments or {}) do
             if IsValid(entry.m_Model) then
+                local _att = BASE_TRM_ATTS[entry.Class]
+
                 changeBodyGroup(entry.m_Model, bodygroup, sub)
+                if _att.AttBodyGroup then
+                    for groupName , pose in pairs(_att.AttBodyGroup) do
+                        changeBodyGroup(entry.m_Model, groupName, pose)
+                    end
+                end
             end
         end
     end

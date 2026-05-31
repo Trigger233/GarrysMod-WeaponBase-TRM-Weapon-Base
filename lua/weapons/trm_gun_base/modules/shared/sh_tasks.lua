@@ -15,6 +15,7 @@
         SprintIn = "Task_SprintIn",
         SprintOut = "Task_SprintOut",
         Sprint = "Task_Sprint",
+        Firemode = "Task_Firemode"
     }
 
 function SWEP:TaskThink()

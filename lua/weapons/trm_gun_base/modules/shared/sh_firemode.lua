@@ -14,23 +14,26 @@ function SWEP:Task_Firemode(cycle)
             self:PlayAnimation(self:ChooseAnim(info.Animation), true)
         end
 
-        self:FireModeStat() 
+        self:FireModeStat()
     end
 
     self:SetCurrentTask("Finished")
-end     
-
-
+end
 
 function SWEP:FireModeStat()
-    if SERVER then
+    if SERVER  then
         self:CallOnClient("FireModeStat")
     end
+    self:GetOriginStat()
+    self:DeepObjectCopy(self.m_OriginalStat.Primary, self.Primary)
+
     local index = self:GetFiremodeIndex()
     if self.Firemode and self.Firemode[index] and self.Firemode[index].OnSet then
         self.Firemode[index].OnSet(self)
     end
+    print("Firemode : ",self.Primary.Automatic,"IsServer",SERVER)
 end
+
 local function defmode(w)
     local defName
     if w.Primary.Burst then
@@ -45,7 +48,7 @@ end
 function SWEP:GetFiremodeName()
     local index = self:GetFiremodeIndex()
     local def = defmode(self)
-    local stat = self.Firemode[index] and self.Firemode[index].Name or false
+    local stat = self.Firemode and self.Firemode[index] and self.Firemode[index].Name or false
     local name = stat or def
     return name
 end
