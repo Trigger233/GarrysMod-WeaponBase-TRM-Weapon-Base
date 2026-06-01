@@ -21,3 +21,4 @@ function SWEP:NPCShoot_Primary(pos , dir)
     end
 end  
 
+

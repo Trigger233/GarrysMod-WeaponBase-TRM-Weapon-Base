@@ -88,12 +88,7 @@ concommand.Add("print_trm_injector", function()
     PrintTable(BASE_TRM_INJECTOR)
 end)
 
+-- function BASE_TRM_INJECTOR.Inject(weapon)
+--     for inj
+-- end
 
-hook.Add("PreRegisterSWEP", "TRMBASE_INJECTOR_SWEP", function(weapon, class)
-    if not util.IsTRMBase(weapon) then return end
-    for _, injector in pairs(BASE_TRM_INJECTOR) do
-        if injector.DoInjector then
-            injector:DoInjector(weapon, class)
-        end
-    end
-end)

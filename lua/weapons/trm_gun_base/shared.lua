@@ -119,7 +119,7 @@ SWEP.Primary.Force = 1
 
 SWEP.Primary.Sound = Sound("")
 SWEP.Primary.SliencedSound = nil
-SWEP.Primary.Slienced = false
+SWEP.Slienced = false
 
 
 SWEP.Primary.NumBullets = 6
@@ -414,6 +414,8 @@ SWEP.BasePoseParameters = {
 
 function SWEP:Initialize()
     self.m_ViewModel = Model(self.ViewModel)
+    self:SetHoldType(self.HoldType)
+    self:SetWeaponHoldType("ar2")
     self.m_HoldType = self.HoldType
     self:SetHoldType(self.m_HoldType)
     self.m_FirstDeployed = true
@@ -433,6 +435,7 @@ function SWEP:Initialize()
 
     self.m_SprintDeltaLerp = 0
     self.m_SprintPose = 0
+    
 
     if self.GetOriginStat then self:GetOriginStat() end
     if self.ChangeWeaponStats then self:ChangeWeaponStats() end
@@ -624,6 +627,9 @@ function SWEP:PrimaryAttack()
         self:SetCurrentTask("Charge")
     else
         self:SetCurrentTask("PrimaryFire")
+    end
+    if CLIENT then
+        gui.AddCaption("Fire")
     end
 end
 

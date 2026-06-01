@@ -1,8 +1,17 @@
 module("trm_weapon_base_util",package.seeall)
 
+local function getBase(weapon)
+    if weapon.IsTRMWeapon then
+        return true
+    end
+    if weapon.Base then
+        return getBase(weapon.Base)
+    end
+    return false
+end
 
 function util.IsTRMBase(weapon)
-    return IsValid(weapon) and (weapon.IsTRMWeapon)
+    return IsValid(weapon) and (getBase(weapon))
 end
 
 function trm_weapon_base_util.IsDucking(ply)
@@ -12,4 +21,3 @@ function trm_weapon_base_util.IsDucking(ply)
 end
 
 CreateConVar("trmbase_load_attachment_on_pickup",1,{FCVAR_ARCHIVE})
-

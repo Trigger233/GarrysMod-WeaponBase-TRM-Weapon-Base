@@ -75,7 +75,7 @@ function SWEP:Task_PrimaryFire()
 end
 
 function SWEP:DoFireSound()
-	local slience = self.Primary.Slienced or false
+	local slience = self.Slienced and true or false
 	local chan = CHAN_STATIC
 	if slience and self.Primary.SliencedSound then
 		self:EmitSound(self.Primary.SliencedSound, 140, 100, 1, chan)
@@ -268,7 +268,7 @@ function SWEP:DoVisualRecoil()
 		self.m_VRecoilBack = 0
 	end
 
-	local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2])
+	local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2]) * AdsScale
 	self.m_VRecoilBack = self.m_VRecoilBack + baseBack + progBack
 
 	-- 限制最大值
@@ -364,7 +364,7 @@ function SWEP:DoCameraRecoil()
 	local eyeAngles = owner:EyeAngles()
 	local delay = 60 / self.Primary.RPM
 	local nextRecoil = self:GetNextRecoil()
-	local isFiring = CurTime() - nextRecoil < 0.0
+	local isFiring = CurTime() - nextRecoil < engine.TickInterval()
 	local NextAngle = Angle(0, 0, 0)
 	local stat = self.Recoil
 

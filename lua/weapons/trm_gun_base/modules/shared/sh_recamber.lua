@@ -1,5 +1,5 @@
 function SWEP:Task_Rechamber(cycle)
-    if self:GetOwner():KeyDown(IN_ATTACK) then return end
+    if self:GetOwner():KeyDown(IN_ATTACK)  and self.Primary.Automatic then return end
     if self.Animations.Rechamber and not self:IsEmpty() then
         self:PlayAnimation("Rechamber",true) 
     end

@@ -29,9 +29,7 @@ local function ApplyAttachmentTable(weapon, data)
     if not data or not istable(data) then return false end
 
     weapon.CurrentAttachments = weapon.CurrentAttachments or {}
-    for slotKey in pairs(weapon.CurrentAttachments) do
-        weapon.CurrentAttachments[slotKey] = nil
-    end
+    weapon:EquipDefaultAttachments()
 
     for i, attClass in ipairs(data) do
         local slotKey = tostring(i)

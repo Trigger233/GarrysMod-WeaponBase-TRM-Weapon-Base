@@ -87,11 +87,15 @@ local function RollChance()
     return math.random(0, 99) < chance
 end
 
--- 随机装备配件
+-- 随机装备配件（跳过玩家武器）
 local function RandomizeAttachments(ent)
     if not IsValid(ent) then return end
     if not ent.Attachments or #ent.Attachments == 0 then return end
     if not ent.EquipAttachment then return end
+
+    -- 跳过玩家正在使用的武器（避免干扰玩家当前配件状态）
+    local owner = ent:GetOwner()
+    if IsValid(owner) and owner:IsPlayer() then return end
 
     local cv = GetConVar("trmbase_random_attachments")
     if not cv or not cv:GetBool() then return end
@@ -118,7 +122,7 @@ local function RandomizeAttachments(ent)
         -- 每个槽 50% 概率装一个随机配件
         if  RollChance() then
             local chosen = available[math.random(#available)]
-            if chosen ~= slot.Default and ent:CanAttach(chosen) then
+            if chosen ~= slot.Default then
                 ent:EquipAttachment(tostring(i), chosen)
             end
         end

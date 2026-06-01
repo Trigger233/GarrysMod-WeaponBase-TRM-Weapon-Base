@@ -4,5 +4,6 @@ ATTACHMENT.Selectable = true
 
 function ATTACHMENT:ChangeWeaponStats(weapon)
     weapon.Primary.Slienced = true
+    weapon.Slienced = true
     
 end

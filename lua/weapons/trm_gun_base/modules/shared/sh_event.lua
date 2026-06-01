@@ -19,7 +19,7 @@ end
 
 function SWEP:DoMuzzleEffect()
     if not CLIENT then return end
-    if self.Primary.Slienced then return end
+    if self.Slienced then return end
    
     local effect = EffectData()
     local data = self:GetAttachmentData(self.Effects.Muzzle.attachment)

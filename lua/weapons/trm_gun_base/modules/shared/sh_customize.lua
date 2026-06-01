@@ -1,11 +1,14 @@
 function SWEP:RefreshAttTable()
-
     for slot, entry in pairs(self.CurrentAttachments) do
         if not self:CanAttach(slot) then
             self:UnEquipAttachment(slot)
         end
     end
+end
 
+function SWEP:IsPlyCarry()
+    local owner = self:GetOwner()
+    return owner:IsPlayer() and owner:GetActiveWeapon() == self or false
 end
 --- 检查指定槽位能否安装配件
 --- 返回 false 表示被排除（不可用），true 表示可用
@@ -102,7 +105,9 @@ function SWEP:PrepareViewModel()
     -- vm:SetWeaponModel(self.ViewModel, self)
 
     for _group, _sub in pairs(self.BodyGroups or {}) do
-        changeBodyGroup(vm, _group, _sub)
+        if self:IsPlyCarry() then
+            changeBodyGroup(vm, _group, _sub)
+        end
         for _, entry in pairs(self.CurrentAttachments or {}) do
             if IsValid(entry.m_Model) then
                 changeBodyGroup(entry.m_Model, _group, _sub)
@@ -129,14 +134,16 @@ function SWEP:ApplyViewModelChange()
     vm:SetSkin(self.m_SkinCache || 0)
     vm:ClearPoseParameters()
     for bodygroup, sub in pairs(self.m_BodyGroupCache) do
-        changeBodyGroup(vm, bodygroup, sub)
+        if self:IsPlyCarry() then
+            changeBodyGroup(vm, bodygroup, sub)
+        end
         for _, entry in pairs(self.CurrentAttachments or {}) do
             if IsValid(entry.m_Model) then
                 local _att = BASE_TRM_ATTS[entry.Class]
 
                 changeBodyGroup(entry.m_Model, bodygroup, sub)
                 if _att.AttBodyGroup then
-                    for groupName , pose in pairs(_att.AttBodyGroup) do
+                    for groupName, pose in pairs(_att.AttBodyGroup) do
                         changeBodyGroup(entry.m_Model, groupName, pose)
                     end
                 end
@@ -149,22 +156,39 @@ function SWEP:ChangeWeaponStats()
     self:CallOnClient("ChangeWeaponStats")
     self:GetOriginStat()
     self:DeepObjectCopy(self.m_OriginalStat, self)
+
+    for name, injector in pairs(BASE_TRM_INJECTOR) do
+        if type(injector) == "table" and injector.Inject then -- 只处理有 Inject 方法的
+            if injector.SWEP and injector.SWEP ~= self:GetClass() then
+                continue
+            end
+            injector:Inject(self)
+        end
+    end
+
     self.m_Anim = table.Copy(self.Animations)
-    
+    --init anim data
+
+    for Class, Anim in pairs(self.Animations) do
+        Anim.Speed = Anim.Speed or 1
+    end
 
     for _, entry in pairs(self.CurrentAttachments or {}) do
         if entry and entry.Class and BASE_TRM_ATTS[entry.Class].ChangeWeaponStats then
             BASE_TRM_ATTS[entry.Class]:ChangeWeaponStats(self)
+        elseif BASE_TRM_ATTS[entry.Class].Stats then
+            BASE_TRM_ATTS[entry.Class]:Stats(self)
         end
     end
 
-    --Animation Protect 
-    for Class, Data in pairs(self.m_Anim ) do
+    --Animation Protect
+    for Class, Data in pairs(self.m_Anim) do
         if self.Animations[Class] == nil then
             self.Animations[Class] = Data
         end
     end
- 
+
+
 
     if SERVER then
         if self:Clip1() > (self.Primary.ClipSize + self.Primary.Chamber) then
@@ -173,6 +197,7 @@ function SWEP:ChangeWeaponStats()
         if self:Clip2() > self.Secondary.ClipSize then
             self:SetClip2(self.Secondary.ClipSize)
         end
+        --self:MagzineLoaded()
         self:SetSpread(self.Spread.Base)
         self:SetSpreadVertical(self.Spread.Vertical)
         self:SetSpreadHorizonal(self.Spread.Horizontal)
@@ -246,7 +271,7 @@ end
 function SWEP:BuildViewModelData()
     if not CLIENT then return end
     local vm = self:GetViewModel(0)
-    if not IsValid(vm) then return end
+    if not IsValid(vm) then  return end
 
     -- Attachment 数据
     if not self.m_Attachment then
@@ -477,9 +502,9 @@ end
 function SWEP:BuildCustomizedGun()
     if SERVER then
         self:CallOnClient("BuildCustomizedGun")
-            self:PrecacheViewModel()
-            self:PrepareViewModel()
-            self:ApplyViewModelChange()
+        self:PrecacheViewModel()
+        self:PrepareViewModel()
+        self:ApplyViewModelChange()
         return
     end
 
