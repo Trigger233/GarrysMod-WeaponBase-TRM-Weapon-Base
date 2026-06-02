@@ -148,15 +148,21 @@ local function SlotIconName(slot)
 
     text = text .. " " .. string.lower(tostring(slot and slot.Name or ""))
 
-    if string.find(text, "sight", 1, true) or string.find(text, "optic", 1, true) or string.find(text, "reflex", 1, true) then return
-        "sight" end
+    if string.find(text, "sight", 1, true) or string.find(text, "optic", 1, true) or string.find(text, "reflex", 1, true) then
+        return
+        "sight"
+    end
     if string.find(text, "mag", 1, true) or string.find(text, "clip", 1, true) then return "mag" end
     if string.find(text, "barrel", 1, true) then return "barrel" end
-    if string.find(text, "muzzle", 1, true) or string.find(text, "suppress", 1, true) or string.find(text, "flash", 1, true) then return
-        "muzzle" end
+    if string.find(text, "muzzle", 1, true) or string.find(text, "suppress", 1, true) or string.find(text, "flash", 1, true) then
+        return
+        "muzzle"
+    end
     if string.find(text, "laser", 1, true) or string.find(text, "tactical", 1, true) then return "laser" end
-    if string.find(text, "under", 1, true) or string.find(text, "foregrip", 1, true) or string.find(text, "vert", 1, true) then return
-        "underbarrel" end
+    if string.find(text, "under", 1, true) or string.find(text, "foregrip", 1, true) or string.find(text, "vert", 1, true) then
+        return
+        "underbarrel"
+    end
     if string.find(text, "stock", 1, true) then return "stock" end
     if string.find(text, "grip", 1, true) then return "grip" end
     if string.find(text, "ammo", 1, true) or string.find(text, "bullet", 1, true) then return "ammo" end
@@ -250,6 +256,10 @@ local function ApplyAttachmentStats(target, attClass)
     local attData = BASE_TRM_ATTS and BASE_TRM_ATTS[attClass]
     if attData and attData.ChangeWeaponStats then
         pcall(attData.ChangeWeaponStats, attData, target)
+    end
+
+    if attData and attData.Stats then
+        pcall(attData.Stats, attData, target)
     end
 end
 
@@ -905,7 +915,7 @@ end
 function PANEL:SetupModel()
     if not IsValid(self.m_Weapon) then return end
 
-    local model = self.m_Weapon.ViewModel
+    local model = self.m_Weapon:GetViewModel():GetModel()
     if not model or model == "" then model = self.m_Weapon.WorldModel end
     if not model or model == "" then return end
 
@@ -1340,7 +1350,7 @@ function PANEL:LayoutSlotCards()
     local stripH = math.max(self.m_SlotStrip:GetTall(), cardH)
     local visibleCards = math.max(math.floor(stripW / 152), 1)
     local cardW = math.Clamp(
-    math.floor((stripW - gap * math.min(count + 1, visibleCards + 1)) / math.min(count, visibleCards)), 128, 172)
+        math.floor((stripW - gap * math.min(count + 1, visibleCards + 1)) / math.min(count, visibleCards)), 128, 172)
     local totalW = count * cardW + (count - 1) * gap
     local startX = totalW < stripW and math.floor((stripW - totalW) * 0.5) or 0
     self.m_SlotMaxScroll = math.max(totalW - stripW, 0)
@@ -1983,8 +1993,6 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
         self:RefreshPreview()
         self:RefreshAll()
     end
-
-    
 end
 
 function PANEL:Close()

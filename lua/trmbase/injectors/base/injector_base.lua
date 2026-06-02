@@ -116,6 +116,7 @@ function INJECTOR:Animation(weapon)
         if animData.Length then
             weapon.Animations[newAnimName].Length = animData.Length
         end
+        --PrintTable(weapon.Animations[newAnimName])
     end
 end
 
