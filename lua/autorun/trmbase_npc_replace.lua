@@ -110,7 +110,8 @@ local function RandomizeAttachments(ent)
             if not attData.Category then continue end
 
             for _, cat in ipairs(istable(slot.Category) and slot.Category or { slot.Category }) do
-                if attData.Category == cat and (attData.Selectable or true) then
+                if attData.Selectable == false then continue end
+                if attData.Category == cat  then
                     table.insert(available, attClass)
                     break
                 end

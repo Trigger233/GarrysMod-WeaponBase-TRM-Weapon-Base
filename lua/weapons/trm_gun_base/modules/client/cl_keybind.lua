@@ -9,7 +9,9 @@ CreateClientConVar("trmbase_cl_keybind_firemode", "0", true, false, "Firemode ke
 local cv_melee = GetConVar("trmbase_cl_keybind_melee")
 local cv_inspect = GetConVar("trmbase_cl_keybind_inspect")
 local cv_customize = GetConVar("trmbase_cl_keybind_customize")
-local cv_firemode = GetConVar("trmbase_cl_keybind_firemode") 
+local cv_firemode = GetConVar("trmbase_cl_keybind_firemode")
+
+
 hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
     local weapon = LocalPlayer():GetActiveWeapon()
     if not util.IsTRMBase(weapon) then return end
@@ -48,5 +50,9 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
         RunConsoleCommand("+trmbase_cycle_firemode")
         return true
     end
+
+
     
 end)
+
+

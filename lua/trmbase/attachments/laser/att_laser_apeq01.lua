@@ -1,5 +1,5 @@
 ATTACHMENT.Name = "ANPEQ15"
-ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_laser_anpeq15.mdl")
+ATTACHMENT.Model = Model("models/trm_attachments/laser/a_laser_anpeq15.mdl")
 ATTACHMENT.Category = "att_laser"
 ATTACHMENT.Base = "att_laser"
 ATTACHMENT.Angles = Angle(-90,0,180)

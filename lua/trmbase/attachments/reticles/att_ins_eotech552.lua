@@ -3,8 +3,7 @@ ATTACHMENT.Category = "att_sight"
 ATTACHMENT.Base = "att_reticle"
 ATTACHMENT.Selectable = true
 
-ATTACHMENT.Angles  = Angle(-90,0,90)
-
+ATTACHMENT.Angles     = Angle(-180, 180, 180)
 ATTACHMENT.Sight = {
     Pos = Vector(0.00,0, -0.95 ) ,
     Align = "reticle" ,
@@ -14,8 +13,7 @@ ATTACHMENT.Sight = {
     HideMaterial = {2} , --Material Index
 }
 
-ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_optic_eotech.mdl")
-
+ATTACHMENT.Model = Model("models/trm_attachments/optic/a_optic_eotech.mdl")
 function ATTACHMENT:ChangeWeaponStats(weapon)
     weapon.Aim.Time = weapon.Aim.Time * 1.1
 end

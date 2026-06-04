@@ -1,5 +1,5 @@
 ATTACHMENT.Name = "P320 Laser"
-ATTACHMENT.Model = Model("models/weapons/upgrades/a_laser_p320.mdl")
+ATTACHMENT.Model = Model("models/trm_attachments/laser/a_laser_p320.mdl")
 ATTACHMENT.Category = "att_laser_pistol"
 ATTACHMENT.Base = "att_laser"
 ATTACHMENT.Angles = Angle(-0,0,0)

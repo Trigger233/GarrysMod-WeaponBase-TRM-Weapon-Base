@@ -2,9 +2,9 @@ ATTACHMENT.Name = "Mosin 7.5x (WIP)"
 ATTACHMENT.Category = "att_sight"
 ATTACHMENT.Base = "att_scope"
 ATTACHMENT.Selectable = false
-ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_optic_mosin.mdl")
-ATTACHMENT.Angles = Angle(-90, 0, 90)
-ATTACHMENT.Pos = Vector(-1.5,0,0)
+ATTACHMENT.Model = Model("models/trm_attachments/optic/a_optic_mosin.mdl")
+ATTACHMENT.Angles = Angle(-180, 180, 180)
+ATTACHMENT.Pos = Vector(-1.5, 0, 0)
 
 ATTACHMENT.Sight = {
     Pos = Vector(0, 2, 0.2),

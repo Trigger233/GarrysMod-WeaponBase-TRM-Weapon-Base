@@ -1,7 +1,7 @@
-ATTACHMENT.Name = "a_suppressor_ins"
+ATTACHMENT.Name = "Suppressor Ins"
 ATTACHMENT.Base = "att_suppressor"
 ATTACHMENT.Category = "att_muzzle"
-ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_suppressor_ins.mdl")
+ATTACHMENT.Model = Model("models/trm_attachments/muzzle/a_suppressor_ins.mdl")
 ATTACHMENT.Pos = Vector(2,0,0)
 
 function ATTACHMENT:ChangeWeaponStats(weapon)

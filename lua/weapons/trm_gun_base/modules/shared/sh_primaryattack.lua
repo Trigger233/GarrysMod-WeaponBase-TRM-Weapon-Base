@@ -8,81 +8,31 @@ function SWEP:CanPrimaryFire()
 	if self.Primary.BoltAction and self.Animations.Rechamber and self:GetChamberAmmo() <= 0 and not self:IsEmpty() and self:GetNextPrimaryFire() <= CurTime() then
 		return false
 	end
+
+	if self:GetSprintDelta() > 0.2 then
+		return false
+	end
+
 	return (not self:IsEmpty() and (self:GetNextPrimaryFire() <= CurTime()))
 end
 
-function SWEP:Task_Charge()
-	local stat = self.Primary.Trigger
-	if not stat then return end
-
-	if stat.Sound and not self.s_TriggerSound then
-		self:EmitSound(stat.Sound)
-		self.s_TriggerSound = true
-	end
-
-	-- 修复1：只在 m_NextFireTime 为 nil 时设置
-	if stat.Time > 0 and self.m_NextFireTime == nil then
-		self.m_NextFireTime = CurTime() + stat.Time
-	end
-
-	local anim = self.Animations
-	self:PlayAnimation(self:ChooseAnim("Charge"), true)
-
-	local owner = self:GetOwner()
-	if not IsValid(owner) then return end
-
-	-- 修复2：确保 m_NextFireTime 存在再比较
-	if self.m_NextFireTime and CurTime() >= self.m_NextFireTime then
-		if not self.Primary.Automatic then
-			self.m_NextFireTime = nil
-			self.s_TriggerSound = false -- 修复3：重置声音标志
-		end
-
-		if stat.Type == "Hold" and not owner:KeyDown(IN_ATTACK) then
-			self:SetCurrentTask("Finished")
-		else
-			self:SetNextAnimationTime(0)
-			self:SetCurrentTask("PrimaryFire")
-		end
-	end
+if SERVER then
+	AddCSLuaFile("include/trmbase_sound.lua")
+else
+	include("include/trmbase_sound.lua")
 end
-
-function SWEP:Task_PrimaryFire()
-	local aim = self:GetAimDelta() > 0.5 and true or false
-
-	if self:Clip1() == 1 and self.Animations.Fire_Last then
-		if aim and self.Animations.Iron_Fire_Last then
-			self:PlayAnimation("Iron_Fire_Last")
-		else
-			self:PlayAnimation("Fire_Last")
-		end
-	elseif self.Animations.Fire then
-		if aim and self.Animations.Iron_Fire then
-			self:PlayAnimation("Iron_Fire", false)
-		else
-			self:PlayAnimation("Fire", false)
-		end
-	end
-
-	if (self.Primary.Special == -1 or not self.Primary.Special) then
-		self:FirePrimaryBullet()
-	else
-		self:FireProjectile()
-	end
-	-- local debugRPM = 60/(CurTime() - self:GetNextPrimaryFire())
-	-- print(debugRPM)
-	self:SetNextFireTime(60 / self.Primary.RPM)
-end
-
 function SWEP:DoFireSound()
 	local slience = self.Slienced and true or false
-	local chan = CHAN_STATIC
+	local chan = CHAN_WPNFOLEY
+
 	if slience and self.Primary.SliencedSound then
 		self:EmitSound(self.Primary.SliencedSound, 140, 100, 1, chan)
 	elseif self.Primary.Sound then
 		self:EmitSound(self.Primary.Sound, 140, 100, 1, chan)
 	end
-
+	if self.Reverb then
+		self:HandleReverb()
+	end
 	if self:Clip1() == 1 then
 		self:EmitSound("weapons/pistol/pistol_empty.wav", 66, 100, 1, CHAN_ITEM)
 	end
@@ -180,7 +130,7 @@ function SWEP:FirePrimaryBullet()
 		amount = math.max(amount - 1, 0)
 		self:SetChamberAmmo(amount)
 	end
-	self:SetCurrentTask("Finished")
+	self:TrySetTask("Idle")
 end
 
 function SWEP:DoImpactEffect(tr, dmgType)
@@ -364,7 +314,7 @@ function SWEP:DoCameraRecoil()
 	local eyeAngles = owner:EyeAngles()
 	local delay = 60 / self.Primary.RPM
 	local nextRecoil = self:GetNextRecoil()
-	local isFiring = CurTime() - nextRecoil < engine.TickInterval()
+	local isFiring = CurTime() - nextRecoil < delay
 	local NextAngle = Angle(0, 0, 0)
 	local stat = self.Recoil
 
@@ -418,8 +368,8 @@ function SWEP:GetCurrentSpread()
 	local owner = self:GetOwner()
 	if not IsValid(owner) then return baseSpread end
 
-	-- 移动扩散 
-	local vel = math.max( owner:GetVelocity():Length2D() / owner:GetWalkSpeed() , 0)
+	-- 移动扩散
+	local vel = math.max(owner:GetVelocity():Length2D() / owner:GetWalkSpeed(), 0)
 	local moveMult = 1.0
 
 	moveMult = math.max(self.Spread.MoveMultiplier * vel or 1.0, 1)

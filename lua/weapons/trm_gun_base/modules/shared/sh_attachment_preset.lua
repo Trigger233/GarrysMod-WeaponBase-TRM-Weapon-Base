@@ -2,7 +2,6 @@ local PRESET_ROOT = "trm_weapon_base/preset/save_attachment/"
 local LOADOUT_ROOT = "trm_weapon_base/preset/loadouts/"
 if SERVER then
     AddCSLuaFile()
-
     util.AddNetworkString("TRMBase_LoadLoadout")
     util.AddNetworkString("TRMBase_SaveLoadout")
 end

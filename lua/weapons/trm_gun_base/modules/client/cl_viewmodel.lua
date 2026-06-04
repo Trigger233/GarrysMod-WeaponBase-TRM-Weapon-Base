@@ -292,10 +292,6 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
 
         angles:RotateAroundAxis(angles:Right(), -visAng.p * 0.63)
         angles:RotateAroundAxis(angles:Up(), visAng.y * 0.68)
-        --angles:RotateAroundAxis(    angles:Forward() , visAng.y * -3 )
-
-
-        --angles:Add(self.m_VisualRecoilAngle)
     end
 
 
@@ -315,6 +311,7 @@ function SWEP:ViewModelDrawn(vm)
 
     vm:InvalidateBoneCache()
     vm:SetupBones()
+    --self:ApplyAttachmentModels()
 
     -- 检测配件模型是否缺失（换关后 ClientsideModel 被销毁需要重建）
     if not self.m_NeedsBuild then
@@ -323,7 +320,7 @@ function SWEP:ViewModelDrawn(vm)
                 self.m_NeedsBuild = true
                 break
             end
-        end
+        end 
     end
 
     if self.m_NeedsBuild and self.BuildCustomizedGun then

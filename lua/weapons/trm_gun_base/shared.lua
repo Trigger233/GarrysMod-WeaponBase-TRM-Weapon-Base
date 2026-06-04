@@ -23,6 +23,18 @@ end
 
 IncludeSharedFiles()
 
+local function IncludeTaskFiles()
+    local folder = "weapons/trm_gun_base/modules/shared/tasks/"
+    local files, _ = file.Find(folder .. "*.lua", "LUA")
+    for _, fileName in ipairs(files) do
+        local fullPath = folder .. fileName
+        if SERVER then
+            AddCSLuaFile(fullPath)
+        end
+        include(fullPath)
+    end
+end
+IncludeTaskFiles()
 -- ==========================================
 -- 包含所有 client 文件（只在客户端执行，但需要发送给客户端）
 -- ==========================================
@@ -121,6 +133,27 @@ SWEP.Primary.Sound = Sound("")
 SWEP.Primary.SliencedSound = nil
 SWEP.Slienced = false
 
+-- SWEP.Reverb = {
+--     RoomScale = 50000, --(hu)
+--     --how big should an area be before it is categorized as 'outside'?
+--     --h36_fire_reflection h36_fire_layer
+--     Sounds = {
+--         Outside = {
+--             Layer = Sound("Atmo_AR.Outside"),
+--             Reflection = Sound("sound_atom"),
+-- --             LayerSup = Sound("Reflection_AR.Inside"),
+--             ReflectionSup = Sound("sound_atom")
+
+--         },
+
+--         Inside = {
+--             Layer = Sound("Reflection_AR.Inside"),
+--             Reflection = Sound("sound_atom"),
+--             LayerSup = Sound("Reflection_AR.Inside"),
+--             ReflectionSup = Sound("sound_atom")
+--         }
+--     }
+-- }
 
 SWEP.Primary.NumBullets = 6
 
@@ -144,8 +177,8 @@ SWEP.Effects = {
         effect = "MuzzleEffect",
         attachment = "muzzle",
         Tracer = {
-            Name = "Tracer" ,
-            IsParticle = false ,
+            Name = "Tracer",
+            IsParticle = false,
         }
     },
     Shell = {
@@ -224,7 +257,7 @@ SWEP.Recoil = {
     AdsMultiplier = 0.7,
     KickDown = 1,
     Shake = 1,
-    Recover = 0.05,
+    Recover = 0.01,
     Factor = 0.5,
     Functional = {
         Increase = 0.2,
@@ -419,7 +452,7 @@ function SWEP:Initialize()
     self.m_HoldType = self.HoldType
     self:SetHoldType(self.m_HoldType)
     self.m_FirstDeployed = true
-    
+    self.m_bTaskCache = {}
     -- self:UpdateSelectIcon()
     self.m_LastEmptySoundTime = 0
     self.m_ViewModelFOV = self.ViewModelFOV
@@ -431,11 +464,12 @@ function SWEP:Initialize()
     self.m_AimSpread = 0
 
     self.m_WalkDeltaLerp = 0
+
     self.m_WalkPose = 0
 
     self.m_SprintDeltaLerp = 0
     self.m_SprintPose = 0
-    
+
 
     if self.GetOriginStat then self:GetOriginStat() end
     if self.ChangeWeaponStats then self:ChangeWeaponStats() end
@@ -521,14 +555,10 @@ end
 function SWEP:Deploy()
     self:GetOwner():SetSaveValue("m_flNextAttack", 0)
     self:SetNextAnimationTime(0)
-    self:SetCurrentTask("Deploy")
-    timer.Simple(0.1, function()
-        self:OnAttachmentChanged()
-        -- 确保客户端知道当前配件（预设由初始化 / Equip / Restore 加载）
-        self:SyncAllAttachments()
-        self:BuildCustomizedGun()
-    end)
-end 
+    self:TrySetTask("Deploy")
+    self:BuildCustomizedGun()
+    self:SetCanSwitch(false)
+end
 
 -- 读档后恢复配件数据
 function SWEP:Restore()
@@ -562,33 +592,12 @@ function SWEP:OnReloaded()
 
 
     -- 只在客户端执行热加载
-    if not CLIENT then return end
-    -- 重新包含所有客户端文件
-    local function ReloadClientFiles()
-        local folder = "weapons/trm_gun_base/modules/client/"
-        local files, _ = file.Find(folder .. "*.lua", "LUA")
-        for _, fileName in ipairs(files) do
-            local fullPath = folder .. fileName
-            -- 先清除旧的
-            if _G[fullPath] then
-                _G[fullPath] = nil
-            end
-            -- 重新包含
-            include(fullPath)
-        end
+    if not CLIENT then
+        IncludeClientFiles()
     end
+    -- 重新包含所有客户端文件
 
-    ReloadClientFiles()
-
-
-
-    -- 重新初始化客户端相关变量
-    self.m_SmoothAimDelta = 0
-    self.m_SwayAngle = Angle(0, 0, 0)
-    self.m_BobPos = Vector(0, 0, 0)
-    self.m_BobAng = Angle(0, 0, 0)
-
-    --print("[TRMBase] Client files reloaded!")
+    IncludeTaskFiles()
 end
 
 function SWEP:OnRestore()
@@ -596,7 +605,7 @@ function SWEP:OnRestore()
         self:OnReloaded()
         self:EquipDefaultAttachments()
         --self:SpreadInit()
-        self:SetCurrentTask("Finished")
+        self:TrySetTask("Idle")
         if SERVER and cvar_attachment:GetBool() then
             -- 先加载保存的配件配置
             self:LoadAttachmentPreset()
@@ -624,12 +633,9 @@ function SWEP:PrimaryAttack()
         return false
     end
     if self.Primary.Trigger then
-        self:SetCurrentTask("Charge")
+        self:TrySetTask("Charge")
     else
-        self:SetCurrentTask("PrimaryFire")
-    end
-    if CLIENT then
-        gui.AddCaption("Fire")
+        self:TrySetTask("PrimaryFire")
     end
 end
 
@@ -639,7 +645,7 @@ end
 
 function SWEP:Reload()
     if not self:CanReload() then return end
-    self:SetCurrentTask("Reload")
+    self:TrySetTask("Reload")
     return true
 end
 
@@ -740,8 +746,6 @@ function SWEP:GetPlayerMoveMult(ply)
     return runMult, walkMult
 end
 
-
-
 function SWEP:ShouldDropOnDie(arguments)
     return true
 end
@@ -749,5 +753,3 @@ end
 function SWEP:OnDrop(owner)
     self:SyncAllAttachments()
 end
-
-

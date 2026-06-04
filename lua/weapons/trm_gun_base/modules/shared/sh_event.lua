@@ -33,7 +33,7 @@ function SWEP:DoMuzzleEffect()
     effect:SetEntity(data.Ent)
     effect:SetAttachment(   data.id  )
     effect:SetScale( 5 )
-    effect:SetFlags(1 )
+    effect:SetFlags(1    )
  
    --print(effect:GetEntity())
 

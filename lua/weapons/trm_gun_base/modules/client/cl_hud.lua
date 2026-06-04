@@ -40,9 +40,13 @@ end)
 function DebugHUD(ply, wep)
     if cv_debug:GetInt() == 0 then return end
 
-    draw.SimpleText("Current Task: " .. (wep.GetCurrentTask and wep:GetCurrentTask() or "None"), "Default", ScrW() / 2,
+    local task = wep:GetCurrentTask()
+    draw.SimpleText("Current Task: " .. (task), "Default", ScrW() / 2,
         ScrH() * 0.74, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    draw.SimpleText("Chamber : "..wep:GetChamberAmmo(), "Default", ScrW() / 2,
+    draw.SimpleText("Name Task: " .. (wep.GetCurrentTaskName and wep:GetCurrentTaskName(task) or "None"), "Default",
+        ScrW() / 2,
+        ScrH() * 0.64, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    draw.SimpleText("Chamber : " .. wep:GetChamberAmmo(), "Default", ScrW() / 2,
         ScrH() * 0.70, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
@@ -98,7 +102,7 @@ function DrawCustomCrosshair(ply, wep)
 
     surface.SetDrawColor(r, g, b, alpha)
 
-    local width = 2.5
+    local width = 3
     local length = 16
     if wep.Primary.NumBullets > 1 then
         local temp = width

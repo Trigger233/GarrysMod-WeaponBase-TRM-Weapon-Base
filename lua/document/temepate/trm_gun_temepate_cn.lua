@@ -36,6 +36,27 @@ SWEP.Primary.NumBullets = 1
 --     Sound = Sound() ,
 -- }
 -- 音效
+-- 
+-- -- SWEP.Reverb = {
+--     RoomScale = 50000, --(hu)
+--     --how big should an area be before it is categorized as 'outside'?
+--     --h36_fire_reflection h36_fire_layer
+--     Sounds = {
+--         Outside = {
+--             Layer = Sound("Atmo_AR.Outside"),
+--             Reflection = Sound("sound_atom"),
+-- --             LayerSup = Sound("Reflection_AR.Inside"),
+--             ReflectionSup = Sound("sound_atom_sup")
+--         },
+
+--         Inside = {
+--             Layer = Sound("Reflection_AR.Inside"),
+--             Reflection = Sound("sound_atom_sup"),
+--             LayerSup = Sound("Reflection_AR.Inside"),
+--             ReflectionSup = Sound("sound_atom_sup")
+--         }
+--     }
+-- }
 --
 -- 如果是自定义的音效 你需要在自己通过lua创建音效（你可以放个lua在lua/autorun 也可以直接include）
 SWEP.Primary.Sound = Sound("武器.开火")

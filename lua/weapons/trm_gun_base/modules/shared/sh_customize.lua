@@ -8,7 +8,7 @@ end
 
 function SWEP:IsPlyCarry()
     local owner = self:GetOwner()
-    return owner:IsPlayer() and owner:GetActiveWeapon() == self or false
+    return owner:IsPlayer() and owner:GetActiveWeapon() == self and true or false
 end
 --- 检查指定槽位能否安装配件
 --- 返回 false 表示被排除（不可用），true 表示可用
@@ -99,8 +99,11 @@ function SWEP:PrepareViewModel()
 
     self:SetSkin(0)
 
-    for b = 0, self:GetNumBodyGroups() do
-        self:SetBodygroup(b, 0)
+
+    if self:IsPlyCarry() then
+        for b = 0, self:GetNumBodyGroups() do
+            self:SetBodygroup(b, 0)
+        end
     end
     -- vm:SetWeaponModel(self.ViewModel, self)
 
@@ -108,6 +111,8 @@ function SWEP:PrepareViewModel()
         if self:IsPlyCarry() then
             changeBodyGroup(vm, _group, _sub)
         end
+        -- 武器实体本身的 bodygroup 也要应用（影响世界模型）
+        changeBodyGroup(self, _group, _sub)
         for _, entry in pairs(self.CurrentAttachments or {}) do
             if IsValid(entry.m_Model) then
                 changeBodyGroup(entry.m_Model, _group, _sub)
@@ -127,15 +132,21 @@ end
 
 function SWEP:ApplyViewModelChange()
     local vm = self:GetViewModel()
-    if not IsValid(vm) then return false end
+    if not IsValid(vm) or not self:IsPlyCarry() then return false end
+    local viewmodel = self.m_ViewmodelCache or self.ViewModel
+
     if CLIENT then
-        vm:SetModel(self.m_ViewmodelCache || self.ViewModel)
+        vm:SetModel(viewmodel)
+    elseif not game.SinglePlayer() then
+        vm:SetModel(viewmodel)
     end
+    self.m_BodyGroupCache = self.m_BodyGroupCache or {}
     vm:SetSkin(self.m_SkinCache || 0)
     vm:ClearPoseParameters()
     for bodygroup, sub in pairs(self.m_BodyGroupCache) do
         if self:IsPlyCarry() then
             changeBodyGroup(vm, bodygroup, sub)
+            -- print( "change bodygroup", bodygroup, sub)
         end
         for _, entry in pairs(self.CurrentAttachments or {}) do
             if IsValid(entry.m_Model) then
@@ -157,6 +168,7 @@ function SWEP:ChangeWeaponStats()
     self:GetOriginStat()
     self:DeepObjectCopy(self.m_OriginalStat, self)
 
+
     for name, injector in pairs(BASE_TRM_INJECTOR) do
         if type(injector) == "table" and injector.Inject then -- 只处理有 Inject 方法的
             if injector.SWEP and injector.SWEP ~= self:GetClass() then
@@ -166,6 +178,7 @@ function SWEP:ChangeWeaponStats()
         end
     end
 
+    self:FireModeStat(self:GetFiremodeIndex())
     self.m_Anim = table.Copy(self.Animations)
     --init anim data
 
@@ -188,7 +201,7 @@ function SWEP:ChangeWeaponStats()
         end
     end
 
-
+    -- self:FireModeStat(self:GetFiremodeIndex())
 
     if SERVER then
         if self:Clip1() > (self.Primary.ClipSize + self.Primary.Chamber) then
@@ -271,7 +284,7 @@ end
 function SWEP:BuildViewModelData()
     if not CLIENT then return end
     local vm = self:GetViewModel(0)
-    if not IsValid(vm) then  return end
+    if not IsValid(vm) then return end
 
     -- Attachment 数据
     if not self.m_Attachment then
@@ -500,99 +513,102 @@ function SWEP:UnEquipAttachment(slot)
 end
 
 function SWEP:BuildCustomizedGun()
-    if SERVER then
-        self:CallOnClient("BuildCustomizedGun")
-        self:PrecacheViewModel()
-        self:PrepareViewModel()
-        self:ApplyViewModelChange()
-        return
-    end
+    self:SyncAllAttachments()
 
     local vm = self:GetViewModel()
     local hasVM = IsValid(vm)
+    local isActive = hasVM and self:GetOwner() and self:GetOwner():GetActiveWeapon() == self
+
 
     self.m_Sight = nil
-    --print("call rebuild!")
     local currentSlotKeys = {}
+    if CLIENT then
+        for slotKey, entry in pairs(self.CurrentAttachments or {}) do
+            if not entry or not entry.Class then continue end
+            currentSlotKeys[slotKey] = true
 
-    for slotKey, entry in pairs(self.CurrentAttachments or {}) do
-        if not entry or not entry.Class then continue end
-        currentSlotKeys[slotKey] = true
+            local attData = BASE_TRM_ATTS[entry.Class]
+            if not attData then continue end
 
-        local attData = BASE_TRM_ATTS[entry.Class]
-        if not attData then continue end
+            -- ========== 第一人称模型（挂 ViewModel） ==========
+            -- 只在 vm 有效时创建/更新
+            if hasVM then
+                if not IsValid(entry.m_Model) and attData.Model then
+                    local model = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
+                    model:SetNoDraw(true)
+                    model:SetNotSolid(true)
+                    model:SetMoveType(MOVETYPE_NONE)
+                    model:SetOwner(vm)
+                    model:InvalidateBoneCache()
+                    model:SetupBones()
 
-        -- ========== 第一人称模型（挂 ViewModel） ==========
-        -- 只在 vm 有效时创建/更新
-        if hasVM then
-            if not IsValid(entry.m_Model) and attData.Model then
-                local model = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
-                model:SetNoDraw(true)
-                model:SetNotSolid(true)
-                model:SetMoveType(MOVETYPE_NONE)
-                model:SetOwner(vm)
-                model:InvalidateBoneCache()
-                model:SetupBones()
+                    entry.m_Model = model
+                    trm_weapon_base_util.DealWithFullUpdate(entry.m_Model)
+                end
+            end
 
-                entry.m_Model = model
+            -- ========== 第三人称模型（挂武器实体，引擎自动渲染） ==========
+            if attData.Bonemerge == true and attData.Model then
+                if not IsValid(entry.m_TpModel) then
+                    local tpModel = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
+                    tpModel:SetNotSolid(true)
+                    tpModel:SetMoveType(MOVETYPE_NONE)
+                    tpModel:SetNoDraw(true)
+                    tpModel:SetParent(self)
+                    tpModel:AddEffects(EF_BONEMERGE)
+                    tpModel:AddEffects(EF_BONEMERGE_FASTCULL)
+                    entry.m_TpModel = tpModel
+                end
+            elseif IsValid(entry.m_TpModel) then
+                self:RemoveAttachmentModel(entry, true)
             end
         end
 
-        -- ========== 第三人称模型（挂武器实体，引擎自动渲染） ==========
-        if attData.Bonemerge == true and attData.Model then
-            if not IsValid(entry.m_TpModel) then
-                local tpModel = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
-                tpModel:SetNotSolid(true)
-                tpModel:SetMoveType(MOVETYPE_NONE)
-                tpModel:SetNoDraw(true)
-                tpModel:SetParent(self)
-                tpModel:AddEffects(EF_BONEMERGE)
-                tpModel:AddEffects(EF_BONEMERGE_FASTCULL)
-                entry.m_TpModel = tpModel
+        -- 清除已卸载配件的模型
+        for slotKey, entry in pairs(self.CurrentAttachments or {}) do
+            if not currentSlotKeys[slotKey] and entry then
+                self:RemoveAttachmentModel(entry)
+                self:RemoveAttachmentModel(entry, true)
             end
-        elseif IsValid(entry.m_TpModel) then
-            self:RemoveAttachmentModel(entry, true)
         end
     end
 
-    -- 清除已卸载配件的模型
-    for slotKey, entry in pairs(self.CurrentAttachments or {}) do
-        if not currentSlotKeys[slotKey] and entry then
-            self:RemoveAttachmentModel(entry)
-            self:RemoveAttachmentModel(entry, true)
-        end
-    end
+    -- 配件缓存（无论武器是否活跃，都需要更新）
 
     -- VM 相关操作只在 vm 有效时执行
-    if vm and self:GetOwner() and self:GetOwner():GetActiveWeapon() == self then
+    if hasVM and vm and self:GetOwner() and isActive then
         -- 确保骨骼数据已刷新
-        vm:InvalidateBoneCache()
-        vm:SetupBones()
-
+        if CLIENT then
+            vm:InvalidateBoneCache()
+            vm:SetupBones()
+        end
         self:PrecacheViewModel()
+
         self:PrepareViewModel()
         self:ApplyViewModelChange()
-        self:BuildViewModelData()
-        self:ApplyAttachmentModels()
         self:GenerateAimOffset()
     end
+    self:BuildViewModelData()
+    self:ApplyAttachmentModels()
 
-    -- TP 模型偏移始终需要计算（挂在武器实体上，不依赖 vm）
-    for slotKey, entry in pairs(self.CurrentAttachments or {}) do
-        if not entry or not entry.Class then continue end
-        local tpModel = entry.m_TpModel
-        if not IsValid(tpModel) then continue end
+    if (CLIENT) then
+        -- TP 模型偏移始终需要计算（挂在武器实体上，不依赖 vm）
+        for slotKey, entry in pairs(self.CurrentAttachments or {}) do
+            if not entry or not entry.Class then continue end
+            local tpModel = entry.m_TpModel
+            if not IsValid(tpModel) then continue end
 
-        local slotData = self.Attachments and self.Attachments[tonumber(slotKey)]
-        local attData = BASE_TRM_ATTS[entry.Class]
+            local slotData = self.Attachments and self.Attachments[tonumber(slotKey)]
+            local attData = BASE_TRM_ATTS[entry.Class]
 
-        local tpPos = slotData and Vector(slotData.Pos) or Vector(0, 0, 0)
-        local tpAng = slotData and Angle(slotData.Ang) or Angle(0, 0, 0)
-        if attData and attData.Pos and isvector(attData.Pos) then tpPos:Add(attData.Pos) end
-        if attData and attData.Angles and isangle(attData.Angles) then tpAng:Add(attData.Angles) end
+            local tpPos = slotData and Vector(slotData.Pos) or Vector(0, 0, 0)
+            local tpAng = slotData and Angle(slotData.Ang) or Angle(0, 0, 0)
+            if attData and attData.Pos and isvector(attData.Pos) then tpPos:Add(attData.Pos) end
+            if attData and attData.Angles and isangle(attData.Angles) then tpAng:Add(attData.Angles) end
 
-        tpModel:SetLocalPos(tpPos)
-        tpModel:SetLocalAngles(tpAng)
+            tpModel:SetLocalPos(tpPos)
+            tpModel:SetLocalAngles(tpAng)
+        end
     end
 end
 

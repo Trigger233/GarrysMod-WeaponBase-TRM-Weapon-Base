@@ -22,7 +22,7 @@ function SWEP:UpdatePoseParameters()
 
     local vm = self:GetViewModel()
     if not IsValid(vm) then return end
-
+    vm:ClearPoseParameters()
     -- 速度乘相关（只算一次）
     local owner = self:GetOwner()
     local speed = IsValid(owner) and owner:GetVelocity():Length2D() or 0
@@ -67,17 +67,40 @@ function SWEP:UpdatePoseParameters()
 
     --PrintTable(self.m_PoseParameter)
 
+    -- ======== 配件 Pose 参数（Grip1） ========
+    -- 记录上次设过的参数名，卸下配件后自动重置为 0
+    self.m_LastPoseParameter = self.m_LastPoseParameter or {}
+    self.m_grippose = Lerp(dt * 10, self.m_grippose or 0, (self:GetGrip1() and 1 or 0))
+
+    -- 先把上一帧的所有配件 pose 重置为 0
+    for name in pairs(self.m_LastPoseParameter) do
+        vm:SetPoseParameter(name, 0)
+        self.m_LastPoseParameter[name] = nil
+    end
+
+    -- 再设置当前配件的 pose
     if self.m_PoseParameter then
-        self.m_grippose = Lerp(dt * 10, self.m_grippose or 0, (self:GetGrip1() and 1 or 0))
         for _, poseName in pairs(self.m_PoseParameter) do
-            vm:SetPoseParameter(poseName, self:LookupRangeCache(poseName) * self.m_grippose)
+            local val = self:LookupRangeCache(poseName) * self.m_grippose
+            vm:SetPoseParameter(poseName, val)
+            self.m_LastPoseParameter[poseName] = true
         end
     end
 
+    -- ======== 配件 Pose 参数（Grip2） ========
+    self.m_LastPoseParameter2 = self.m_LastPoseParameter2 or {}
+    self.m_grippose2 = Lerp(dt * 10, self.m_grippose2 or 0, (self:GetGrip2() and 1 or 0))
+
+    for name in pairs(self.m_LastPoseParameter2) do
+        vm:SetPoseParameter(name, 0)
+        self.m_LastPoseParameter2[name] = nil
+    end
+
     if self.m_PoseParameter2 then
-        self.m_grippose2 = Lerp(dt * 10, self.m_grippose2 or 0, (self:GetGrip2() and 1 or 0))
         for _, poseName in pairs(self.m_PoseParameter2) do
-            vm:SetPoseParameter(poseName, self:LookupRangeCache(poseName) * self.m_grippose2)
+            local val = self:LookupRangeCache(poseName) * self.m_grippose2
+            vm:SetPoseParameter(poseName, val)
+            self.m_LastPoseParameter2[poseName] = true
         end
     end
 
@@ -92,4 +115,12 @@ function SWEP:UpdatePoseParameters()
             end
         end      
     end
+end
+
+
+function SWEP:ResetPose()
+    local vm = self:GetViewModel()
+    if not IsValid(vm) then return end
+
+    vm:ClearPoseParameters()
 end

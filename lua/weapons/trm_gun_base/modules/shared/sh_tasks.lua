@@ -1,56 +1,100 @@
-
-    local taskMap = {
-        Deploy = "Task_Deploy",
-        Holster = "Task_Holster",
-        Inspect = "Task_Inspect",
-        Charge = "Task_Charge" ,
-        PrimaryFire = "Task_PrimaryFire",
-        Reload = "Task_Reload",
-        ReloadLoop = "Task_ReloadLoop",
-        ReloadEnd = "Task_ReloadEnd", 
-        AdsIn = "Task_AdsIn",
-        AdsOut = "Task_AdsOut",
-        Melee = "Task_Melee",
-        Rechamber = "Task_Rechamber",
-        SprintIn = "Task_SprintIn",
-        SprintOut = "Task_SprintOut",
-        Sprint = "Task_Sprint",
-        Firemode = "Task_Firemode"
-    }
+SWEP.Tasks = {}
 
 function SWEP:TaskThink()
     local vm = self:GetViewModel()
-    if not IsValid(vm) or (CLIENT and game.SinglePlayer()) and not IsFirstTimePredicted() then
+    if not IsValid(vm) or (CLIENT and game.SinglePlayer()) and not IsFirstTimePredicted() then return end
+
+    local task = self.Tasks[self:GetCurrentTask()]
+
+    if not self.m_NextTaskThink then
+        self.m_NextTaskThink = CurTime()
+    end
+
+    if CurTime() < self.m_NextTaskThink then return end
+
+    if (task.Think != nil) then
+        task:Think(vm:GetCycle(), self)
+    end
+
+    if not task then
+        self:TrySetTask("Idle")
         return
     end
 
-    local task = self:GetCurrentTask()
-    local cycle = vm:GetCycle()
+    self.m_NextTaskThink = CurTime() + FrameTime() * 4
+end
 
-    -- 任务映射表
+function SWEP:RegisterTask(task)
+    self.Tasks = self.Tasks or {}
+    for t, registeredTask in pairs(self.Tasks) do
+        if (registeredTask.Name == task.Name) then
+            self.Tasks[t] = table.Copy(task)
+            return
+        end
+    end
+    local index = #self.Tasks + 1
+    self.Tasks[index] = table.Copy(task)
+    --print("Task")
+end
 
+function SWEP:TrySetTask(taskIndex)
+    local Index = self:GetTaskByName(taskIndex)
 
-    local funcName = taskMap[task]
-    if funcName and self[funcName] then
-        self[funcName](self, cycle)
-    elseif task == "Finished" and cycle >= 0.98 then
-        self:Task_Idle()
+    --PrintTable(self.Tasks)
+    if not Index then return end
+    local task = self.Tasks[Index]
+    if not task then return end
+
+    local currentTask = self.Tasks[self:GetCurrentTask()]
+
+    -- if currentTask.Priority and task.Priority then
+    --     if currentTask.Priority > task.Priority then
+    --         return
+    --     end
+    -- end
+
+    if task.CanBeSet and task:CanBeSet(self) == false then
+        return false
+    end
+    --print(Index)
+    self:SetCurrentTask(Index)
+
+    if task.OnSet then
+        self.m_NextTaskThink = 0
+        task:OnSet(self)
     end
 end
 
-function SWEP:Task_Idle()
-    local animations = self.Animations
-    self:SetNextAnimationTime(0)
-    if self:IsEmpty() and animations.Idle_Empty then
-        self:PlayAnimation("Idle_Empty")
-    else
-        self:PlayAnimation("Idle")
+function SWEP:GetTaskByName(name)
+    if not self.m_TaskNameIndexCache then
+        self.m_TaskNameIndexCache = {}
     end
+    if self.m_TaskNameIndexCache[name] then
+        return self.m_TaskNameIndexCache[name]
+    end
+
+    for Index, task in pairs(self.Tasks) do
+        if (task.Name == name) then
+            self.m_TaskNameIndexCache[name] = Index
+            return Index
+        end
+    end
+    return nil
+end
+
+function SWEP:GetCurrentTaskName()
+    local task = self.Tasks[self:GetCurrentTask()]
+    --print(task.Name)
+    return task and task.Name or nil
+end
+
+function SWEP:IsCurrentTask(name)
+    return self:GetCurrentTaskName() == name
 end
 
 concommand.Add("trmbase_debug_task", function(ply, cmd, args)
     local wep = ply:GetActiveWeapon()
-    if IsValid(wep) and (wep.Base == "trm_gun_base" or wep:GetClass() == "trm_gun_base") then
-        wep:SetCurrentTask(args[1] or "Idle")
+    if IsValid(wep) and util.IsTRMBase(wep) then
+        wep:TrySetTask(args[1] or "Idle")
     end
 end)

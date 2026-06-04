@@ -4,7 +4,7 @@ ATTACHMENT.Base = "att_base"
 ATTACHMENT.Bonemerge = false 
 ATTACHMENT.Pos = Vector(-2,0,-0.0)
 ATTACHMENT.Scale = 0.5
-ATTACHMENT.Model = Model("models/weapons/tfa_ins2/upgrades/a_foregrip_sec2.mdl")
+ATTACHMENT.Model = Model("models/trm_attachments/foregrip/a_foregrip_sec2.mdl")
 
 ATTACHMENT.poseParameter = {
     "grip_vert_offset",

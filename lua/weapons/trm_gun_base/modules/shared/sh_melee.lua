@@ -12,22 +12,13 @@ function SWEP:CanMelee()
     return false 
 end
 
-function SWEP:Task_Melee()
-    self:SetNextAnimationTime(0)
-    local animations = self.Animations
-    if self:IsEmpty() and animations.Melee_Empty then
-        self:PlayAnimation("Melee_Empty",true)
-    elseif animations.Melee then
-        self:PlayAnimation("Melee",true)
-    end
-    self:SetCurrentTask("Finished")
-end
+
 
 concommand.Add("trmbase_melee",function(ply)
     local wep = ply:GetActiveWeapon()
     if IsValid(wep) and (wep.Base == "trm_gun_base" or wep:GetClass() == "trm_gun_base") then
         if wep:CanMelee() then
-            wep:SetCurrentTask("Melee")
+            wep:TrySetTask("Melee")
         end
     end
 end)
@@ -61,6 +52,7 @@ function SWEP:DealMeleeDamage()
         dmginfo:SetDamageType(DMG_CLUB)
     
     if not tr.Hit then return end
+        self:MeleeImpactEffects(tr)
     self:MeleeDoor(tr)
     local ent = tr.Entity
     if not (game.SinglePlayer() and CLIENT ) then
@@ -73,7 +65,6 @@ function SWEP:DealMeleeDamage()
             ent:TakeDamageInfo(dmginfo)
         end
     end
-        self:MeleeImpactEffects(tr)
 
     local phys
 
