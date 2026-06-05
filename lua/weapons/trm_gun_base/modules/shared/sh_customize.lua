@@ -146,6 +146,7 @@ function SWEP:ApplyViewModelChange()
     for bodygroup, sub in pairs(self.m_BodyGroupCache) do
         if self:IsPlyCarry() then
             changeBodyGroup(vm, bodygroup, sub)
+            changeBodyGroup(self, bodygroup, sub)
             -- print( "change bodygroup", bodygroup, sub)
         end
         for _, entry in pairs(self.CurrentAttachments or {}) do
@@ -205,7 +206,8 @@ function SWEP:ChangeWeaponStats()
 
     if SERVER then
         if self:Clip1() > (self.Primary.ClipSize + self.Primary.Chamber) then
-            self:SetClip1(self.Primary.ClipSize)
+            self:Unload()
+            self:MagzineLoaded()
         end
         if self:Clip2() > self.Secondary.ClipSize then
             self:SetClip2(self.Secondary.ClipSize)
@@ -543,7 +545,7 @@ function SWEP:BuildCustomizedGun()
                     model:SetupBones()
 
                     entry.m_Model = model
-                    trm_weapon_base_util.DealWithFullUpdate(entry.m_Model)
+                    --trm_weapon_base_util.DealWithFullUpdate(entry.m_Model)
                 end
             end
 
@@ -582,14 +584,14 @@ function SWEP:BuildCustomizedGun()
             vm:InvalidateBoneCache()
             vm:SetupBones()
         end
-        self:PrecacheViewModel()
-
+        
+        self:PrecacheViewModel() 
         self:PrepareViewModel()
         self:ApplyViewModelChange()
+        self:BuildViewModelData()
+        self:ApplyAttachmentModels()
         self:GenerateAimOffset()
     end
-    self:BuildViewModelData()
-    self:ApplyAttachmentModels()
 
     if (CLIENT) then
         -- TP 模型偏移始终需要计算（挂在武器实体上，不依赖 vm）
@@ -664,6 +666,9 @@ end
 
 function SWEP:GenerateAimOffset()
     if SERVER then return end
+
+    self.m_Sight = nil
+
     for slot, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
         local AttachmentData = BASE_TRM_ATTS[entry.Class]
@@ -707,7 +712,7 @@ function SWEP:GenerateAimOffset()
                 if align.SightPos then
                     localPos:Add(align.SightPos)
                 end
-                model.AimPos = Vector(localPos.x, localPos.y, localPos.z)
+                model.AimPos = Vector(localPos.x, localPos.y , localPos.z)
                 model.AimAng = align.SightAng or Angle(0, 0, 0)
                 if not self.m_Sight then
                     self.m_Sight = {

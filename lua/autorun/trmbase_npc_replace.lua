@@ -259,7 +259,7 @@ end
 local cv = GetConVar("trmbase_replace_weapon")
 
 local function replace(ent)
-    if not IsValid(ent) then return end
+    if not IsValid(ent) or util.IsTRMBase(ent) then return end
 
     -- 优先处理弹药箱（弹药箱不是NPC也不是武器，需要单独处理）
     if AmmoBoxMap[ent:GetClass()] then

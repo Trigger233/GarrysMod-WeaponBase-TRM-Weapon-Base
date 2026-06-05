@@ -52,6 +52,7 @@ end
 
 function DrawCustomCrosshair(ply, wep)
     if cv_crosshair_enable:GetInt() == 0 then return end
+    local scale = ScreenScale(0.25)
     local style = cv_crosshair_style:GetInt()
     local r = cv_crosshair_color_r:GetInt()
     local g = cv_crosshair_color_g:GetInt()
@@ -66,6 +67,7 @@ function DrawCustomCrosshair(ply, wep)
     aimDir.pitch = aimDir.pitch + visualRecoil.pitch * 1 + recoil.pitch * 1
     aimDir.yaw = aimDir.yaw + visualRecoil.yaw * 1 + recoil.yaw * 1
     local aimDirVec = aimDir:Forward()
+    
 
     -- TraceLine 每 2 帧做一次（物理查询开销大，准星不需要每帧重新追踪）
     local frame = FrameNumber()
@@ -84,9 +86,9 @@ function DrawCustomCrosshair(ply, wep)
     local x = math.Clamp(screenPos.x, 0, ScrW())
     local y = math.Clamp(screenPos.y, 0, ScrH())
 
-    local spread = (wep:GetCurrentSpread() or 0) * 700
+    local spread = (wep:GetCurrentSpread() or 0) * 700 * scale
     local spreadH = wep:GetSpreadHorizonal() or 0.5
-    local spreadV = wep:GetSpreadVertical() or 0.5
+    local spreadV = wep:GetSpreadVertical() or 0.5 
     local spreadSizeX = spread * math.tan(spreadH)
     local spreadSizeY = spread * math.tan(spreadV)
     local sequence = wep.m_CurrentSequence or wep:GetPlayingSequence()
@@ -102,7 +104,7 @@ function DrawCustomCrosshair(ply, wep)
 
     surface.SetDrawColor(r, g, b, alpha)
 
-    local width = 3
+    local width = 3 
     local length = 16
     if wep.Primary.NumBullets > 1 then
         local temp = width

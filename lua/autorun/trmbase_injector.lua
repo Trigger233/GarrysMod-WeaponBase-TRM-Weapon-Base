@@ -63,7 +63,7 @@ end
 
 function BASE_TRM_INJECTOR.Inherit(injector)
     local baseclass = BASE_TRM_INJECTOR[injector.Base]
-    while baseclass do
+    while baseclass   do
         inherit(injector, baseclass)
         baseclass = BASE_TRM_INJECTOR[baseclass.Base]
     end

@@ -2,7 +2,7 @@ local task = {}
 
 task.Name = "Idle"
 
-task.Priority = 0
+task.Priority = 1
 
 function task:CanBeSet(weapon)
     return true

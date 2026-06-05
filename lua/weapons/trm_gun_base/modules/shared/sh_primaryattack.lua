@@ -22,16 +22,14 @@ else
 	include("include/trmbase_sound.lua")
 end
 function SWEP:DoFireSound()
-	local slience = self.Slienced and true or false
-	local chan = CHAN_WPNFOLEY
-
-	if slience and self.Primary.SliencedSound then
-		self:EmitSound(self.Primary.SliencedSound, 140, 100, 1, chan)
-	elseif self.Primary.Sound then
-		self:EmitSound(self.Primary.Sound, 140, 100, 1, chan)
-	end
 	if self.Reverb then
-		self:HandleReverb()
+		self:HandleReverb(self.Reverb) 
+	end
+	local slience = self.Slienced and true or false
+	if slience and self.Primary.SliencedSound then
+		self:EmitSound(self.Primary.SliencedSound)
+	elseif self.Primary.Sound then
+		self:EmitSound(self.Primary.Sound)
 	end
 	if self:Clip1() == 1 then
 		self:EmitSound("weapons/pistol/pistol_empty.wav", 66, 100, 1, CHAN_ITEM)
@@ -53,7 +51,6 @@ function SWEP:FirePrimaryBullet()
 	if (not IsFirstTimePredicted()) then return end
 
 
-	self:DoFireSound()
 	local owner = self:GetOwner()
 	local eyeAng = owner:EyeAngles()
 	local aimDir = owner:GetAimVector()
@@ -83,7 +80,6 @@ function SWEP:FirePrimaryBullet()
 	end
 
 	local spread = Vector(self:GetSpreadHorizonal(), self:GetSpreadVertical(), 0) * self:GetCurrentSpread()
-	local muzzle = self:GetAttachmentData("muzzle")
 	local bullet = {
 		Attacker = self:GetOwner(),
 		Num = self.Primary.NumBullets,
@@ -118,6 +114,7 @@ function SWEP:FirePrimaryBullet()
 	if SERVER and IsFirstTimePredicted() then
 		owner:FireBullets(bullet)
 	end
+	self:DoFireSound()
 
 	self:DoVisualRecoil()
 	self:DoRecoil()
@@ -133,6 +130,76 @@ function SWEP:FirePrimaryBullet()
 	self:TrySetTask("Idle")
 end
 
+function SWEP:FireProjectile()
+	if CLIENT then
+		-- 枪焰：总是播（确保每次开火都有）
+		self:DoMuzzleEffect()
+		-- 弹壳：只在预测帧播（防重复）
+		if self.Effects.Shell.Primary and IsFirstTimePredicted() then
+			self:DoShell()
+		end
+	elseif SERVER && game.SinglePlayer() then
+		self:CallOnClient("ShootEffects")
+	end
+
+	if (not IsFirstTimePredicted()) then return end
+
+	local owner = self:GetOwner()
+	local eyeAng = owner:EyeAngles()
+	local aimDir = owner:GetAimVector()
+
+	if owner:IsPlayer() then
+		if not self.r_shakeDir then
+			self.r_shakeDir = 1
+		end
+		self.r_shakeDir = -self.r_shakeDir
+		local shake = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 1) * self.r_shakeDir
+		owner:SetViewPunchAngles(Angle(0, 0, shake))
+		owner:SetViewPunchVelocity(Angle(0, 0, shake * 100))
+		local length = aimDir:Length()
+		local dir = aimDir:Angle()
+		dir:Add(self:GetVisualRecoil())
+		aimDir = dir:Forward() * length
+	end
+
+
+	local spreadScale = self:GetCurrentSpread()
+	local spreadVec = Vector(
+		math.Rand(-1, 1) * self:GetSpreadHorizonal() * spreadScale,
+		math.Rand(-1, 1) * self:GetSpreadVertical() * spreadScale,
+		0
+	)
+	aimDir = (aimDir + spreadVec):GetNormalized()
+
+	if SERVER and self.Primary.SpecialAmmo != -1 then
+		local proj = ents.Create(self.Primary.SpecialAmmo)
+		proj:SetPos(owner:GetShootPos()) -- 从枪口前方一点的位置发射，避免穿模
+		proj:SetAngles(aimDir:Angle())
+		proj:Spawn()
+		proj:SetOwner(self)
+		local phys = proj:GetPhysicsObject()
+		
+
+		if IsValid(phys) then 
+			phys:Wake()
+			phys:SetVelocity(aimDir * self.Primary.Velocity + owner:GetVelocity())
+		end
+	end
+
+	self:DoFireSound()
+	self:DoVisualRecoil()
+	self:DoRecoil()
+	self:DoSpread()
+	self:SetLastFireTime(CurTime())	
+	self:SetClip1(self:Clip1() - 1)
+
+	if self.Primary.BoltAction and self.Animations.Rechamber then
+		local amount = self:GetChamberAmmo()
+		amount = math.max(amount - 1, 0)
+		self:SetChamberAmmo(amount)
+	end
+	self:TrySetTask("Idle")
+end
 function SWEP:DoImpactEffect(tr, dmgType)
 	self:CallOnClient("DoImpactEffect")
 
@@ -341,7 +408,7 @@ function SWEP:DoCameraRecoil()
 		self.m_RecoilDelta = self.m_RecoilDelta - math.min(playerPitchDelta, 0)
 	else
 		-- 停火后：回正剩余的后坐力
-		if self.m_RecoilDelta * (current.pitch > 0 and 1 or -1) > 0.1 then
+		if self.m_RecoilDelta * (current.pitch > 0 and 1 or -1) > 1 then
 			NextAngle.pitch = -self.m_RecoilDelta * stat.Recover
 			self.m_RecoilDelta = self.m_RecoilDelta + NextAngle.pitch
 		else
@@ -367,7 +434,8 @@ function SWEP:GetCurrentSpread()
 	local aimDelta = self:GetAimDelta()
 	local owner = self:GetOwner()
 	if not IsValid(owner) then return baseSpread end
-
+	if not owner.GetWalkSpeed then return baseSpread end
+	local walkSpeed = owner:GetWalkSpeed()
 	-- 移动扩散
 	local vel = math.max(owner:GetVelocity():Length2D() / owner:GetWalkSpeed(), 0)
 	local moveMult = 1.0

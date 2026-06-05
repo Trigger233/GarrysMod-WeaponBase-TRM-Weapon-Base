@@ -1,6 +1,6 @@
 local task = {}
 task.Name = "Holster"
-task.Priority = 250
+task.Priority = 256
 
 function task:CanBeSet(weapon)
     return true

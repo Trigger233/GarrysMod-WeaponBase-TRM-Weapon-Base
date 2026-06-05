@@ -127,8 +127,7 @@ SWEP.m_EjectDelay = 0.0
 SWEP.Primary.Damage = 8
 -- SWEP.Primary.Range = 5000
 SWEP.Primary.Force = 1
-
-
+SWEP.Primary.Velocity = 3000
 SWEP.Primary.Sound = Sound("")
 SWEP.Primary.SliencedSound = nil
 SWEP.Slienced = false

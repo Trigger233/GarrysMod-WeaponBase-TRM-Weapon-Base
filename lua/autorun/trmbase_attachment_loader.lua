@@ -69,7 +69,7 @@ end
 
 function BASE_TRM_ATTS.Inherit(att)
     local baseClass = BASE_TRM_ATTS[att.Base]
-    while baseClass do
+    while baseClass  do
         inherit(att, baseClass)
         baseClass = BASE_TRM_ATTS[baseClass.Base]
     end

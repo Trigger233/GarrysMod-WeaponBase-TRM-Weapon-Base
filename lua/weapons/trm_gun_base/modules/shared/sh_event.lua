@@ -58,10 +58,10 @@ function SWEP:DoShell()
         self:CallOnClient("DoShell")     
     return end
     local vm = self:GetViewModel()
-    if not IsValid(vm) then return end
+    if not IsValid(vm) or not self.Effects.Shell then return end
     local effect = EffectData()
     local att_shell = self:GetAttachmentData(self.Effects.Shell.attachment)
-
+    if not att_shell then return end
     effect:SetOrigin(att_shell.Pos + self.Effects.Shell.Pos)
     effect:SetAngles(att_shell.Ang + self.Effects.Shell.Ang)
     effect:SetScale(self.Effects.Shell.Scale or 1)

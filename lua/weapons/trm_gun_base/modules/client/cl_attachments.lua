@@ -339,7 +339,7 @@ local function BuildAttachmentPreviewStats(weapon, slotIndex, attClass)
     local rows = {}
     for _, stat in ipairs(BuildStatsFromCopies(current, preview)) do
         local delta = Num(stat[2]) - Num(stat[3])
-        if math.abs(delta) > 0.00001 then
+        if math.abs(delta) > 0.0 then
             local biggerIsBetter = stat[4]
             local good = biggerIsBetter and delta > 0 or (not biggerIsBetter and delta < 0)
             rows[#rows + 1] = {
@@ -1705,6 +1705,7 @@ end
 
 function PANEL:PaintAttachmentPanel(w, h)
     local slot = IsValid(self.m_Weapon) and self.m_Weapon.Attachments and self.m_Weapon.Attachments[self.m_Slot]
+    if not slot then return end
     local slotName = language.GetPhrase(slot.Name)
     local attClass = IsValid(self.m_Weapon) and CurrentAttachmentClass(self.m_Weapon, self.m_Slot) or nil
     DrawPanelShell(w, h, string.upper(slotName), "SELECT ACCESSORY", "SLOT " .. tostring(self.m_Slot or 1))

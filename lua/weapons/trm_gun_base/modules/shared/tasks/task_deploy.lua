@@ -2,7 +2,7 @@ local task = {}
 
 task.Name = "Deploy"
 
-task.Priority = 255
+task.Priority = 105
 
 function task:CanBeSet(weapon) 
     return true 

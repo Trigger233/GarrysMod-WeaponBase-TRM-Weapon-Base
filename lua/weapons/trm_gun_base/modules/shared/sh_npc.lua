@@ -1,24 +1,27 @@
-
 function SWEP:CanBePickedUpByNPCs()
     return true
 end
+
 function SWEP:GetNPCBulletSpread()
-    return 4    
+    return 4
 end
 
 function SWEP:GetNPCBurstSettings()
-    return 1 , 5 , (60 /self.Primary.RPM)
+    return 1, 5, (60 / self.Primary.RPM)
 end
 
 function SWEP:GetNPCRestTimes()
-    return 0.3 , 0.6
+    return 0.3, 0.6
 end
 
-function SWEP:NPCShoot_Primary(pos , dir)
+function SWEP:NPCShoot_Primary(pos, dir)
     if CurTime() > self:GetNextPrimaryFire() then
-            self:FirePrimaryBullet() 
-            self:SetNextFireTime( 60 / self.Primary.RPM ) 
+        if self.Primary.SpecialAmmo == -1 then
+            self:FirePrimaryBullet()
+        else
+            self:FireProjectile()
+        end
+        
+        self:SetNextFireTime(60 / self.Primary.RPM)
     end
-end  
-
-
+end

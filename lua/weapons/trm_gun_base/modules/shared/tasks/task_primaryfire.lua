@@ -43,7 +43,7 @@ SWEP:RegisterTask(task_charge)
 
 local task_fire = {}
 task_fire.Name = "PrimaryFire"
-task_fire.Priority = 200
+task_fire.Priority = 255
 
 function task_fire:CanBeSet(weapon)
     return true
@@ -65,11 +65,13 @@ function task_fire:OnSet(weapon)
             weapon:PlayAnimation("Fire", false)
         end
     end
-    if weapon.Primary.Special == -1 or not weapon.Primary.Special then
+
+    if weapon.Primary.SpecialAmmo == -1 or not weapon.Primary.SpecialAmmo then
         weapon:FirePrimaryBullet()
     else
         weapon:FireProjectile()
     end
+
     weapon:SetNextPrimaryFire(CurTime() + 60 / weapon.Primary.RPM)
 end
 

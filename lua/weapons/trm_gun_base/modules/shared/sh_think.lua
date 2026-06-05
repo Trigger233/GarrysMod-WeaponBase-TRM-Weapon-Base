@@ -35,6 +35,6 @@ function SWEP:bThink()
 
     self.m_SprintDelta = self.m_SprintDelta or 0
     self.m_SprintDelta = Lerp(FrameTime() * 10, self.m_SprintDelta,
-        sprint and owner:OnGround() and owner:GetVelocity():Length2D() > owner:GetWalkSpeed() and 1 or 0)
+        sprint and owner:OnGround() and owner:GetVelocity():Length2D() > owner:GetWalkSpeed() and self:CanSprint() and 1 or 0)
     self:SetSprintDelta(self.m_SprintDelta)
 end

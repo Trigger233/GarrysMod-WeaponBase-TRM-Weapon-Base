@@ -4,7 +4,7 @@ local Tracerscale = 5000
 local tracerStart
 function SWEP:DoTracer(startpos,endpos)
     if not CLIENT then return end
-    if self.Slienced then return end
+    if self.Slienced or not self.Effects.Muzzle.Tracer then return end
     tracerStart = self:GetMuzzlePos() or startpos
     tracerName = self.Effects.Muzzle.Tracer.Name or tracerName
     local owner = self:GetOwner()

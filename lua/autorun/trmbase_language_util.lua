@@ -25,6 +25,7 @@ TRMBase.Language.cn = {
     ["Sight"]                      = "瞄具",
     ["Tactical"]                   = "战术配件",
     ["Ammo"]                   = "弹药",
+    ["Perk"]                       = "特长",
 
     -- VGUI
     ["TRMBase_Installed"]          = "已安装",

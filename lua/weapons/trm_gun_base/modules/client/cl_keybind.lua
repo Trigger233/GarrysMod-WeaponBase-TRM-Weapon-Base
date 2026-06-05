@@ -1,9 +1,9 @@
 if not CLIENT then return end
 
-CreateClientConVar("trmbase_cl_keybind_melee", "32", true, false, "Melee keybind")
-CreateClientConVar("trmbase_cl_keybind_inspect", "19", true, false, "Inspect keybind")
-CreateClientConVar("trmbase_cl_keybind_customize", "0", true, false, "Customize keybind")
-CreateClientConVar("trmbase_cl_keybind_firemode", "0", true, false, "Firemode keybind")
+CreateClientConVar("trmbase_cl_keybind_melee", 0, true, false, "Melee keybind")
+CreateClientConVar("trmbase_cl_keybind_inspect", 0, true, false, "Inspect keybind")
+CreateClientConVar("trmbase_cl_keybind_customize", 0, true, false, "Customize keybind")
+CreateClientConVar("trmbase_cl_keybind_firemode", 0, true, false, "Firemode keybind")
 
 -- 使用 ConVar 引用而非一次性读出，确保实时生效
 local cv_melee = GetConVar("trmbase_cl_keybind_melee")
@@ -17,12 +17,12 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
     if not util.IsTRMBase(weapon) then return end
 
     -- Melee
-    if input.WasKeyPressed(cv_melee:GetInt()) then
+    if input.WasKeyPressed(cv_melee:GetInt()) and cv_melee:GetInt() > 0 then
         RunConsoleCommand("trmbase_melee")
     end
 
     -- Inspect
-    if input.WasKeyPressed(cv_inspect:GetInt()) then
+    if input.WasKeyPressed(cv_inspect:GetInt()) and cv_inspect:GetInt() > 0 then
         RunConsoleCommand("trmbase_weaponinspect")
     end
 
