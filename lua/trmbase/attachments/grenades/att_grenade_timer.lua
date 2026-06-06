@@ -3,4 +3,5 @@ ATTACHMENT.Name = "Timer Grenade"
 function ATTACHMENT:ChangeWeaponStats(weapon)
     weapon.Primary.SpecialAmmo = "ent_trm_projectile_grenade_timer"
     weapon.Primary.Damage = weapon.Primary.Damage * 1.5
+    weapon.PrintName = weapon.PrintName .. " Timer-Bomb"
 end

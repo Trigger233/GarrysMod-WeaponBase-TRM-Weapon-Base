@@ -29,7 +29,7 @@ end
 function ENT:Think()
     -- 定时爆炸
     local time = CurTime()
-
+    self:WarnNPC()
 
     if time - self.m_NextTick > 0 then
         self:EmitSound(self.TickingSound, SNDLVL_GUNFIRE, 100, 1, CHAN_WEAPON, FL_GRENADE)
@@ -42,4 +42,9 @@ function ENT:Think()
         self:Explode()
         return
     end
+end
+
+
+function ENT:OnTakeDamage(number)
+    self:Explode()
 end

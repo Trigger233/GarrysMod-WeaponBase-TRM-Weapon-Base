@@ -6,15 +6,15 @@ function SWEP:Holster(weapon)
             end
             
         
-        self.m_NeedsBuild = true
-        if self.CurrentAttachments then
-            for _, entry in pairs(self.CurrentAttachments) do
-                if entry then
-                    self:RemoveAttachmentModel(entry)
-                    self:RemoveAttachmentModel(entry, true)
-                end
-            end
-        end
+        --self.m_NeedsBuild = true
+        -- if self.CurrentAttachments then
+        --     for _, entry in pairs(self.CurrentAttachments) do
+        --         if entry then
+        --             self:RemoveAttachmentModel(entry)
+        --             self:RemoveAttachmentModel(entry, true)
+        --         end
+        --     end
+        -- end
         
     end
 

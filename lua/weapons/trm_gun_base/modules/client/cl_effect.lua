@@ -28,11 +28,9 @@ end)
 
 
 function SWEP:GetMuzzlePos() 
-    local vm = self:GetViewModel()
-    if not IsValid(vm) then return false end
     local muzzle = self:GetAttachmentData(self.Effects.Muzzle.attachment)
-
-
-
-    return muzzle.Pos
+    if not muzzle then
+        muzzle = self:GetWorldAttachmentData()
+    end
+    return muzzle.Pos or false
 end

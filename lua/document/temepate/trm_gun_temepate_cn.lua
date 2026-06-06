@@ -24,7 +24,7 @@ SWEP.Primary.ClipSize = 30
 SWEP.Primary.Chamber = 1 -- 预装弹药数量，0表示不预装，1表示预装一发
 SWEP.Primary.DefaultClip = 0
 SWEP.Primary.Ammo = "ar2"
-SWEP.Primary.SpecialAmmo = -1
+SWEP.Primary.SpecialAmmo = -1 --如果不为-1，则发射实体其（字符串）
 SWEP.Primary.RPM = 700
 SWEP.Primary.Automatic = true
 SWEP.Primary.Damage = 34
@@ -32,7 +32,7 @@ SWEP.Primary.Force = 1
 SWEP.Primary.NumBullets = 1
 -- SWEP.Primary.Trigger = {
 --     Time = 0 ,
---     Type = "Hold", -- or "Tap"
+--     Type = "Hold", -- or "Tap" or "Release"(WIP)
 --     Sound = Sound() ,
 -- }
 -- 音效
@@ -188,15 +188,20 @@ SWEP.Animations = { --有些动作是给老一派的模型用的，没有也行
     ["Draw"] = { sequence = { "base_draw" } },
     ["Draw_First"] = { sequence = { "base_ready" } },
     ["Holster"] = { sequence = { "base_holster" } },
+    
     ["Idle"] = { sequence = { "base_idle" } },
-    ["Idle_Empty"] = { sequence = { "empty_idle" } },
-    ["Iron_Idle"] = { sequence = { "base_idle" } },
+    -- ["Idle_Empty"] = { sequence = { "empty_idle" } },
+    -- ["Iron_Idle"] = { sequence = { "base_idle" } },
+    
     ["Sprint"] = { sequence = { "base_sprint" }, Speed = 1.1 },
     ["Sprint_Empty"] = { sequence = { "empty_sprint" }, Speed = 1.1 },
+    
     ["Fire"] = { sequence = { "base_fire" } },
     ["Fire_Last"] = { sequence = { "base_fire_last" } },
-    ["Iron_Fire"] = { sequence = { "iron_fire" } },
-    ["Iron_Fire_Last"] = { sequence = { "iron_fire_last" } },
+    
+    -- ["Iron_Fire"] = { sequence = { "iron_fire" } },
+    -- ["Iron_Fire_Last"] = { sequence = { "iron_fire_last" } },
+    
     ["Reload"] = {
         sequence = { "base_reload" },
         Speed = 1.2,
@@ -222,7 +227,7 @@ SWEP.Animations = { --有些动作是给老一派的模型用的，没有也行
         } }
     },
     -- ["ExampleAnim"] = {
-    --     sequence = { "base_reloadempty" }, --动画序列 可以是一个字符串或者一个字符串数组 如果是数组会随机播放
+    --     sequence = { "the_anim_name" }, --动画序列 一个字符串数组 数组会随机播放
     --     Speed = 1.2, --执行的速度
     --     Length = 1, --动画长度(比例) 如果你的动画长度和实际动作不符可以通过调整这个参数来让它在正确的时间执行事件
     --     RealLength = 1 , --时间（秒） 如果你的动画长度不为1秒，或者你想让它在特定的时间点执行事件，可以通过调整这个参数来实现
@@ -231,9 +236,10 @@ SWEP.Animations = { --有些动作是给老一派的模型用的，没有也行
     --     } } --动画事件 这是个数组 你可以在动画的任意时间点执行一个函数 通过调整上面的Length或者RealLength参数来让它在正确的时间点执行
     -- },
     --你可能会用到的函数：
+    -- 部分动画的获取有程序比如"Iron_","_Empty"只要有就行
     --[[
-            SWEP:SetGrip1( bool ) 禁用/启用左手的PoseParameter
-            SWEP:SetGrip1( bool ) 禁用/启用右手的PoseParameter
+            SWEP:SetGrip1( bool ) 禁用/启用左手的Pose
+            SWEP:SetGrip1( bool ) 禁用/启用右手的Pose
             SWEP:MagzineLoaded() 换弹动画中执行这个函数来实现换弹
             SWEP:SingleLoad(num) 换弹动画中执行这个函数来实现逐发装填 num默认取0，一次上弹的数量
             SWEP:EmitSound( sound ) 播放音效

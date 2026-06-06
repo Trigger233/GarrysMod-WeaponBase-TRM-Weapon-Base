@@ -22,6 +22,7 @@ function ENT:Initialize()
     self:SetCollisionGroup(COLLISION_GROUP_PROJECTILE)
     self.m_SpawnTime = CurTime()
     self.m_Exploded = false
+    self.m_NextWarn = 0
     if SERVER then
         util.SpriteTrail(self, 0, self.TrailColor, false, 20, 15, 0.2, 16, "trails/laser")
     end
@@ -109,12 +110,15 @@ end
 
 -- 碰撞时爆炸
 function ENT:PhysicsCollide(data, phys)
+    self:CollisionDamage(data, phys)
+    local should = self:ShouldActivateOnCollision(data, phys)
     if CurTime() - self.m_SpawnTime < self.SafeyTimer then
-        self.m_Exploded = true
-        self:CollisionDamage(data, phys)
+        if should then
+            self.m_Exploded = true
+        end
         return
     end
-    if not self.m_Exploded then
+    if not self.m_Exploded and should then
         self:Explode()
     end
 end
@@ -139,8 +143,10 @@ function ENT:CollisionDamage(data, phys)
     local hitPos = data.HitPos
     if IsValid(hitEnt) and hitEnt.TakeDamageInfo then
         local owner = self:GetOwner()
-        local damage = self.ImpactDamage or 50 -- 物理撞击伤害
-
+        local damage = owner.Primary.Damage or 50 -- 物理撞击伤害
+        if self:GetVelocity():Length() < 200 then
+            damage = 0
+        end
         local dmginfo = DamageInfo()
         dmginfo:SetAttacker(IsValid(owner) and owner or self)
         dmginfo:SetInflictor(self)
@@ -154,12 +160,25 @@ function ENT:CollisionDamage(data, phys)
         -- 播放撞击音效
         self:EmitSound("weapons/bullet_impact.wav", 65, math.random(90, 110))
 
-        -- 榴弹弹开
-        local vel = phys:GetVelocity()
-        local normal = data.HitNormal
-        local newVel = vel - 2 * vel:Dot(normal) * normal
-        phys:SetVelocity(newVel * 1)
-
         return -- 不爆炸
     end
+end
+
+function ENT:WarnNPC()
+    if not SERVER then return end
+    if not self.m_NextWarn then self.m_NextWarn = 0 end
+    if CurTime() - self.m_NextWarn < 0 then return end
+    local targets = ents.FindInSphere(self:GetPos(), self.Radius or 300)
+    for _, npc in ipairs(targets) do
+        if IsValid(npc) and npc:IsNPC() then
+            -- 让 NPC 把这个烟雾弹当作威胁
+            npc:SetLastPosition(self:GetPos())
+            npc:SetSchedule(SCHED_RUN_FROM_ENEMY)
+        end
+    end
+    self.m_NextWarn = CurTime() + 1
+end
+
+function ENT:ShouldActivateOnCollision(data, phys)
+    return true
 end

@@ -83,9 +83,7 @@ function SWEP:PrecacheViewModel()
 end
 
 function SWEP:PrepareViewModel()
-    if (not vm) then
-        vm = self:GetViewModel(0)
-    end
+    local vm = self:GetViewModel(0)
 
     if (not IsValid(vm) or not vm) then
         return false
@@ -157,6 +155,16 @@ function SWEP:ApplyViewModelChange()
                 if _att.AttBodyGroup then
                     for groupName, pose in pairs(_att.AttBodyGroup) do
                         changeBodyGroup(entry.m_Model, groupName, pose)
+                    end
+                end
+            end
+            if IsValid(entry.m_TpModel) then
+                local _att = BASE_TRM_ATTS[entry.Class]
+
+                changeBodyGroup(entry.m_TpModel, bodygroup, sub)
+                if _att.AttBodyGroup then
+                    for groupName, pose in pairs(_att.AttBodyGroup) do
+                        changeBodyGroup(entry.m_TpModel, groupName, pose)
                     end
                 end
             end
@@ -283,101 +291,72 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
     end
 end
 
-function SWEP:BuildViewModelData()
-    if not CLIENT then return end
-    local vm = self:GetViewModel(0)
-    if not IsValid(vm) then return end
+function SWEP:BuildAttachmentsData(_table, model)
 
-    -- Attachment 数据
-    if not self.m_Attachment then
-        self.m_Attachment = {}
-    end
+    for _, attachment in pairs(model:GetAttachments() or {}) do
+        local stat = model:GetAttachment(attachment.id)
+        if not stat or not stat.name then continue end -- 👈 增加 name 检查
 
-    -- ViewModel 自身的 Attachments
-    local Stat = vm:GetAttachments()
-    for _, Modelattachment in pairs(Stat) do
-        local data = vm:GetAttachment(Modelattachment.id)
-        if data then
-            self.m_Attachment[Modelattachment.name] = data
-            self.m_Attachment[Modelattachment.name].id = Modelattachment.id
-            self.m_Attachment[Modelattachment.name].Ent = vm
-            self.m_Attachment[Modelattachment.name].LastUpdate = CurTime()
-        end
-    end
+        _table[stat.name] = {}
+        _table[stat.name] = stat
+        _table[stat.name].Ent = model
+        _table[stat.name].id = stat.id
+        _table[stat.name].LastUpdate = CurTime()
+    end 
+    PrintTable(_table) 
+    
+end
+function SWEP:BuildBonesData(_table, model)
 
-    -- 配件模型的 Attachments（只有 Bonemerge 模式的配件才需要）
-    for slot, entry in pairs(self.CurrentAttachments or {}) do
-        local model = entry.m_Model
-        if not IsValid(model) then continue end
-
-
-        local attID = entry.Class
-        if not attID then continue end
-
-        local attData = BASE_TRM_ATTS[attID]
-        if not attData or not attData.Bonemerge then continue end -- 只处理 Bonemerge 配件
-
-        for _, att in pairs(model:GetAttachments()) do
-            local data = model:GetAttachment(att.id)
-            if data then
-                self.m_Attachment[att.name] = data
-                self.m_Attachment[att.name].id = att.id
-                self.m_Attachment[att.name].Ent = model
-                self.m_Attachment[att.name].LastUpdate = CurTime()
-            end
-        end
-    end
-
-    -- Bone 数据（ViewModel 自身）
-    if not self.m_Bone then
-        self.m_Bone = {}
-    end
-
-    local count = vm:GetBoneCount()
-    if count and count > 0 then
+    local count = model:GetBoneCount()
+    if count and count > 1 then
         for i = 0, count - 1 do
-            local name = vm:GetBoneName(i)
-            local matrix = vm:GetBoneMatrix(i)
-            if matrix and name then
-                self.m_Bone[name] = {
-                    Pos = matrix:GetTranslation(),
-                    Ang = matrix:GetAngles(),
-                    Id = i,
-                    Ent = vm,
+            local _matrix = model:GetBoneMatrix(i)  
+            local name = model:GetBoneName(i)
+
+            if _matrix and name then
+                _table[name] = {
+                    Pos = _matrix:GetTranslation(),
+                    Ang = _matrix:GetAngles(),
+                    id = i,
+                    Ent = model,
                 }
             end
         end
     end
+end
 
-    -- 配件模型的 Bones（只有 Bonemerge 模式的配件才需要）
+function SWEP:BuildWeaponModelData()
+    if not CLIENT then return end
+    local vm = self:GetViewModel(0)
+
+    -- Attachment 数据
+    self.m_Attachment = {}
+    self.m_Bone = {}
+    if IsValid(vm) then
+        self:BuildAttachmentsData(self.m_Attachment, vm)
+        self:BuildBonesData(self.m_Bone, vm)
+    end
+    self.wm_Attachment = {}
+    self.wm_Bone = {}
+
+    self:BuildAttachmentsData(self.wm_Attachment, self)
+    self:BuildBonesData(self.wm_Bone, self)
+    -- 配件模型的 Attachments（只有 Bonemerge 模式的配件才需要）
     for _, entry in pairs(self.CurrentAttachments or {}) do
         local model = entry.m_Model
         if not IsValid(model) then continue end
 
         local attID = entry.Class
         if not attID then continue end
-
         local attData = BASE_TRM_ATTS[attID]
-        if not attData or not attData.Bonemerge then continue end
-
-        local boneCount = model:GetBoneCount()
-        if not boneCount or boneCount <= 0 then continue end
-
-        for j = 0, boneCount - 1 do
-            local name = model:GetBoneName(j)
-            local matrix = model:GetBoneMatrix(j)
-            if name and matrix then
-                if not self.m_Bone[name] then
-                    self.m_Bone[name] = {}
-                end
-                self.m_Bone[name].Pos = matrix:GetTranslation()
-                self.m_Bone[name].Ang = matrix:GetAngles()
-                self.m_Bone[name].Id = j
-                self.m_Bone[name].Ent = model
-            end
-        end
+        if not attData or not attData.Bonemerge then continue end -- 只处理 Bonemerge 配件
+        self:BuildAttachmentsData(self.m_Attachment, model)
+        self:BuildBonesData(self.m_Bone, model)
+        model = entry.m_TpModel
+        self:BuildAttachmentsData(self.wm_Attachment, model)
+        self:BuildBonesData(self.wm_Bone, model)
     end
-
     -- if CurTime() - (self.lastdebug or 0) > 10 and GetConVar("developer"):GetInt() == 1 then
     --     PrintTable(self.m_Bone)
     --     self.lastdebug = CurTime()
@@ -401,6 +380,14 @@ end
 
 function SWEP:GetBoneData(name)
     return self.m_Bone[name] or false
+end
+
+function SWEP:GetWorldAttachmentData(name)
+    return self.wm_Attachment[name] or false
+end
+
+function SWEP:GetWorldBoneData(name)
+    return self.wm_Bone[name] or false
 end
 
 ---CustomizeSystem
@@ -480,7 +467,7 @@ function SWEP:UnEquipAttachment(slot)
     -- 清理模型
     local entry = self.CurrentAttachments[slot]
     if entry and IsValid(entry.m_Model) then
-        BASE_TRM_ATTS[entry.Class]:Remove(self, m_Model)
+        BASE_TRM_ATTS[entry.Class]:Remove(self, entry.m_Model)
     end
 
     self.CurrentAttachments[slot] = nil
@@ -545,21 +532,26 @@ function SWEP:BuildCustomizedGun()
                     model:SetupBones()
 
                     entry.m_Model = model
-                    --trm_weapon_base_util.DealWithFullUpdate(entry.m_Model)
+                    trm_weapon_base_util.DealWithFullUpdate(entry.m_Model)
                 end
             end
 
             -- ========== 第三人称模型（挂武器实体，引擎自动渲染） ==========
-            if attData.Bonemerge == true and attData.Model then
+            if attData.Model then
                 if not IsValid(entry.m_TpModel) then
                     local tpModel = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
                     tpModel:SetNotSolid(true)
                     tpModel:SetMoveType(MOVETYPE_NONE)
                     tpModel:SetNoDraw(true)
-                    tpModel:SetParent(self)
-                    tpModel:AddEffects(EF_BONEMERGE)
-                    tpModel:AddEffects(EF_BONEMERGE_FASTCULL)
+                    tpModel:InvalidateBoneCache()
+                    tpModel:SetupBones()
+                    if attData.Bonemerge then
+                        tpModel:SetParent(self)
+                        tpModel:AddEffects(EF_BONEMERGE)
+                        tpModel:AddEffects(EF_BONEMERGE_FASTCULL)
+                    end
                     entry.m_TpModel = tpModel
+                    trm_weapon_base_util.DealWithFullUpdate(entry.m_TpModel)
                 end
             elseif IsValid(entry.m_TpModel) then
                 self:RemoveAttachmentModel(entry, true)
@@ -576,6 +568,7 @@ function SWEP:BuildCustomizedGun()
     end
 
     -- 配件缓存（无论武器是否活跃，都需要更新）
+        self:BuildWeaponModelData()
 
     -- VM 相关操作只在 vm 有效时执行
     if hasVM and vm and self:GetOwner() and isActive then
@@ -584,14 +577,13 @@ function SWEP:BuildCustomizedGun()
             vm:InvalidateBoneCache()
             vm:SetupBones()
         end
-        
-        self:PrecacheViewModel() 
+
+        self:PrecacheViewModel()
         self:PrepareViewModel()
         self:ApplyViewModelChange()
-        self:BuildViewModelData()
+    end
         self:ApplyAttachmentModels()
         self:GenerateAimOffset()
-    end
 
     if (CLIENT) then
         -- TP 模型偏移始终需要计算（挂在武器实体上，不依赖 vm）
@@ -625,25 +617,41 @@ function SWEP:ApplyAttachmentModels()
         local WeaponData = self.Attachments and self.Attachments[tonumber(slot)]
         if not AttachmentData.Model then continue end
         local model = entry.m_Model
+        local Tpmodel = entry.m_TpModel
         if not IsValid(model) then continue end
-        local parent = vm
 
         if AttachmentData.Bonemerge then
-            model:SetParent(parent)
+            model:SetParent(vm)
             model:AddEffects(EF_BONEMERGE)
             model:AddEffects(EF_BONEMERGE_FASTCULL)
             model:SetLocalPos(Vector(0, 0, 0))
             model:SetLocalAngles(Angle(0, 0, 0))
+
+            -- TP 模型（bonemerge）
+            if IsValid(Tpmodel) then
+                Tpmodel:SetParent(self)
+                Tpmodel:AddEffects(EF_BONEMERGE)
+                Tpmodel:AddEffects(EF_BONEMERGE_FASTCULL)
+                Tpmodel:SetLocalPos(Vector(0, 0, 0))
+                Tpmodel:SetLocalAngles(Angle(0, 0, 0))
+            end
         else
             if not WeaponData.Bone then continue end
             local bone = self:GetBoneData(WeaponData.Bone)
             if not bone then continue end
-            parent = bone.Ent
-            model:FollowBone(parent, bone.Id)
-
-            -- 先清零（确保不继承上次的结果）
+            model:FollowBone(bone.Ent, bone.id)
             model:SetLocalPos(Vector(0, 0, 0))
             model:SetLocalAngles(Angle(0, 0, 0))
+
+            -- TP 模型（骨骼跟随）
+            if IsValid(Tpmodel) then
+                local tpbone = self:GetWorldBoneData(WeaponData.Bone)
+                if tpbone then
+                    Tpmodel:FollowBone(tpbone.Ent, tpbone.id)
+                    Tpmodel:SetLocalPos(Vector(0, 0, 0))
+                    Tpmodel:SetLocalAngles(Angle(0, 0, 0))
+                end
+            end
 
             -- 组合偏移：槽位偏移 + 配件自身偏移
             local finalPos = WeaponData.Pos and Vector(WeaponData.Pos) or Vector(0, 0, 0)
@@ -653,8 +661,16 @@ function SWEP:ApplyAttachmentModels()
 
             model:SetLocalPos(finalPos)
             model:SetLocalAngles(finalAng)
+            if IsValid(Tpmodel) then
+                Tpmodel:SetLocalPos(finalPos)
+                Tpmodel:SetLocalAngles(finalAng)
+            end
+
             if AttachmentData.Scale then
                 model:SetModelScale(AttachmentData.Scale)
+                if IsValid(Tpmodel) then
+                    Tpmodel:SetModelScale(AttachmentData.Scale)
+                end
             end
         end
     end
@@ -712,7 +728,7 @@ function SWEP:GenerateAimOffset()
                 if align.SightPos then
                     localPos:Add(align.SightPos)
                 end
-                model.AimPos = Vector(localPos.x, localPos.y , localPos.z)
+                model.AimPos = Vector(localPos.x, localPos.y, localPos.z)
                 model.AimAng = align.SightAng or Angle(0, 0, 0)
                 if not self.m_Sight then
                     self.m_Sight = {

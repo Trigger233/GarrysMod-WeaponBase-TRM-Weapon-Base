@@ -30,7 +30,7 @@ if (CLIENT) then
         FullUpdateEntities[ent] = true
     end
 
-    hook.Add("PreRender", "mw_utilsFullUpdatePreRender", function()
+    hook.Add("PreRender", "trm_utilsFullUpdatePreRender", function()
         for ent, _ in pairs(FullUpdateEntities) do
             if (!IsValid(ent)) then
                 FullUpdateEntities[ent] = nil

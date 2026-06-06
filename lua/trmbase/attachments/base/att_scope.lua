@@ -29,7 +29,7 @@ end
 
 
 function ATTACHMENT:Render(wep, model)
-    if CLIENT and TRM_ScopePiP and TRM_ScopePiP.RenderScopeAttachment then
+    if CLIENT and TRM_ScopePiP and TRM_ScopePiP.RenderScopeAttachment and wep:IsCarriedByLocalPlayer() and not wep:GetOwner():ShouldDrawLocalPlayer() then
         return TRM_ScopePiP.RenderScopeAttachment(wep, model, self)
     end
 

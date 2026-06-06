@@ -7,7 +7,7 @@ ENT.Base = "ent_trm_projectile_grenade_timer"
 -- 爆炸参数
 ENT.Range = 50   -- 无衰减范围（单位内满伤）
 ENT.Radius = 250 -- 最大影响范围
-ENT.Timer = 5
+ENT.Timer = 4
 --Trail
 ENT.TrailColor = Color(255, 233, 125)
 --Sound
@@ -23,12 +23,13 @@ function ENT:PhysicsCollide(data, phys)
 
     -- 停止飞行
     phys:EnableMotion(false)
-    self:SetNotSolid(true)
+    -- self:SetNotSolid(true)
 
     -- 粘附
-    if IsValid(data.HitEntity) then
+    local ent = data.HitEntity
+    if IsValid(ent) and (ent:IsPlayer() or ent:IsNPC() or ent:IsNextBot()) then
         self:SetParent(data.HitEntity)
-        self:SetLocalPos(self:GetPos() - data.HitEntity:GetPos())
+        --self:SetLocalPos(self:GetPos() - data.HitEntity:GetPos() + data.HitEntity:OBBCenter())
     end
 
     -- 粘附特效
@@ -39,9 +40,10 @@ function ENT:PhysicsCollide(data, phys)
     util.Effect("cball_explode", effect)
 
     -- 音效
-    self:EmitSound("weapons/sticky_attach.wav", 70, 100)
+    self:EmitSound("npc/turret_floor/ping.wav", 70, 100)
 
     -- 重启计时器（粘住后才开始倒计时）
     self.m_SpawnTime = CurTime()
     self.m_NextTick = CurTime() + 1
 end
+

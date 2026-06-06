@@ -1,4 +1,3 @@
-if not CLIENT then return end
 
 -- =============================================
 -- 世界模型渲染 — SetRenderOrigin/Angles 兼容模式
@@ -20,7 +19,8 @@ end
 -- =============================================
 -- DrawWorldModel — 每帧由引擎调用
 -- =============================================
-function SWEP:DrawWorldModel(flags)
+function SWEP:RenderOverride(flags)
+    
     if self.m_NeedsBuild and self.BuildCustomizedGun then
         self:BuildCustomizedGun()
         self.m_NeedsBuild = false
@@ -57,15 +57,23 @@ function SWEP:DrawWorldModel(flags)
         end
     end
 
+    self:SetupBones()
     self:DrawModel(flags)
 
     if self.CurrentAttachments then
         for _, entry in pairs(self.CurrentAttachments) do
-            if IsValid(entry.m_TpModel) then
-                entry.m_TpModel:DrawModel()
+            local att = BASE_TRM_ATTS[entry.Class]
+            if IsValid(entry.m_TpModel) and att.Render then
+                entry.m_TpModel:InvalidateBoneCache()
+                entry.m_TpModel:SetupBones()
+                att:Render(self,entry.m_TpModel)
             end
         end
     end
+end
+
+function SWEP:DrawWorldModel(flags)
+    self:DrawModel(flags)
 end
 
 function SWEP:DrawWorldModelTranslucent(flags)
