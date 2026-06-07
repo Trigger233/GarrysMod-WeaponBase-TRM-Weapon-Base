@@ -165,7 +165,7 @@ function SWEP:FireProjectile()
 	if owner:IsNPC() and IsValid(owner:GetEnemy()) then
 		local DirLength = aimDir:Length()
 		local Ang = aimDir:Angle()
-		local additive = self:Primary_NPC_ProjectileCalc(owner, owner:GetEnemy())
+		local additive = self:NPC_ProjectileCalc(owner, owner:GetEnemy(),self.Primary.Velocity)
 		--print(additive)
 		Ang:Add(additive)
 		aimDir = Ang:Forward() * DirLength

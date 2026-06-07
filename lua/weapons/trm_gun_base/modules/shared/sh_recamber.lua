@@ -1,12 +1,19 @@
 
 function SWEP:ResetChamberRound(amount)
     if not amount then
-        amount = self.Primary.ChamberSize
+        amount = self.Primary.Chamber
     end
     
     self:SetChamberAmmo(amount)
 end
 
+function SWEP:ResetChamberRound2(amount)
+    if not amount then
+        amount = self.Secondary.Chamber
+    end
+
+    self:SetSecondaryChamberAmmo(amount)
+end
 function SWEP:CanRechamber()
     local seq = self.m_CurrentSequence or self:GetPlayingSequence()
     local task = self:GetCurrentTaskName() or ""

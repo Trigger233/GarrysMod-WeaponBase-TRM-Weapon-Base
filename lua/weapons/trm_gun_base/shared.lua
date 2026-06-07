@@ -590,16 +590,26 @@ end
 
 local cvar = CreateConVar("trmbase_autoreload", 1, FCVAR_ARCHIVE)
 function SWEP:PrimaryAttack()
-    if not self:CanPrimaryFire() then
-        if self:IsEmpty() and cvar:GetInt() == 1 then
-            self:Reload()
+    if self:GetUnderBarrel() then
+        if not self:CanSecondaryFire() then
+            if self:Clip2() == 0 and cvar:GetInt() == 1 then
+                self:Reload()
+            end
+            return false
         end
-        return false
-    end
-    if self.Primary.Trigger then
-        self:TrySetTask("Charge")
+        self:TrySetTask("UnderbarrelFire")
     else
-        self:TrySetTask("PrimaryFire")
+        if not self:CanPrimaryFire() then
+            if self:IsEmpty() and cvar:GetInt() == 1 then
+                self:Reload()
+            end
+            return false
+        end
+        if self.Primary.Trigger then
+            self:TrySetTask("Charge")
+        else
+            self:TrySetTask("PrimaryFire")
+        end
     end
 end
 
@@ -608,7 +618,10 @@ function SWEP:SecondaryAttack()
 end
 
 function SWEP:Reload()
-    if not self:CanReload() then return end
+    if self:GetUnderBarrel() then
+        self:TrySetTask("UnderBarrel_Reload")
+        return true
+    end
     self:TrySetTask("Reload")
     return true
 end
@@ -716,4 +729,8 @@ end
 
 function SWEP:OnDrop(owner)
     self:BuildCustomizedGun()
+    if CLIENT then
+        self:InvalidateBoneCache()
+        self:SetupBones()
+    end
 end

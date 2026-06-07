@@ -23,7 +23,18 @@ function SWEP:RenderOverride(flags)
 
     local off = self.WorldModelOffsets
     local owner = self:GetOwner()
+    self:DrawModel(flags)
 
+    if self.CurrentAttachments then
+        for _, entry in pairs(self.CurrentAttachments) do
+            local att = BASE_TRM_ATTS[entry.Class]
+            if IsValid(entry.m_TpModel) and att.Render and  ( att.Bonemerge or self:GetOwner() )then
+                entry.m_TpModel:SetupBones()
+                att:Render(self,entry.m_TpModel)
+            end
+        end
+    end
+    
     if off and not off.Bone and IsValid(owner) then
         -- == SetRenderOrigin/SetRenderAngles 模式 ==
         local handPos, handAng = GetHandBonePosAng(owner)
@@ -52,17 +63,7 @@ function SWEP:RenderOverride(flags)
         end
     end
 
-    self:DrawModel(flags)
 
-    if self.CurrentAttachments then
-        for _, entry in pairs(self.CurrentAttachments) do
-            local att = BASE_TRM_ATTS[entry.Class]
-            if IsValid(entry.m_TpModel) and att.Render and  ( att.Bonemerge or self:GetOwner() )then
-                entry.m_TpModel:SetupBones()
-                att:Render(self,entry.m_TpModel)
-            end
-        end
-    end
 end
 
 function SWEP:DrawWorldModel(flags)

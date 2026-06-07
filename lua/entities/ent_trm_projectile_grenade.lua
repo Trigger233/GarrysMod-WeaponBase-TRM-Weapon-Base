@@ -35,7 +35,7 @@ function ENT:Explode()
     local pos = self:GetPos()
     local owner = self:GetOwner()
     local radius = self.Radius or 200
-    local damage = self.Damage or 100
+    local damage = self:GetDamage()
 
     -- 创建爆炸实体（主要用来产生特效和冲击）
     local explosion = ents.Create("env_explosion")
@@ -43,7 +43,7 @@ function ENT:Explode()
         explosion:SetPos(pos)
         explosion:SetOwner(IsValid(owner) and owner or self)
         explosion:Spawn()
-        explosion:SetKeyValue("iMagnitude", owner.Primary.Damage) -- 不用它的伤害，我们自己处理
+        explosion:SetKeyValue("iMagnitude", damage) -- 不用它的伤害，我们自己处理
         explosion:SetKeyValue("iRadiusOverride", radius)
         explosion:Fire("Explode", 0, 0)
     end
@@ -143,7 +143,7 @@ function ENT:CollisionDamage(data, phys)
     local hitPos = data.HitPos
     if IsValid(hitEnt) and hitEnt.TakeDamageInfo then
         local owner = self:GetOwner()
-        local damage = owner.Primary.Damage or 50 -- 物理撞击伤害
+        local damage = self:GetDamage() -- 物理撞击伤害
         if self:GetVelocity():Length() < 200 then
             damage = 0
         end
@@ -182,3 +182,17 @@ end
 function ENT:ShouldActivateOnCollision(data, phys)
     return true
 end
+
+function ENT:GetDamage()
+    local owner = self:GetOwner()
+    if IsValid(owner) then
+        if owner.GetUnderBarrel and owner:GetUnderBarrel() then
+            return owner.Secondary.Damage
+        elseif owner.Primary.Damage then
+            return owner.Primary.Damage
+        end
+    end
+
+    return 50
+end
+

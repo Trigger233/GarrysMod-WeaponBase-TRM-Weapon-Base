@@ -1,8 +1,7 @@
 function SWEP:RefreshAttTable()
     for slot, entry in pairs(self.CurrentAttachments) do
         if not entry or not entry.Class then continue end
-        local attData = BASE_TRM_ATTS[entry.Class]
-        if attData and attData.Category and not self:CanAttach(slot) then
+        if not self:CanEquip(slot, entry.Class) then
             self:UnEquipAttachment(slot)
         end
     end
@@ -12,50 +11,59 @@ function SWEP:IsPlyCarry()
     local owner = self:GetOwner()
     return owner:IsPlayer() and owner:GetActiveWeapon() == self and true or false
 end
---- 检查指定槽位能否安装配件
+--- 检查指定配件能否安装到指定槽位
+--- 思路：以配件为中心，默认配件永远可装，真实配件才参与排斥
 --- 返回 false 表示被排除（不可用），true 表示可用
---- 排除条件：
----   1. 槽位自身的 Exclude 列表匹配了已装备配件的 Category
----   2. 已装备配件的 Excluded 列表匹配了本槽位的 Category（或其子分类）
-function SWEP:CanAttach(slotIndex)
+function SWEP:CanEquip(slotIndex, attClass)
     if not self.Attachments or not self.Attachments[slotIndex] then return true end
     local slot = self.Attachments[slotIndex]
-    local slotCats = istable(slot.Category) and slot.Category or { slot.Category }
 
-    -- 如果当前装的是该槽位的默认配件，不参与排斥
-    local curEntry = self.CurrentAttachments[tostring(slotIndex)]
-    if curEntry and curEntry.Class and slot.Default and curEntry.Class == slot.Default then return true end
+    -- 默认配件或空配件永远可装
+    if slot.Default and attClass == slot.Default then return true end
+    if not attClass then return true end
 
-    -- 方向 A：已装备配件排斥本槽位
+    local attData = BASE_TRM_ATTS[attClass]
+    if not attData then return true end
+
+    -- 没有 Category 的配件不参与排斥
+    local attCats = attData.Category
+    if not attCats then return true end
+    if not istable(attCats) then attCats = { attCats } end
+
+    -- 方向 A：其他已装备配件排斥本配件
     for _, entry in pairs(self.CurrentAttachments or {}) do
-        local attData = BASE_TRM_ATTS[entry.Class]
-        if attData and attData.Excluded then
-            local excluded = istable(attData.Excluded) and attData.Excluded or { attData.Excluded }
+        if not entry or not entry.Class or entry.Class == attClass then continue end
+        local otherData = BASE_TRM_ATTS[entry.Class]
+        if otherData and otherData.Excluded then
+            local excluded = istable(otherData.Excluded) and otherData.Excluded or { otherData.Excluded }
             for _, excludeCat in ipairs(excluded) do
-                for _, slotCat in ipairs(slotCats) do
-                    if slotCat == excludeCat then
-                        return false
-                    end
+                for _, attCat in ipairs(attCats) do
+                    if attCat == excludeCat then return false end
                 end
             end
         end
     end
 
-    -- 方向 B：本槽位排斥已装备配件
+    -- 方向 B：本槽位排斥其他已装备配件
     if slot.Exclude and #slot.Exclude > 0 then
         for _, entry in pairs(self.CurrentAttachments or {}) do
-            local attData = BASE_TRM_ATTS[entry.Class]
-            if attData and attData.Category then
+            if not entry or not entry.Class or entry.Class == attClass then continue end
+            local otherData = BASE_TRM_ATTS[entry.Class]
+            if otherData and otherData.Category then
                 for _, excludeCat in ipairs(slot.Exclude) do
-                    if attData.Category == excludeCat then
-                        return false
-                    end
+                    if otherData.Category == excludeCat then return false end
                 end
             end
         end
     end
 
     return true
+end
+
+-- 兼容旧接口
+function SWEP:CanAttach(slotIndex)
+    local entry = self.CurrentAttachments[tostring(slotIndex)]
+    return self:CanEquip(slotIndex, entry and entry.Class or nil)
 end
 
 --self:GetViewModel():SetWeaponModel("models/weapons/c_smg1.mdl",self)
@@ -228,6 +236,7 @@ function SWEP:ChangeWeaponStats()
         if self:Clip2() > self.Secondary.ClipSize then
             self:SetClip2(self.Secondary.ClipSize)
         end
+        self:MagzineLoaded2()
         --self:MagzineLoaded()
         self:SetSpread(self.Spread.Base)
         self:SetSpreadVertical(self.Spread.Vertical)
@@ -432,7 +441,7 @@ end
 
 function SWEP:EquipAttachment(slot, attClass)
     local slotIndex = tonumber(slot)
-    if slotIndex and not self:CanAttach(slotIndex) then
+    if slotIndex and not self:CanEquip(slotIndex, attClass) then
         print("[TRMBase] Slot", slot, "is excluded, cannot equip", attClass)
         return
     end
@@ -445,7 +454,7 @@ function SWEP:EquipAttachment(slot, attClass)
         local removedSlots = {}
         for i = 1, #(self.Attachments or {}) do
             local key = tostring(i)
-            if key ~= slot and self.CurrentAttachments[key] and self.CurrentAttachments[key].Class and not self:CanAttach(i) then
+            if key ~= slot and self.CurrentAttachments[key] and self.CurrentAttachments[key].Class and not self:CanEquip(i, self.CurrentAttachments[key].Class) then
                 self:RemoveAttachmentModel(self.CurrentAttachments[key])
                 removedSlots[#removedSlots + 1] = key
                 self.CurrentAttachments[key] = nil
@@ -455,7 +464,7 @@ function SWEP:EquipAttachment(slot, attClass)
         -- 被清空的槽位：先装默认配件，再发送同步
         for _, removedKey in ipairs(removedSlots) do
             local slotData = self.Attachments and self.Attachments[tonumber(removedKey)]
-            if slotData and slotData.Default and BASE_TRM_ATTS[slotData.Default] and self:CanAttach(tonumber(removedKey)) then
+            if slotData and slotData.Default and BASE_TRM_ATTS[slotData.Default] and self:CanEquip(tonumber(removedKey), slotData.Default) then
                 self.CurrentAttachments[removedKey] = { Class = slotData.Default }
                 net.Start("TRMBase_SyncAttachment")
                 net.WriteEntity(self)
@@ -513,7 +522,7 @@ function SWEP:UnEquipAttachment(slot)
         if SERVER then
             for i, slotData in ipairs(self.Attachments or {}) do
                 local key = tostring(i)
-                if key ~= slot and not self.CurrentAttachments[key] and slotData.Default and self:CanAttach(i) then
+                if key ~= slot and not self.CurrentAttachments[key] and slotData.Default and self:CanEquip(i, slotData.Default) then
                     self:EquipAttachment(key, slotData.Default)
                 end
             end
@@ -524,93 +533,6 @@ function SWEP:UnEquipAttachment(slot)
     --print("Unequipped:", slot, self.CurrentAttachments[slot] or "None")
 end
 
-function SWEP:BuildCustomizedGun()
-    self:SyncAllAttachments()
-    self:ChangeWeaponStats()
-
-    local vm = self:GetViewModel()
-    local hasVM = IsValid(vm)
-    local isActive = hasVM and self:GetOwner() and self:GetOwner():GetActiveWeapon() == self
-
-    self.sight = nil
-    self.underbarrel = nil
-
-
-    local currentSlotKeys = {}
-    if CLIENT then
-        for slotKey, entry in pairs(self.CurrentAttachments or {}) do
-            if not entry or not entry.Class then continue end
-            currentSlotKeys[slotKey] = true
-
-            local attData = BASE_TRM_ATTS[entry.Class]
-            if not attData then continue end
-
-            -- ========== 第一人称模型（挂 ViewModel） ==========
-            -- 只在 vm 有效时创建/更新
-            if hasVM then
-                if not IsValid(entry.m_Model) and attData.Model then
-                    local model = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
-                    model:SetNoDraw(true)
-                    model:SetNotSolid(true)
-                    model:SetMoveType(MOVETYPE_NONE)
-                    model:SetOwner(vm)
-                    model:InvalidateBoneCache()
-                    model:SetupBones()
-
-                    entry.m_Model = model
-                    trm_weapon_base_util.DealWithFullUpdate(entry.m_Model)
-                end
-            end
-
-            -- ========== 第三人称模型（挂武器实体，引擎自动渲染） ==========
-            if attData.Model then
-                if not IsValid(entry.m_TpModel) then
-                    local tpModel = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
-                    tpModel:SetNotSolid(true)
-                    tpModel:SetMoveType(MOVETYPE_NONE)
-                    tpModel:SetNoDraw(true)
-                    tpModel:InvalidateBoneCache()
-                    tpModel:SetupBones()
-                    if attData.Bonemerge then
-                        tpModel:SetParent(self)
-                        tpModel:AddEffects(EF_BONEMERGE)
-                        tpModel:AddEffects(EF_BONEMERGE_FASTCULL)
-                    end
-                    entry.m_TpModel = tpModel
-                    trm_weapon_base_util.DealWithFullUpdate(entry.m_TpModel)
-                end
-            elseif IsValid(entry.m_TpModel) then
-                self:RemoveAttachmentModel(entry, true)
-            end
-        end
-
-        -- 清除已卸载配件的模型
-        for slotKey, entry in pairs(self.CurrentAttachments or {}) do
-            if not currentSlotKeys[slotKey] and entry then
-                self:RemoveAttachmentModel(entry)
-                self:RemoveAttachmentModel(entry, true)
-            end
-        end
-    end
-
-    -- 配件缓存（无论武器是否活跃，都需要更新）
-    self:BuildWeaponModelData()
-    self:ApplyAttachmentModels()
-    self:GenerateAimOffset()
-
-    -- VM 相关操作只在 vm 有效时执行
-    if hasVM and vm and self:GetOwner() and isActive then
-        -- 确保骨骼数据已刷新
-        if CLIENT then
-            vm:InvalidateBoneCache()
-            vm:SetupBones()
-        end
-
-        self:PrecacheViewModel()
-        self:PrepareViewModel()
-        self:ApplyWeaponModelChange()
-    end
-end
 
 function SWEP:ApplyAttachmentModels()
     if SERVER then return end
@@ -763,3 +685,93 @@ end)
 
 
 ------------------------------------------------------
+function SWEP:BuildCustomizedGun()
+    self:SyncAllAttachments()
+
+
+    local vm = self:GetViewModel()
+    local hasVM = IsValid(vm)
+    local isActive = hasVM and self:GetOwner() and self:GetOwner():GetActiveWeapon() == self
+
+    self.sight = nil
+    self.underbarrel = nil
+
+    self:SetUnderBarrel(false)
+    self:ChangeWeaponStats()
+
+
+    local currentSlotKeys = {}
+    if CLIENT then
+        for slotKey, entry in pairs(self.CurrentAttachments or {}) do
+            if not entry or not entry.Class then continue end
+            currentSlotKeys[slotKey] = true
+
+            local attData = BASE_TRM_ATTS[entry.Class]
+            if not attData then continue end
+
+            -- ========== 第一人称模型（挂 ViewModel） ==========
+            -- 只在 vm 有效时创建/更新
+            if hasVM then
+                if not IsValid(entry.m_Model) and attData.Model then
+                    local model = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
+                    model:SetNoDraw(true)
+                    model:SetNotSolid(true)
+                    model:SetMoveType(MOVETYPE_NONE)
+                    model:SetOwner(vm)
+                    model:InvalidateBoneCache()
+                    model:SetupBones()
+
+                    entry.m_Model = model
+                    trm_weapon_base_util.DealWithFullUpdate(entry.m_Model)
+                end
+            end
+
+            -- ========== 第三人称模型（挂武器实体，引擎自动渲染） ==========
+            if attData.Model then
+                if not IsValid(entry.m_TpModel) then
+                    local tpModel = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
+                    tpModel:SetNotSolid(true)
+                    tpModel:SetMoveType(MOVETYPE_NONE)
+                    tpModel:SetNoDraw(true)
+                    tpModel:InvalidateBoneCache()
+                    tpModel:SetupBones()
+                    if attData.Bonemerge then
+                        tpModel:SetParent(self)
+                        tpModel:AddEffects(EF_BONEMERGE)
+                        tpModel:AddEffects(EF_BONEMERGE_FASTCULL)
+                    end
+                    entry.m_TpModel = tpModel
+                    trm_weapon_base_util.DealWithFullUpdate(entry.m_TpModel)
+                end
+            elseif IsValid(entry.m_TpModel) then
+                self:RemoveAttachmentModel(entry, true)
+            end
+        end
+
+        -- 清除已卸载配件的模型
+        for slotKey, entry in pairs(self.CurrentAttachments or {}) do
+            if not currentSlotKeys[slotKey] and entry then
+                self:RemoveAttachmentModel(entry)
+                self:RemoveAttachmentModel(entry, true)
+            end
+        end
+    end
+
+    -- 配件缓存（无论武器是否活跃，都需要更新）
+    self:BuildWeaponModelData()
+    self:ApplyAttachmentModels()
+    self:GenerateAimOffset()
+
+    -- VM 相关操作只在 vm 有效时执行
+    if hasVM and vm and self:GetOwner() and isActive then
+        -- 确保骨骼数据已刷新
+        if CLIENT then
+            vm:InvalidateBoneCache()
+            vm:SetupBones()
+        end
+
+        self:PrecacheViewModel()
+        self:PrepareViewModel()
+        self:ApplyWeaponModelChange()
+    end
+end

@@ -10,7 +10,7 @@ local cv_melee = GetConVar("trmbase_cl_keybind_melee")
 local cv_inspect = GetConVar("trmbase_cl_keybind_inspect")
 local cv_customize = GetConVar("trmbase_cl_keybind_customize")
 local cv_firemode = GetConVar("trmbase_cl_keybind_firemode")
-
+local cv_underbarrel = CreateClientConVar("trmbase_cl_keybind_ub", 0, true, false, "Underbarrel keybind")
 
 hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
     local weapon = LocalPlayer():GetActiveWeapon()
@@ -21,11 +21,17 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
         RunConsoleCommand("trmbase_melee")
     end
 
+    if input.WasKeyPressed(cv_melee:GetInt()) and cv_melee:GetInt() > 0 then
+        RunConsoleCommand("trmbase_melee")
+    end
     -- Inspect
     if input.WasKeyPressed(cv_inspect:GetInt()) and cv_inspect:GetInt() > 0 then
         RunConsoleCommand("trmbase_weaponinspect")
     end
 
+    if input.WasKeyPressed(cv_underbarrel:GetInt()) and cv_underbarrel:GetInt() > 0 then
+        RunConsoleCommand("+trmbase_switch_underbarrel")
+    end
     -- Customize：独立按键 vs 菜单回退，两条路泾渭分明
     local custKey = cv_customize:GetInt()
 

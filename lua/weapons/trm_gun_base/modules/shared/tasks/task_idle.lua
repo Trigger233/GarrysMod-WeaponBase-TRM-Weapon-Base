@@ -9,6 +9,10 @@ function task:CanBeSet(weapon)
 end
 
 function task:Think(cycle,weapon)
+    if weapon:GetUnderBarrel() then
+        weapon:TrySetTask("UnderBarrel")
+        return
+    end
     weapon:PlayAnimation(weapon:ChooseAnim("Idle"))
 end
 

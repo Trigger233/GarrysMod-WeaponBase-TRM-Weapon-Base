@@ -26,13 +26,13 @@ function SWEP:NPCShoot_Primary(pos, dir)
     end
 end
 
-function SWEP:Primary_NPC_ProjectileCalc(owner, target)
+function SWEP:NPC_ProjectileCalc(owner, target,speed)
     local startpos = owner:GetShootPos()
     local targetpos = target:GetPos() + target:OBBCenter()
     local targetspeed = target:GetVelocity()
     local ownerspeed = owner:GetVelocity()
 
-    local muzzleSpeed = self.Primary.Velocity or self.Primary.Speed or 1200
+    local muzzleSpeed = speed
     local gravity = (GetConVar("sv_gravity"):GetInt() or 800) * 1.1
 
     local aimpos = targetpos

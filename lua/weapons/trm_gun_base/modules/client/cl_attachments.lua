@@ -1423,8 +1423,8 @@ end
 function PANEL:PaintSlotCard(card, w, h)
     local slot = card.m_Slot or {}
     local selected = card.m_Index == self.m_Slot
-    local excluded = IsValid(self.m_Weapon) and not self.m_Weapon:CanAttach(card.m_Index)
     local attClass = IsValid(self.m_Weapon) and CurrentAttachmentClass(self.m_Weapon, card.m_Index) or nil
+    local excluded = IsValid(self.m_Weapon) and not self.m_Weapon:CanEquip(card.m_Index, attClass or slot.Default)
     local attName = AttachmentName(attClass or slot.Default)
     local slotName = language.GetPhrase(slot.Name)
     local iconMat = SlotIconMaterial(SlotIconName(slot))
@@ -1881,7 +1881,7 @@ function PANEL:RefreshAttList()
 
     local slotKey = tostring(self.m_Slot)
     local currentAtt = CurrentAttachmentClass(self.m_Weapon, self.m_Slot)
-    local slotExcluded = not self.m_Weapon:CanAttach(self.m_Slot)
+    local slotExcluded = IsValid(self.m_Weapon) and not self.m_Weapon:CanEquip(self.m_Slot, currentAtt)
 
 
     local skipDefault = nil
