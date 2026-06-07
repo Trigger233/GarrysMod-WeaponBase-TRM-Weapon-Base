@@ -4,7 +4,7 @@ end
 
 if CLIENT then
     net.Receive("TRMBase_FiremodeCall", function(len, ply)
-        local index = net.ReadInt(8)
+        local index = net.ReadInt(4)
         local weapon = net.ReadEntity()
         weapon:FireModeStat(index)
     end)
@@ -12,17 +12,9 @@ end
 
 function SWEP:FireModeStat(index)
     if not index then return end
-    -- if not self.m_FiremodeStat then 
-    --     self.m_FiremodeStat = {}
-    --     self:DeepObjectCopy(self, self.m_FiremodeStat)
-    -- else
-    --     self:DeepObjectCopy(self.m_FiremodeStat, self)
-    -- end
-
     if self.Firemode and self.Firemode[index] and self.Firemode[index].OnSet then
         self.Firemode[index].OnSet(self)
     end
-    --print("Firemode : ", self.Primary.Automatic, "IsServer", SERVER, "Index", index)
 end
 
 local function defmode(w)

@@ -28,7 +28,7 @@ function SWEP:CanSprint()
         end
     end
 
-    local blacklist = { "Deploy", "Rechamber", "Holster", "Reload", "Inspect", "Melee", "Draw" }
+    local blacklist = {  "Inspect" , "Holster"}
     for _, v in ipairs(blacklist) do
         if string.find(task, v) or string.find(seq, v) then
             return false

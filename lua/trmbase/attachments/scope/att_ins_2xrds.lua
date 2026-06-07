@@ -7,7 +7,7 @@ ATTACHMENT.Angles = Angle(-180, 180, 180)
 ATTACHMENT.Pos = Vector(-0, 0, 0)
 
 ATTACHMENT.Sight = {
-    Pos = Vector(0, -0, -0.9),
+    Pos = Vector(0, -0, 0.5),
     Align = "scope_origin",
     Size = 360,
     Color = Color(255, 255, 255) ,

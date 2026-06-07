@@ -77,13 +77,12 @@ function task_end:CanBeSet(weapon)
 end
 
 function task_end:OnSet(weapon)
+    weapon:SetNextAnimationTime(0)  
 end
 
 function task_end:Think(cycle, weapon)
-    if weapon:IsAnimFinished() then
         weapon:PlayAnimation(weapon:ChooseAnim("Reload_End"), true)
         weapon:TrySetTask("Idle")
-    end
 end
 
 SWEP:RegisterTask(task_end)

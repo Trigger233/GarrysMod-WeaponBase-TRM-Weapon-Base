@@ -17,6 +17,10 @@ function ATTACHMENT:ChangeWeaponStats(weapon)
     
 end
 
+function ATTACHMENT:Stats(weapon)
+    
+end
+
 function ATTACHMENT:Render( weapon ,model )
     model:DrawModel()
 end

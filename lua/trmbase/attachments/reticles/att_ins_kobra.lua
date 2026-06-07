@@ -5,7 +5,7 @@ ATTACHMENT.Selectable = true
 
 ATTACHMENT.Angles     = Angle(-180, 180, 180)
 ATTACHMENT.Sight = {
-    Pos = Vector(0.00,0, -0.45 ) ,
+    Pos = Vector(0.00,0, 0.55 ) ,
     Align = "reticle" ,
     Material = Material("models/weapons/tfa_ins2/optics/kobra_dot") ,
     Size = 2.56 , 

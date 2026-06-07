@@ -4,9 +4,10 @@ ENT.Base = "ent_trm_projectile_grenade"
 ENT.Name = "Smoke Grenade"
 
 DEFINE_BASECLASS(ENT.Base)
-ENT.TrailColor = Color(0,255,255)
+ENT.TrailColor = Color(0, 255, 255)
 ENT.Radius = 512
 ENT.Timer = 10
+ENT.TriggerDelay = 1
 ENT.SmokeSound = Sound("physics/metal/metal_chainlink_impact_soft3.wav")
 
 if SERVER then
@@ -40,18 +41,20 @@ function ENT:PhysicsCollide(data, phy)
     self.m_SmokeNext = 0
     if self.m_Smoke then return end
     self.m_Smoke = true
-    self.m_NextRemove = CurTime() + self.Timer
-    self.m_LoopSound =  self:StartLoopingSound(self.SmokeSound)
+    self.m_NextRemove = CurTime() + self.Timer + self.TriggerDelay
+    timer.Simple(self.TriggerDelay, function()
+        self.m_LoopSound = self:StartLoopingSound(self.SmokeSound)
+        sendsmoke(self)
+        phy:EnableMotion(false)
+    end)
     self:CollisionDamage(data, phy)
-    phy:EnableMotion(false)
     -- 通知客户端生成烟雾
-    sendsmoke(self)
 end
 
 function ENT:Think()
     if not SERVER then return end
     local targets = ents.FindInSphere(self:GetPos(), self.Radius)
-    
+
     for _, k in ipairs(targets) do
         if k:IsNPC() then
             k:SetSchedule(SCHED_STANDOFF)
@@ -76,7 +79,7 @@ if CLIENT then
             smoke:SetVelocity(VectorRand() * 50)
             smoke:SetStartAlpha(255)
             smoke:SetEndAlpha(0)
-            smoke:SetStartSize(50)
+            smoke:SetStartSize(0)
             smoke:SetEndSize(ent.Radius)
             smoke:SetDieTime(ent.Timer)
             smoke:SetColor(255, 255, 255)

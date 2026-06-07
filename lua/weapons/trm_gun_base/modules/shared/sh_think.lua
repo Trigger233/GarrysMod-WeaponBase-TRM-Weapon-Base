@@ -3,8 +3,6 @@ function SWEP:Think()
     local owner = self:GetOwner()
     if IsValid(owner) and owner:IsPlayer() then
         self:SetWeaponHoldType(self.HoldType)
-        self:SetHoldType(self.HoldType)
-        self.m_CurrentSequence = self:GetPlayingSequence()
         self:UpdatePoseParameters()
         self:AimThink()
         self:TaskThink()

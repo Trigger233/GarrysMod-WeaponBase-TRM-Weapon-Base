@@ -60,7 +60,7 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
     if distance < 10 then return end
     
     render.SetMaterial(self:GetLineMat())
-    render.DrawBeam(att.Pos, tr.HitPos or tr.endpos, data.Width * math.random(0.5,1), 0, 1, data.Color)
+    render.DrawBeam(att.Pos, tr.HitPos or tr.endpos, data.Width * math.random(0.2,1), 0, 1, data.Color)
 
     if tr.Hit then
         render.SetMaterial(self:GetDotMat())

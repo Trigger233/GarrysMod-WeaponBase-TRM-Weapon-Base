@@ -1,6 +1,8 @@
 function SWEP:RefreshAttTable()
     for slot, entry in pairs(self.CurrentAttachments) do
-        if not self:CanAttach(slot) then
+        if not entry or not entry.Class then continue end
+        local attData = BASE_TRM_ATTS[entry.Class]
+        if attData and attData.Category and not self:CanAttach(slot) then
             self:UnEquipAttachment(slot)
         end
     end
@@ -20,21 +22,11 @@ function SWEP:CanAttach(slotIndex)
     local slot = self.Attachments[slotIndex]
     local slotCats = istable(slot.Category) and slot.Category or { slot.Category }
 
-    -- 检查槽位自身的 Exclude 列表
-    if slot.Exclude and #slot.Exclude > 0 then
-        for _, entry in pairs(self.CurrentAttachments or {}) do
-            local attData = BASE_TRM_ATTS[entry.Class]
-            if attData and attData.Category then
-                for _, excludeCat in ipairs(slot.Exclude) do
-                    if attData.Category == excludeCat then
-                        return false
-                    end
-                end
-            end
-        end
-    end
+    -- 如果当前装的是该槽位的默认配件，不参与排斥
+    local curEntry = self.CurrentAttachments[tostring(slotIndex)]
+    if curEntry and curEntry.Class and slot.Default and curEntry.Class == slot.Default then return true end
 
-    -- 检查已装备配件的 Excluded 列表
+    -- 方向 A：已装备配件排斥本槽位
     for _, entry in pairs(self.CurrentAttachments or {}) do
         local attData = BASE_TRM_ATTS[entry.Class]
         if attData and attData.Excluded then
@@ -42,6 +34,20 @@ function SWEP:CanAttach(slotIndex)
             for _, excludeCat in ipairs(excluded) do
                 for _, slotCat in ipairs(slotCats) do
                     if slotCat == excludeCat then
+                        return false
+                    end
+                end
+            end
+        end
+    end
+
+    -- 方向 B：本槽位排斥已装备配件
+    if slot.Exclude and #slot.Exclude > 0 then
+        for _, entry in pairs(self.CurrentAttachments or {}) do
+            local attData = BASE_TRM_ATTS[entry.Class]
+            if attData and attData.Category then
+                for _, excludeCat in ipairs(slot.Exclude) do
+                    if attData.Category == excludeCat then
                         return false
                     end
                 end
@@ -128,7 +134,7 @@ function changeBodyGroup(model, submodel, sub)
     --print("change")
 end
 
-function SWEP:ApplyViewModelChange()
+function SWEP:ApplyWeaponModelChange()
     local vm = self:GetViewModel()
     if not IsValid(vm) or not self:IsPlyCarry() then return false end
     local viewmodel = self.m_ViewmodelCache or self.ViewModel
@@ -196,9 +202,11 @@ function SWEP:ChangeWeaponStats()
     end
 
     for _, entry in pairs(self.CurrentAttachments or {}) do
-        if entry and entry.Class and BASE_TRM_ATTS[entry.Class].ChangeWeaponStats then
+        if not entry or not entry.Class then continue end
+        if  BASE_TRM_ATTS[entry.Class].ChangeWeaponStats then
             BASE_TRM_ATTS[entry.Class]:ChangeWeaponStats(self)
-        elseif BASE_TRM_ATTS[entry.Class].Stats then
+        end
+        if BASE_TRM_ATTS[entry.Class].Stats then
             BASE_TRM_ATTS[entry.Class]:Stats(self)
         end
     end
@@ -292,26 +300,23 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
 end
 
 function SWEP:BuildAttachmentsData(_table, model)
-
-    for _, attachment in pairs(model:GetAttachments() or {}) do
+    for _, attachment in pairs(model:GetAttachments()) do
         local stat = model:GetAttachment(attachment.id)
-        if not stat or not stat.name then continue end -- 👈 增加 name 检查
-
-        _table[stat.name] = {}
-        _table[stat.name] = stat
-        _table[stat.name].Ent = model
-        _table[stat.name].id = stat.id
-        _table[stat.name].LastUpdate = CurTime()
-    end 
-    PrintTable(_table) 
-    
+        local name = attachment.name
+        if not stat then continue end -- 👈 增加 name 检查
+        _table[name] = stat
+        _table[name].Ent = model
+        _table[name].id = attachment.id
+        _table[name].LastUpdate = CurTime()
+    end
+    -- PrintTable(_table)
 end
-function SWEP:BuildBonesData(_table, model)
 
+function SWEP:BuildBonesData(_table, model)
     local count = model:GetBoneCount()
     if count and count > 1 then
         for i = 0, count - 1 do
-            local _matrix = model:GetBoneMatrix(i)  
+            local _matrix = model:GetBoneMatrix(i)
             local name = model:GetBoneName(i)
 
             if _matrix and name then
@@ -327,35 +332,37 @@ function SWEP:BuildBonesData(_table, model)
 end
 
 function SWEP:BuildWeaponModelData()
-    if not CLIENT then return end
-    local vm = self:GetViewModel(0)
+    local vm = self:GetViewModel()
 
     -- Attachment 数据
-    self.m_Attachment = {}
-    self.m_Bone = {}
+    self.m_Attachment = { "table" }
+    self.m_Bone = { "table" }
+    self.wm_Attachment = { "table" }
+    self.wm_Bone = { "table" }
     if IsValid(vm) then
         self:BuildAttachmentsData(self.m_Attachment, vm)
         self:BuildBonesData(self.m_Bone, vm)
     end
-    self.wm_Attachment = {}
-    self.wm_Bone = {}
 
     self:BuildAttachmentsData(self.wm_Attachment, self)
     self:BuildBonesData(self.wm_Bone, self)
-    -- 配件模型的 Attachments（只有 Bonemerge 模式的配件才需要）
-    for _, entry in pairs(self.CurrentAttachments or {}) do
-        local model = entry.m_Model
-        if not IsValid(model) then continue end
 
-        local attID = entry.Class
-        if not attID then continue end
-        local attData = BASE_TRM_ATTS[attID]
-        if not attData or not attData.Bonemerge then continue end -- 只处理 Bonemerge 配件
-        self:BuildAttachmentsData(self.m_Attachment, model)
-        self:BuildBonesData(self.m_Bone, model)
-        model = entry.m_TpModel
-        self:BuildAttachmentsData(self.wm_Attachment, model)
-        self:BuildBonesData(self.wm_Bone, model)
+    -- 配件模型的 Attachments（只有 Bonemerge 模式的配件才需要）
+    if (CLIENT) then
+        for _, entry in pairs(self.CurrentAttachments) do
+            local model = entry.m_Model
+            if not IsValid(model) then continue end
+
+            local attID = entry.Class
+            if not attID then continue end
+            local attData = BASE_TRM_ATTS[attID]
+            if not attData or not attData.Bonemerge then continue end -- 只处理 Bonemerge 配件
+            self:BuildAttachmentsData(self.m_Attachment, model)
+            self:BuildBonesData(self.m_Bone, model)
+            model = entry.m_TpModel
+            self:BuildAttachmentsData(self.wm_Attachment, model)
+            self:BuildBonesData(self.wm_Bone, model)
+        end
     end
     -- if CurTime() - (self.lastdebug or 0) > 10 and GetConVar("developer"):GetInt() == 1 then
     --     PrintTable(self.m_Bone)
@@ -371,6 +378,16 @@ function SWEP:RefreshVMAttachment(name)
     cache.Ang = ref.Ang
     cache.LastUpdate = CurTime()
     self.m_Attachment[name] = cache
+end
+
+function SWEP:RefreshWMAttachment(name)
+    local cache = self.wm_Attachment[name]
+    if not cache or (CurTime() - cache.LastUpdate < (FrameTime() * 1)) then return false end
+    local ref = cache.Ent:GetAttachment(cache.id)
+    cache.Pos = ref.Pos
+    cache.Ang = ref.Ang
+    cache.LastUpdate = CurTime()
+    self.wm_Attachment[name] = cache
 end
 
 function SWEP:GetAttachmentData(name)
@@ -392,7 +409,6 @@ end
 
 ---CustomizeSystem
 function SWEP:OnAttachmentChanged()
-    self:ChangeWeaponStats()
     self:BuildCustomizedGun()
     self:SaveAttachmentPreset()
 end
@@ -415,7 +431,6 @@ function SWEP:RemoveAttachmentModel(entry, isTp)
 end
 
 function SWEP:EquipAttachment(slot, attClass)
-    -- 检查此槽位是否被排除（防止绕过 VGUI 直接发 net 消息）
     local slotIndex = tonumber(slot)
     if slotIndex and not self:CanAttach(slotIndex) then
         print("[TRMBase] Slot", slot, "is excluded, cannot equip", attClass)
@@ -427,7 +442,6 @@ function SWEP:EquipAttachment(slot, attClass)
         self.CurrentAttachments[slot] = { Class = attClass }
 
         -- 装完后检查其他槽是否因此被排除，如有则自动卸掉
-
         local removedSlots = {}
         for i = 1, #(self.Attachments or {}) do
             local key = tostring(i)
@@ -438,21 +452,32 @@ function SWEP:EquipAttachment(slot, attClass)
             end
         end
 
+        -- 被清空的槽位：先装默认配件，再发送同步
+        for _, removedKey in ipairs(removedSlots) do
+            local slotData = self.Attachments and self.Attachments[tonumber(removedKey)]
+            if slotData and slotData.Default and BASE_TRM_ATTS[slotData.Default] and self:CanAttach(tonumber(removedKey)) then
+                self.CurrentAttachments[removedKey] = { Class = slotData.Default }
+                net.Start("TRMBase_SyncAttachment")
+                net.WriteEntity(self)
+                net.WriteString(removedKey)
+                net.WriteString(slotData.Default)
+                net.Broadcast()
+            else
+                self.CurrentAttachments[removedKey] = nil
+                net.Start("TRMBase_SyncAttachment")
+                net.WriteEntity(self)
+                net.WriteString(removedKey)
+                net.WriteString("None")
+                net.Broadcast()
+            end
+        end
+
         -- 发送主配件的同步消息
         net.Start("TRMBase_SyncAttachment")
         net.WriteEntity(self)
         net.WriteString(slot)
         net.WriteString(attClass)
         net.Broadcast()
-
-        -- 同时发送被自动卸载的槽位同步（告诉客户端这些槽已清空）
-        for _, removedKey in ipairs(removedSlots) do
-            net.Start("TRMBase_SyncAttachment")
-            net.WriteEntity(self)
-            net.WriteString(removedKey)
-            net.WriteString("None")
-            net.Broadcast()
-        end
     end
     self:RefreshAttTable()
 
@@ -482,7 +507,6 @@ function SWEP:UnEquipAttachment(slot)
     net.Broadcast()
 
     self:OnAttachmentChanged()
-    self:SaveAttachmentPreset()
 
     -- 恢复被排他配件清空的槽位默认配件（跳过刚卸掉的槽位本身）
     timer.Simple(FrameTime() * 5, function()
@@ -491,7 +515,6 @@ function SWEP:UnEquipAttachment(slot)
                 local key = tostring(i)
                 if key ~= slot and not self.CurrentAttachments[key] and slotData.Default and self:CanAttach(i) then
                     self:EquipAttachment(key, slotData.Default)
-                    PrintTable(self.CurrentAttachments[key])
                 end
             end
         end
@@ -503,13 +526,16 @@ end
 
 function SWEP:BuildCustomizedGun()
     self:SyncAllAttachments()
+    self:ChangeWeaponStats()
 
     local vm = self:GetViewModel()
     local hasVM = IsValid(vm)
     local isActive = hasVM and self:GetOwner() and self:GetOwner():GetActiveWeapon() == self
 
+    self.sight = nil
+    self.underbarrel = nil
 
-    self.m_Sight = nil
+
     local currentSlotKeys = {}
     if CLIENT then
         for slotKey, entry in pairs(self.CurrentAttachments or {}) do
@@ -568,7 +594,9 @@ function SWEP:BuildCustomizedGun()
     end
 
     -- 配件缓存（无论武器是否活跃，都需要更新）
-        self:BuildWeaponModelData()
+    self:BuildWeaponModelData()
+    self:ApplyAttachmentModels()
+    self:GenerateAimOffset()
 
     -- VM 相关操作只在 vm 有效时执行
     if hasVM and vm and self:GetOwner() and isActive then
@@ -580,37 +608,14 @@ function SWEP:BuildCustomizedGun()
 
         self:PrecacheViewModel()
         self:PrepareViewModel()
-        self:ApplyViewModelChange()
-    end
-        self:ApplyAttachmentModels()
-        self:GenerateAimOffset()
-
-    if (CLIENT) then
-        -- TP 模型偏移始终需要计算（挂在武器实体上，不依赖 vm）
-        for slotKey, entry in pairs(self.CurrentAttachments or {}) do
-            if not entry or not entry.Class then continue end
-            local tpModel = entry.m_TpModel
-            if not IsValid(tpModel) then continue end
-
-            local slotData = self.Attachments and self.Attachments[tonumber(slotKey)]
-            local attData = BASE_TRM_ATTS[entry.Class]
-
-            local tpPos = slotData and Vector(slotData.Pos) or Vector(0, 0, 0)
-            local tpAng = slotData and Angle(slotData.Ang) or Angle(0, 0, 0)
-            if attData and attData.Pos and isvector(attData.Pos) then tpPos:Add(attData.Pos) end
-            if attData and attData.Angles and isangle(attData.Angles) then tpAng:Add(attData.Angles) end
-
-            tpModel:SetLocalPos(tpPos)
-            tpModel:SetLocalAngles(tpAng)
-        end
+        self:ApplyWeaponModelChange()
     end
 end
 
 function SWEP:ApplyAttachmentModels()
     if SERVER then return end
     local vm = self:GetViewModel()
-    if not IsValid(vm) then return end
-
+    --if not IsValid(vm) then return end
     for slot, entry in pairs(self.CurrentAttachments) do
         if not entry or not entry.Class then continue end
         local AttachmentData = BASE_TRM_ATTS[entry.Class]
@@ -618,15 +623,15 @@ function SWEP:ApplyAttachmentModels()
         if not AttachmentData.Model then continue end
         local model = entry.m_Model
         local Tpmodel = entry.m_TpModel
-        if not IsValid(model) then continue end
 
         if AttachmentData.Bonemerge then
-            model:SetParent(vm)
-            model:AddEffects(EF_BONEMERGE)
-            model:AddEffects(EF_BONEMERGE_FASTCULL)
-            model:SetLocalPos(Vector(0, 0, 0))
-            model:SetLocalAngles(Angle(0, 0, 0))
-
+            if IsValid(model) then
+                model:SetParent(vm)
+                model:AddEffects(EF_BONEMERGE)
+                model:AddEffects(EF_BONEMERGE_FASTCULL)
+                model:SetLocalPos(Vector(0, 0, 0))
+                model:SetLocalAngles(Angle(0, 0, 0))
+            end
             -- TP 模型（bonemerge）
             if IsValid(Tpmodel) then
                 Tpmodel:SetParent(self)
@@ -639,13 +644,19 @@ function SWEP:ApplyAttachmentModels()
             if not WeaponData.Bone then continue end
             local bone = self:GetBoneData(WeaponData.Bone)
             if not bone then continue end
-            model:FollowBone(bone.Ent, bone.id)
-            model:SetLocalPos(Vector(0, 0, 0))
-            model:SetLocalAngles(Angle(0, 0, 0))
-
+            if IsValid(model) then
+                model:FollowBone(bone.Ent, bone.id)
+                model:SetLocalPos(Vector(0, 0, 0))
+                model:SetLocalAngles(Angle(0, 0, 0))
+            end
             -- TP 模型（骨骼跟随）
             if IsValid(Tpmodel) then
-                local tpbone = self:GetWorldBoneData(WeaponData.Bone)
+                local boneselect = WeaponData.Bone
+                if WeaponData.WorldBone then
+                    boneselect = WeaponData.WorldBone
+                end
+
+                local tpbone = self:GetWorldBoneData(boneselect)
                 if tpbone then
                     Tpmodel:FollowBone(tpbone.Ent, tpbone.id)
                     Tpmodel:SetLocalPos(Vector(0, 0, 0))
@@ -658,16 +669,19 @@ function SWEP:ApplyAttachmentModels()
             local finalAng = WeaponData.Ang and Angle(WeaponData.Ang) or Angle(0, 0, 0)
             if AttachmentData.Pos and isvector(AttachmentData.Pos) then finalPos:Add(AttachmentData.Pos) end
             if AttachmentData.Angles and isangle(AttachmentData.Angles) then finalAng:Add(AttachmentData.Angles) end
-
-            model:SetLocalPos(finalPos)
-            model:SetLocalAngles(finalAng)
+            if IsValid(model) then
+                model:SetLocalPos(finalPos)
+                model:SetLocalAngles(finalAng)
+            end
             if IsValid(Tpmodel) then
                 Tpmodel:SetLocalPos(finalPos)
                 Tpmodel:SetLocalAngles(finalAng)
             end
 
             if AttachmentData.Scale then
-                model:SetModelScale(AttachmentData.Scale)
+                if IsValid(model) then
+                    model:SetModelScale(AttachmentData.Scale)
+                end
                 if IsValid(Tpmodel) then
                     Tpmodel:SetModelScale(AttachmentData.Scale)
                 end
@@ -677,73 +691,41 @@ function SWEP:ApplyAttachmentModels()
 end
 
 function SWEP:GetSight()
-    return self.m_Sight or false
+    return self.sight or false
 end
 
 function SWEP:GenerateAimOffset()
-    if SERVER then return end
-
-    self.m_Sight = nil
+    if (SERVER) then
+        return
+    end
 
     for slot, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
         local AttachmentData = BASE_TRM_ATTS[entry.Class]
         if not AttachmentData or AttachmentData.Model == nil then continue end
 
-        if AttachmentData.Sight != nil then
-            local vm = self:GetViewModel()
-            if not IsValid(vm) then continue end
-
-            vm:InvalidateBoneCache()
-            vm:SetupBones()
-
+        if AttachmentData.Sight then
             local align = self.Attachments[tonumber(slot)]
-            if not align or not align.Bone then continue end
+            if not align then continue end
 
-            local AlignAttachment = self:GetBoneData(align.Bone)
-
-            if AlignAttachment then
-                local model = entry.m_Model
-
-                if not IsValid(model) then continue end
-
-                model:InvalidateBoneCache()
-                model:SetupBones()
-
-                local parent = model:GetParent()
-                if IsValid(parent) then
-                    parent:InvalidateBoneCache()
-                    parent:SetupBones()
-                end
-
-                local Data = AlignAttachment
-                local sightData = model:GetAttachment(model:LookupAttachment(AttachmentData.Sight.Align or "reticle"))
-                if not sightData then continue end
-
-                local localPos, localAng = WorldToLocal(sightData.Pos, Data.Ang, Data.Pos, Data.Ang)
-                localPos.x = 0
-                if AttachmentData.Sight.Pos then
-                    localPos:Add(AttachmentData.Sight.Pos)
-                end
-                if align.SightPos then
-                    localPos:Add(align.SightPos)
-                end
-                model.AimPos = Vector(localPos.x, localPos.y, localPos.z)
-                model.AimAng = align.SightAng or Angle(0, 0, 0)
-                if not self.m_Sight then
-                    self.m_Sight = {
-                        AimPos = model.AimPos,
-                        AimAng = model.AimAng,
-                        AimBoneAng = Angle(Data.Ang),
-                    }
-                end
-
-                entry.m_Model = model
-                model = nil
+            local localPos = Vector(0, 0, 0)
+            if AttachmentData.Sight.Pos then
+                localPos:Add(AttachmentData.Sight.Pos)
             end
+            if align.SightPos then
+                localPos:Add(align.SightPos)
+            end
+            local AimPos = Vector(localPos.x, localPos.y, localPos.z)
+            local AimAng = align.SightAng or Angle(0, 0, 0)
+
+            self.sight = {
+                AimPos = AimPos,
+                AimAng = AimAng,    
+            }
         end
     end
 end
+
 
 --- 服务端：把全部配件同步给客户端（Deploy 时调用）
 function SWEP:SyncAllAttachments()

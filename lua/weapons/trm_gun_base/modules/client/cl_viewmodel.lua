@@ -1,8 +1,8 @@
 ﻿if SERVER then return end
 
-local offsetX = CreateClientConVar("trmbase_vm_offsetX",0,true,true,"ViewModel X Offset", -10, 10)
-local offsetY = CreateClientConVar("trmbase_vm_offsetY",0,true,true,"ViewModel Y Offset", -10, 10)
-local offsetZ = CreateClientConVar("trmbase_vm_offsetZ",0,true,true,"ViewModel Z Offset", -10, 10)
+local offsetX = CreateClientConVar("trmbase_vm_offsetX", 0, true, true, "ViewModel X Offset", -10, 10)
+local offsetY = CreateClientConVar("trmbase_vm_offsetY", 0, true, true, "ViewModel Y Offset", -10, 10)
+local offsetZ = CreateClientConVar("trmbase_vm_offsetZ", 0, true, true, "ViewModel Z Offset", -10, 10)
 local rft = RealFrameTime()
 function SWEP:CustomBob()
     if not CLIENT then
@@ -19,7 +19,7 @@ function SWEP:CustomBob()
 
     -- 移动时累积，停止时衰减
     if speed > 10 and owner:OnGround() then
-        self.Bob_t = (self.Bob_t or 0) + RealFrameTime() * math.min(speed , 200) * 0.05
+        self.Bob_t = (self.Bob_t or 0) + RealFrameTime() * math.min(speed, 200) * 0.05
         -- 不限制范围，让 sin 自然循环
     elseif speed < 10 then
         self.Bob_t = (self.Bob_t or 0) * 0.95 -- 停止时归零
@@ -86,7 +86,7 @@ function SWEP:Sway()
 
     -- ===== 侧向移动滚动 =====
     local sideSpeed = velo:Dot(owner:GetRight())
-    local targetRoll = math.Clamp(sideSpeed * 0.05  , -15, 15)
+    local targetRoll = math.Clamp(sideSpeed * 0.05, -15, 15)
     self.m_SwayAngle.roll = Lerp(ft * 10, self.m_SwayAngle.roll, targetRoll)
     -- ========================
 
@@ -107,15 +107,15 @@ function SWEP:GetClientAimDelta()
     end
 
     local target = self:GetAimDelta() or 0
-    local smoothSpeed = 25 -- 平滑速度，越大越快
+    local smoothSpeed = 50 -- 平滑速度，越大越快
 
     self.m_SmoothAimDelta = self.m_SmoothAimDelta or 0
-    self.m_SmoothAimDelta = Lerp(FrameTime() * smoothSpeed, self.m_SmoothAimDelta, target)
+    self.m_SmoothAimDelta = Lerp(RealFrameTime() * smoothSpeed, self.m_SmoothAimDelta, target)
 
     -- 接近时直接归位避免残留
-    if math.abs(self.m_SmoothAimDelta - target) < 0.01 then
-        self.m_SmoothAimDelta = target
-    end
+    -- if math.abs(self.m_SmoothAimDelta - target) < 0.01 then
+    --     self.m_SmoothAimDelta = target
+    -- end
 
     return self.m_SmoothAimDelta
 end
@@ -221,21 +221,21 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     if not self.m_IdleDelta then self.m_IdleDelta = 1 end
     self.m_IdleDelta = Lerp(RealFrameTime() * 10, self.m_IdleDelta or 0, self:IsInspecting() and 0 or 1) * (1 - aimdelta)
     CachePos = ((self.VMOffset.Idle.Pos.x + GetConVar("trmbase_vm_offsetX"):GetFloat()) * angles:Right() + (self.VMOffset.Idle.Pos.y + GetConVar("trmbase_vm_offsetY"):GetFloat()) * angles:Forward() - (self.VMOffset.Idle.Pos.z + GetConVar("trmbase_vm_offsetZ"):GetFloat()) * angles:Up()) *
-    self.m_IdleDelta
+        self.m_IdleDelta
     CacheAngle = self.VMOffset.Idle.Ang * self.m_IdleDelta
 
     pos:Add(CachePos)
     angles:Add(CacheAngle)
     --Sway
-    CacheAngle, CachePos  = self:Sway()
-    local Pos             = -Vector(angles:Right() * CachePos.x, angles:Forward() * CachePos.y, angles:Up() * CachePos.z) *
-    Lerp(aimdelta, 1, 0.2)
+    CacheAngle, CachePos = self:Sway()
+    local Pos            = -Vector(angles:Right() * CachePos.x, angles:Forward() * CachePos.y, angles:Up() * CachePos.z) *
+        Lerp(aimdelta, 1, 0.2)
     pos:Add(Pos)
     angles:Add(CacheAngle * Lerp(aimdelta, 1, 0.5))
     --Bob
     local BobPos, BobAngle = self:CustomBob()
     local ApplyBobPos = Vector(angles:Right() * BobPos.x, angles:Forward() * BobPos.y, angles:Up() * BobPos.z) *
-    (1 - aimdelta)
+        (1 - aimdelta)
     BobAngle:Mul(1 - aimdelta * 0.8)
     pos:Add(ApplyBobPos)
     angles:Add(BobAngle)
@@ -261,7 +261,7 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     AimOffset = self.Sight.Pos and Vector(self.Sight.Pos) or Vector(0, 0, 0)
     AimOffsetAngle = self.Sight.Ang and Angle(self.Sight.Ang) or Angle(0, 0, 0)
     local applyAimPos = (angles:Right() * AimOffset.x + angles:Forward() * AimOffset.y + angles:Up() * AimOffset.z) *
-    aimdelta
+        aimdelta
     pos:Add(applyAimPos)
     angles:Add(AimOffsetAngle * aimdelta)
 
@@ -270,7 +270,7 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
         local sight = self:GetSight()
         local boneAng = sight.AimBoneAng or angles
         local sightPos = (angles:Right() * sight.AimPos.x + angles:Forward() * sight.AimPos.y + angles:Up() * sight.AimPos.z) *
-        aimdelta
+            aimdelta
         pos:Add(sightPos)
         local applyAng = sight.AimAng * aimdelta
         angles:Add(applyAng)
@@ -317,25 +317,15 @@ function SWEP:ViewModelDrawn(vm)
     if not self.m_NeedsBuild then
         for _, entry in pairs(self.CurrentAttachments or {}) do
             if entry.Class and BASE_TRM_ATTS[entry.Class].Model and not IsValid(entry.m_Model) then
-                self.m_NeedsBuild = true
+                self:BuildCustomizedGun()
                 break
             end
-        end 
+        end
     end
 
-    if self.m_NeedsBuild and self.BuildCustomizedGun then
-        -- print(CurTime())
-        self:BuildCustomizedGun()
-        self.m_NeedsBuild = false
-    end
- 
-    --self:UpdateViewmodelData(vm)
-    if not self.m_LastBuild then
-        self.m_LastBuild = CurTime()
-    elseif CurTime() - self.m_LastBuild > 240 then
-        self.m_LastBuild = CurTime()
-        self.m_NeedsBuild = true
-    end
+
+
+
 
     -- 逐个调用配件的 Render
     for slot, entry in pairs(self.CurrentAttachments or {}) do
@@ -346,11 +336,7 @@ function SWEP:ViewModelDrawn(vm)
             data:Render(self, model)
         end
     end
-
-
 end
-
-
 
 function SWEP:PostDrawViewModel()
 
@@ -359,9 +345,7 @@ end
 function SWEP:PreDrawViewModel(vm)
 end
 
-
-
-local cvar_mdv = CreateClientConVar("trmbase_sight_mdv", 1.33 , true, false, "None Description", 0, 3)
+local cvar_mdv = CreateClientConVar("trmbase_sight_mdv", 1.33, true, false, "None Description", 0, 3)
 local function MDVSensitivity(curFOV, defFOV, mdv)
     -- 限制 mdv 最小值，避免 tan 爆炸
     mdv = math.max(mdv or 1.33, 0.5) -- 最小 0.5
@@ -385,18 +369,18 @@ local function MDVSensitivity(curFOV, defFOV, mdv)
     return math.Clamp(b / a, 0.01, 1)
 end
 local function HasScope(wep)
-    for _ ,entry in pairs(wep.CurrentAttachments or {}) do
+    for _, entry in pairs(wep.CurrentAttachments or {}) do
         local att = BASE_TRM_ATTS[entry.Class]
         if att and att.Scope and att.Scope.Zoom then
             return (BASE_TRM_ATTS[entry.Class].Scope.Zoom or 1)
-        end 
+        end
     end
     return false
 end
 
-function SWEP:AdjustMouseSensitivity(defaultSensitivity, localFOV, _ )
+function SWEP:AdjustMouseSensitivity(defaultSensitivity, localFOV, _)
     local defaultFOV = GetConVar("fov_desired"):GetInt()
-    local currentFOV = localFOV 
+    local currentFOV = localFOV
     local scope = HasScope(self)
     local aim = self:GetAimDelta()
     if scope then

@@ -3,19 +3,7 @@ function SWEP:Holster(weapon)
     if CLIENT then
             if IsValid(TRM_AttachMenu_Instance) then
                 TRM_AttachMenu_Instance:Close()
-            end
-            
-        
-        --self.m_NeedsBuild = true
-        -- if self.CurrentAttachments then
-        --     for _, entry in pairs(self.CurrentAttachments) do
-        --         if entry then
-        --             self:RemoveAttachmentModel(entry)
-        --             self:RemoveAttachmentModel(entry, true)
-        --         end
-        --     end
-        -- end
-        
+            end  
     end
 
 
@@ -31,8 +19,6 @@ function SWEP:Holster(weapon)
 
     if not string.find(self:GetPlayingSequence(),"Holster")   then
         self:TrySetTask("Holster")
-        self:SetNextAnimationTime(0)
-
     end
 
     return  self:GetCanSwitch() or not weapon:IsWeapon() or( weapon:GetOwner() == NULL) 

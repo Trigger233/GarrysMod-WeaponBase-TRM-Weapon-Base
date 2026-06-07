@@ -2039,10 +2039,8 @@ net.Receive("TRMBase_SyncAttachment", function()
         wep.CurrentAttachments[slot] = { Class = attClass }
     end
 
-    if wep.BuildCustomizedGun then
-        wep:BuildCustomizedGun()
-    end
-    wep.m_NeedsBuild = true
+    wep:BuildCustomizedGun()
+
 
     if IsValid(TRM_AttachMenu_Instance) then
         TRM_AttachMenu_Instance:RefreshAll()
@@ -2062,10 +2060,7 @@ net.Receive("TRMBase_SyncAllAttachments", function()
         wep.CurrentAttachments[slot] = { Class = attClass }
     end
 
-    if wep.BuildCustomizedGun then
-        wep:BuildCustomizedGun()
-    end
-    wep.m_NeedsBuild = true
+    wep:BuildCustomizedGun()
 
     if IsValid(TRM_AttachMenu_Instance) then
         TRM_AttachMenu_Instance:RefreshAll()

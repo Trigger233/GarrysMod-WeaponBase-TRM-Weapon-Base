@@ -7,7 +7,7 @@ ATTACHMENT.Model = Model("models/trm_attachments/optic/a_optic_elcan.mdl")
 ATTACHMENT.Angles = Angle(-180, 180, 180)
 
 ATTACHMENT.Sight = {
-    Pos = Vector(0, -0, -1.8),
+    Pos = Vector(0, -0, 0.1),
     Align = "scope_origin",
     Material = Material("models/weapons/tfa_ins2/optics/elcan_reticule"),
     Size = 360,

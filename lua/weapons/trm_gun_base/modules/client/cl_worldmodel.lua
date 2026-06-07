@@ -20,11 +20,6 @@ end
 -- DrawWorldModel — 每帧由引擎调用
 -- =============================================
 function SWEP:RenderOverride(flags)
-    
-    if self.m_NeedsBuild and self.BuildCustomizedGun then
-        self:BuildCustomizedGun()
-        self.m_NeedsBuild = false
-    end
 
     local off = self.WorldModelOffsets
     local owner = self:GetOwner()
@@ -57,14 +52,12 @@ function SWEP:RenderOverride(flags)
         end
     end
 
-    self:SetupBones()
     self:DrawModel(flags)
 
     if self.CurrentAttachments then
         for _, entry in pairs(self.CurrentAttachments) do
             local att = BASE_TRM_ATTS[entry.Class]
-            if IsValid(entry.m_TpModel) and att.Render then
-                entry.m_TpModel:InvalidateBoneCache()
+            if IsValid(entry.m_TpModel) and att.Render and  ( att.Bonemerge or self:GetOwner() )then
                 entry.m_TpModel:SetupBones()
                 att:Render(self,entry.m_TpModel)
             end

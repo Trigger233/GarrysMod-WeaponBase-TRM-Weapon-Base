@@ -162,6 +162,15 @@ function SWEP:FireProjectile()
 		aimDir = dir:Forward() * length
 	end
 
+	if owner:IsNPC() and IsValid(owner:GetEnemy()) then
+		local DirLength = aimDir:Length()
+		local Ang = aimDir:Angle()
+		local additive = self:Primary_NPC_ProjectileCalc(owner, owner:GetEnemy())
+		--print(additive)
+		Ang:Add(additive)
+		aimDir = Ang:Forward() * DirLength
+	end
+
 
 	local spreadScale = self:GetCurrentSpread()
 	local spreadVec = Vector(
@@ -399,6 +408,7 @@ function SWEP:DoCameraRecoil()
 	self.m_RecoilDelta = self.m_RecoilDelta + current.pitch
 	self:SetRecoil(Angle(0, 0, 0))
 	local t = math.Clamp((CurTime() - nextRecoil) / delay, 0, 1)
+
 	if isFiring then
 		-- 射击时：应用后坐力，然后用玩家压枪输入抵消
 		NextAngle = self.m_RecoilSum * stat.Factor
@@ -416,6 +426,7 @@ function SWEP:DoCameraRecoil()
 			self.m_RecoilSum = Angle(0, 0, 0)
 		end
 	end
+
 	eyeAngles:Add(NextAngle)
 	owner:SetEyeAngles(eyeAngles)
 

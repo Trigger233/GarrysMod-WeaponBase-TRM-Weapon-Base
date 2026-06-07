@@ -37,8 +37,6 @@ local function ApplyAttachmentTable(weapon, data)
         end
     end
 
-    if weapon.SyncAllAttachments then weapon:SyncAllAttachments() end
-    if weapon.ChangeWeaponStats then weapon:ChangeWeaponStats() end
     if weapon.BuildCustomizedGun then weapon:BuildCustomizedGun() end
 
     return true
@@ -55,7 +53,7 @@ function SWEP:EquipDefaultAttachments()
         end
     end
 
-    self:ChangeWeaponStats()
+    self:OnAttachmentChanged()
 end
 
 function SWEP:SaveAttachmentPreset()

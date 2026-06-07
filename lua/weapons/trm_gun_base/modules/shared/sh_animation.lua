@@ -148,11 +148,6 @@ function SWEP:ApplySpecialAnimationStat(vm, sequenceClass, duration, animData)
         vm:SetPlaybackRate(AdsSpeed)
     end
 
-    if string.find(sequenceClass,"Rechamber") then
-        local delay = 60 / self.Primary.RPM 
-        self:SetNextAnimationTime(CurTime() + delay)
-        self:SetNextFireTime(delay)
-    end
 end
 
 function SWEP:ChooseAnim(animationClass)

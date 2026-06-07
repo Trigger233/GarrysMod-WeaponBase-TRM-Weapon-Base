@@ -130,7 +130,7 @@ function changeBodyGroup(model, submodel, sub)
     --print("change")
 end
 
-function SWEP:ApplyViewModelChange()
+function SWEP:ApplyWeaponModelChange()
     local vm = self:GetViewModel()
     if not IsValid(vm) or not self:IsPlyCarry() then return false end
     local viewmodel = self.m_ViewmodelCache or self.ViewModel
@@ -403,7 +403,6 @@ end
 function SWEP:OnAttachmentChanged()
     self:ChangeWeaponStats()
     self:BuildCustomizedGun()
-    self:SaveAttachmentPreset()
 end
 
 -- 统一移除配件模型，调用 attData:Remove 扩展钩子
@@ -426,10 +425,7 @@ end
 function SWEP:EquipAttachment(slot, attClass)
     -- 检查此槽位是否被排除（防止绕过 VGUI 直接发 net 消息）
     local slotIndex = tonumber(slot)
-    if slotIndex and not self:CanAttach(slotIndex) then
-        print("[TRMBase] Slot", slot, "is excluded, cannot equip", attClass)
-        return
-    end
+
 
     local attData = BASE_TRM_ATTS[attClass]
     if attData then
@@ -437,37 +433,17 @@ function SWEP:EquipAttachment(slot, attClass)
 
         -- 装完后检查其他槽是否因此被排除，如有则自动卸掉
 
-        local removedSlots = {}
         for i = 1, #(self.Attachments or {}) do
             local key = tostring(i)
             if key ~= slot and self.CurrentAttachments[key] and self.CurrentAttachments[key].Class and not self:CanAttach(i) then
-                self:RemoveAttachmentModel(self.CurrentAttachments[key])
-                removedSlots[#removedSlots + 1] = key
-                self.CurrentAttachments[key] = nil
+                self:UnEquipAttachment(i)
             end
         end
 
-        -- 发送主配件的同步消息
-        net.Start("TRMBase_SyncAttachment")
-        net.WriteEntity(self)
-        net.WriteString(slot)
-        net.WriteString(attClass)
-        net.Broadcast()
-
-        -- 同时发送被自动卸载的槽位同步（告诉客户端这些槽已清空）
-        for _, removedKey in ipairs(removedSlots) do
-            net.Start("TRMBase_SyncAttachment")
-            net.WriteEntity(self)
-            net.WriteString(removedKey)
-            net.WriteString("None")
-            net.Broadcast()
-        end
     end
-    self:RefreshAttTable()
 
     self:OnAttachmentChanged()
 
-    --print("Equipped:", slot, attClass)
 end
 
 function SWEP:UnEquipAttachment(slot)
@@ -491,16 +467,14 @@ function SWEP:UnEquipAttachment(slot)
     net.Broadcast()
 
     self:OnAttachmentChanged()
-    self:SaveAttachmentPreset()
 
     -- 恢复被排他配件清空的槽位默认配件（跳过刚卸掉的槽位本身）
     timer.Simple(FrameTime() * 5, function()
         if SERVER then
             for i, slotData in ipairs(self.Attachments or {}) do
                 local key = tostring(i)
-                if key ~= slot and not self.CurrentAttachments[key] and slotData.Default and self:CanAttach(i) then
+                if key ~= slot and not self.CurrentAttachments[key] and( slotData.Default or self:CanAttach(i) )then
                     self:EquipAttachment(key, slotData.Default)
-                    PrintTable(self.CurrentAttachments[key])
                 end
             end
         end
@@ -582,7 +556,7 @@ function SWEP:BuildCustomizedGun()
         self:PrecacheViewModel()
 
         self:PrepareViewModel()
-        self:ApplyViewModelChange()
+        self:ApplyWeaponModelChange()
         self:BuildViewModelData()
         self:ApplyAttachmentModels()
         self:GenerateAimOffset()

@@ -27,7 +27,7 @@ function SWEP:DoMuzzleEffect()
     --PrintTable(att )
     local vm = self:GetViewModel()
 
-    effect:SetColor(255,255,255,255) 
+    effect:SetColor(255) 
     effect:SetOrigin(data.Pos)
     effect:SetAngles(data.Ang)
     effect:SetEntity(data.Ent)

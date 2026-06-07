@@ -32,6 +32,8 @@ function task_charge:Think(cycle, weapon)
         end
         if stat.Type == "Hold" and not owner:KeyDown(IN_ATTACK) then
             weapon:TrySetTask("Idle")
+        elseif stat.Type == "Release" and owner:KeyDown(IN_ATTACK) then
+
         else
             weapon:SetNextAnimationTime(0)
             weapon:TrySetTask("PrimaryFire")

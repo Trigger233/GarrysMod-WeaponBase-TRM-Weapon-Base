@@ -12,12 +12,6 @@ function SWEP:AimIn()
         end
         self.m_Aiming = true
     end
-    local seq = self.m_CurrentSequence or self:GetPlayingSequence()
-    if seq == "Idle" and self.Animations.Iron_Idle then
-        self:PlayAnimation("Iron_Idle")
-    elseif seq == "Idle_Empty" and self.Animations.Iron_Idle_Empty then
-        self:PlayAnimation("Iron_Idle_Empty")
-    end
 end
 
 function SWEP:AimOut()
@@ -27,13 +21,6 @@ function SWEP:AimOut()
             self:TrySetTask("AdsOut")
         end
         self.m_Aiming = false
-    end
-
-    local seq = self.m_CurrentSequence or self:GetPlayingSequence()
-    if seq == "Iron_Idle" and self.Animations.Idle then
-        self:PlayAnimation("Idle")
-    elseif seq == "Iron_Idle_Empty" and self.Animations.Idle_Empty then
-        self:PlayAnimation("Idle_Empty")
     end
 end
 

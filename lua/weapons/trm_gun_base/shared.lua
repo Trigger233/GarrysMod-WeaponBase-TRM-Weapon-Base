@@ -470,9 +470,6 @@ function SWEP:Initialize()
     self.m_SprintPose = 0
 
 
-    if self.GetOriginStat then self:GetOriginStat() end
-    if self.ChangeWeaponStats then self:ChangeWeaponStats() end
-    --self:SpreadInit()
     self.m_MoveSpeed = self.MoveSpeed
     self.m_Spread = self.Spread.Base
 
@@ -507,23 +504,6 @@ function SWEP:Initialize()
 
     self:EquipDefaultAttachments()
 
-
-
-    -- 地面/NPC 武器延后广播，确保客户端实体已就绪
-    if SERVER then
-        timer.Simple(FrameTime() * 10, function()
-            if not IsValid(self) then return end
-            --从 JSON 恢复保存的配件（覆盖默认值）
-            if SERVER and self.LoadAttachmentPreset and self:GetOwner() ~= NULL and self:GetOwner():IsPlayer() then
-                self:LoadAttachmentPreset()
-            end
-            self:SyncAllAttachments()
-        end)
-    end
-
-    self:GetOriginStat()
-    self:ChangeWeaponStats()
-    self:SpreadInit()
     self:BuildCustomizedGun()
     self:SetClip1(self.Primary.ClipSize)
     self:SetClip2(self.Secondary.ClipSize)
@@ -544,10 +524,7 @@ function SWEP:Equip()
     if cvar_attachment:GetBool() then
         self:LoadAttachmentPreset()
     end
-
-    self:OnAttachmentChanged()
-    self:SyncAllAttachments()
-
+    self:BuildCustomizedGun()
     -- 先加载保存的配件配置
 end
 
@@ -557,6 +534,7 @@ function SWEP:Deploy()
     self:TrySetTask("Deploy")
     self:BuildCustomizedGun()
     self:SetCanSwitch(false)
+    return true
 end
 
 -- 读档后恢复配件数据
@@ -579,17 +557,6 @@ function SWEP:OnDrop(owner)
 end
 
 function SWEP:OnReloaded()
-    if self.GetOriginStat then self:GetOriginStat() end
-    if self.ChangeWeaponStats then self:ChangeWeaponStats() end
-    if self.SpreadInit then self:SpreadInit() end
-    if self.BuildCustomizedGun then self:BuildCustomizedGun() end
-
-    -- 确保客户端一定有同步（LoadAttachmentPreset 内部同步可能因没有文件而跳过）
-    if SERVER and self.SyncAllAttachments then
-        self:SyncAllAttachments()
-    end
-
-
     -- 只在客户端执行热加载
     if not CLIENT then
         IncludeClientFiles()
@@ -597,24 +564,22 @@ function SWEP:OnReloaded()
     -- 重新包含所有客户端文件
 
     IncludeTaskFiles()
+    self:BuildCustomizedGun()
 end
 
 function SWEP:OnRestore()
     timer.Simple(FrameTime() * 5, function()
         self:OnReloaded()
         self:EquipDefaultAttachments()
-        --self:SpreadInit()
         self:TrySetTask("Idle")
         if SERVER and cvar_attachment:GetBool() then
             -- 先加载保存的配件配置
             self:LoadAttachmentPreset()
         end
 
-        self:SyncAllAttachments()
 
         self:BuildCustomizedGun()
 
-        self:ChangeWeaponStats()
         self:SetNextRecoil(0)
     end)
 end
@@ -750,5 +715,5 @@ function SWEP:ShouldDropOnDie(arguments)
 end
 
 function SWEP:OnDrop(owner)
-    self:SyncAllAttachments()
+    self:BuildCustomizedGun()
 end

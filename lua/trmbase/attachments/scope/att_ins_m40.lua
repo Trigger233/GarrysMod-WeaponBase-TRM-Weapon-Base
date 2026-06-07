@@ -4,10 +4,10 @@ ATTACHMENT.Base = "att_scope"
 ATTACHMENT.Selectable = true
 ATTACHMENT.Model = Model("models/trm_attachments/optic/a_optic_m40.mdl")
 ATTACHMENT.Angles = Angle(-180, 180, 180)
-ATTACHMENT.Pos = Vector(1, 0, 0)
+ATTACHMENT.Pos = Vector(0, 0, 0)
 
 ATTACHMENT.Sight = {
-    Pos = Vector(0, 4, -0.0),
+    Pos = Vector(0, 4, 1.0),
     Align = "scope_origin",
     Size = 360,
     Color = Color(255, 255, 255) ,

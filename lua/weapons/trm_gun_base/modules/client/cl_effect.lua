@@ -1,4 +1,3 @@
-if not CLIENT then return end
 local tracerName = "Tracer"
 local Tracerscale = 5000
 local tracerStart
@@ -32,5 +31,8 @@ function SWEP:GetMuzzlePos()
     if not muzzle then
         muzzle = self:GetWorldAttachmentData()
     end
+    -- if not muzzle then
+    --     return false
+    -- end
     return muzzle.Pos or false
 end
