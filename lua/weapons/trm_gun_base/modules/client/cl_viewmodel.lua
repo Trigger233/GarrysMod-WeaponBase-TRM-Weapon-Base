@@ -311,9 +311,7 @@ function SWEP:ViewModelDrawn(vm)
 
     vm:InvalidateBoneCache()
     vm:SetupBones()
-    --self:ApplyAttachmentModels()
 
-    -- 检测配件模型是否缺失（换关后 ClientsideModel 被销毁需要重建）
     if not self.m_NeedsBuild then
         for _, entry in pairs(self.CurrentAttachments or {}) do
             if entry.Class and BASE_TRM_ATTS[entry.Class].Model and not IsValid(entry.m_Model) then
@@ -339,7 +337,6 @@ function SWEP:ViewModelDrawn(vm)
 end
 
 function SWEP:PostDrawViewModel()
-
 end
 
 function SWEP:PreDrawViewModel(vm)

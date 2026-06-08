@@ -12,6 +12,7 @@ ENT.Range = 150  -- 无衰减范围（单位内满伤）
 ENT.Radius = 250 -- 最大影响范围
 ENT.SafeyTimer = 0.2
 --Trail
+ENT.Damage = 200
 ENT.TrailColor = Color(255, 255, 255)
 function ENT:Initialize()
     self:SetModel(self.Model)
@@ -35,8 +36,7 @@ function ENT:Explode()
     local pos = self:GetPos()
     local owner = self:GetOwner()
     local radius = self.Radius or 200
-    local damage = self:GetDamage()
-
+    local damage = self.Damage
     -- 创建爆炸实体（主要用来产生特效和冲击）
     local explosion = ents.Create("env_explosion")
     if IsValid(explosion) then
@@ -148,7 +148,7 @@ function ENT:CollisionDamage(data, phys)
             damage = 0
         end
         local dmginfo = DamageInfo()
-        dmginfo:SetAttacker(IsValid(owner) and owner or self)
+        dmginfo:SetAttacker(self:GetAttacker())
         dmginfo:SetInflictor(self)
         dmginfo:SetDamage(damage)
         dmginfo:SetDamageForce(phys:GetVelocity():GetNormalized() * damage * 200)
@@ -160,7 +160,6 @@ function ENT:CollisionDamage(data, phys)
         -- 播放撞击音效
         self:EmitSound("weapons/bullet_impact.wav", 65, math.random(90, 110))
 
-        return -- 不爆炸
     end
 end
 
@@ -196,3 +195,10 @@ function ENT:GetDamage()
     return 50
 end
 
+function ENT:GetAttacker()
+    local owner = self:GetOwner()    
+    while IsValid(owner) and IsValid(owner:GetOwner()) do
+        owner = owner:GetOwner()
+    end
+    return owner 
+end

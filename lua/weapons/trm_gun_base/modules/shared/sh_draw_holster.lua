@@ -21,7 +21,7 @@ function SWEP:Holster(weapon)
         self:TrySetTask("Holster")
     end
 
-    return  self:GetCanSwitch() or not weapon:IsWeapon() or( weapon:GetOwner() == NULL) 
+    return self:GetCanSwitch() or not weapon:IsWeapon() or( weapon:GetOwner() == NULL)  
 end
 
 concommand.Add("trmbase_debug_reset_firstdeployed",function(ply)

@@ -65,7 +65,7 @@ end
 function SWEP:MagzineLoaded()
 	local owner = self:GetOwner()
 	if not owner or not owner:IsPlayer() then
-		self:SetClip1(self.Primary.Clipsize)
+		self:SetClip1(self:GetMaxClip1()) 
 		return
 	end
 	local reserveAmmo = owner:GetAmmoCount(self:GetPrimaryAmmoType())
@@ -137,11 +137,13 @@ function SWEP:Unload()
 	local owner = self:GetOwner()
 	if not SERVER then return end
 	if owner:IsPlayer() then
-		owner:GiveAmmo(self:Clip1(), self:GetPrimaryAmmoType())
+		owner:GiveAmmo(self:Clip1(), self:GetPrimaryAmmoType(),true)
 		self:SetClip1(0)
+		owner:GiveAmmo(self:Clip1(), self:GetSecondaryAmmoType(),true)
+		self:SetClip2(0)
 	end
 end
-
+ 
 function SWEP:MagzineLoaded2()
 	local owner = self:GetOwner()
 	if not owner or not owner:IsPlayer() then

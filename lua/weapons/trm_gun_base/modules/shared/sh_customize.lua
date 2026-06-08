@@ -211,7 +211,7 @@ function SWEP:ChangeWeaponStats()
 
     for _, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
-        if  BASE_TRM_ATTS[entry.Class].ChangeWeaponStats then
+        if BASE_TRM_ATTS[entry.Class].ChangeWeaponStats then
             BASE_TRM_ATTS[entry.Class]:ChangeWeaponStats(self)
         end
         if BASE_TRM_ATTS[entry.Class].Stats then
@@ -235,10 +235,10 @@ function SWEP:ChangeWeaponStats()
         end
         if self:Clip2() > self.Secondary.ClipSize then
             self:SetClip2(self.Secondary.ClipSize)
+            self:MagzineLoaded2()
         end
-        self:MagzineLoaded2()
         --self:MagzineLoaded()
-        self:SetSpread(self.Spread.Base)
+        self:SetSpread(self.Spread.Base)    
         self:SetSpreadVertical(self.Spread.Vertical)
         self:SetSpreadHorizonal(self.Spread.Horizontal)
     end
@@ -341,13 +341,19 @@ function SWEP:BuildBonesData(_table, model)
 end
 
 function SWEP:BuildWeaponModelData()
-    local vm = self:GetViewModel()
+    -- -- 更新频率控制（每秒 10 次）
+    -- if self.m_NextBuildTime and CurTime() < self.m_NextBuildTime then
+    --     return
+    -- end
+    -- self.m_NextBuildTime = CurTime() + FrameTime() -- 0.1 秒更新一次
 
+    local vm = self:GetViewModel()
     -- Attachment 数据
-    self.m_Attachment = { "table" }
-    self.m_Bone = { "table" }
-    self.wm_Attachment = { "table" }
-    self.wm_Bone = { "table" }
+
+    self.m_Attachment = {}
+    self.m_Bone = {}
+    self.wm_Attachment = {}
+    self.wm_Bone = {}
     if IsValid(vm) then
         self:BuildAttachmentsData(self.m_Attachment, vm)
         self:BuildBonesData(self.m_Bone, vm)
@@ -358,49 +364,21 @@ function SWEP:BuildWeaponModelData()
 
     -- 配件模型的 Attachments（只有 Bonemerge 模式的配件才需要）
     if (CLIENT) then
-        for _, entry in pairs(self.CurrentAttachments) do
-            local model = entry.m_Model
-            if not IsValid(model) then continue end
+        if IsValid(vm) then
+            for _, model in pairs(vm:GetChildren()) do
+                self:BuildAttachmentsData(self.m_Attachment, model)
+                self:BuildBonesData(self.m_Bone, model)
+            end
+        end
 
-            local attID = entry.Class
-            if not attID then continue end
-            local attData = BASE_TRM_ATTS[attID]
-            if not attData or not attData.Bonemerge then continue end -- 只处理 Bonemerge 配件
-            self:BuildAttachmentsData(self.m_Attachment, model)
-            self:BuildBonesData(self.m_Bone, model)
-            model = entry.m_TpModel
+        for _, model in pairs(self:GetChildren()) do
             self:BuildAttachmentsData(self.wm_Attachment, model)
             self:BuildBonesData(self.wm_Bone, model)
         end
     end
-    -- if CurTime() - (self.lastdebug or 0) > 10 and GetConVar("developer"):GetInt() == 1 then
-    --     PrintTable(self.m_Bone)
-    --     self.lastdebug = CurTime()
-    -- end
-end
-
-function SWEP:RefreshVMAttachment(name)
-    local cache = self.m_Attachment[name]
-    if not cache or (CurTime() - cache.LastUpdate < (FrameTime() * 1)) then return false end
-    local ref = cache.Ent:GetAttachment(cache.id)
-    cache.Pos = ref.Pos
-    cache.Ang = ref.Ang
-    cache.LastUpdate = CurTime()
-    self.m_Attachment[name] = cache
-end
-
-function SWEP:RefreshWMAttachment(name)
-    local cache = self.wm_Attachment[name]
-    if not cache or (CurTime() - cache.LastUpdate < (FrameTime() * 1)) then return false end
-    local ref = cache.Ent:GetAttachment(cache.id)
-    cache.Pos = ref.Pos
-    cache.Ang = ref.Ang
-    cache.LastUpdate = CurTime()
-    self.wm_Attachment[name] = cache
 end
 
 function SWEP:GetAttachmentData(name)
-    self:RefreshVMAttachment(name)
     return self.m_Attachment[name] or false
 end
 
@@ -533,7 +511,6 @@ function SWEP:UnEquipAttachment(slot)
     --print("Unequipped:", slot, self.CurrentAttachments[slot] or "None")
 end
 
-
 function SWEP:ApplyAttachmentModels()
     if SERVER then return end
     local vm = self:GetViewModel()
@@ -642,7 +619,7 @@ function SWEP:GenerateAimOffset()
 
             self.sight = {
                 AimPos = AimPos,
-                AimAng = AimAng,    
+                AimAng = AimAng,
             }
         end
     end
@@ -774,4 +751,5 @@ function SWEP:BuildCustomizedGun()
         self:PrepareViewModel()
         self:ApplyWeaponModelChange()
     end
+    self:TrySetTask("Idle")
 end

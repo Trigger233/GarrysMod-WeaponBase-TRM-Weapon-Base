@@ -58,6 +58,7 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
     end
 
 
+
     
 end)
 

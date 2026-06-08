@@ -47,6 +47,7 @@ function task_idle:CanBeSet(wep)
 end
 
 function task_idle:OnSet(wep)
+    wep:PlayAnimation(wep:ChooseAnim("UnderBarrel"), false)
 end
 
 function task_idle:Think(cycle, wep)

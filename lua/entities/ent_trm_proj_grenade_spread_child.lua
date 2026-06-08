@@ -38,7 +38,7 @@ function ENT:Explode()
     for _, target in ipairs(targets) do
         if IsValid(target) and (target:IsNPC() or target:IsPlayer()) then
             local distance = target:GetPos():Distance(pos)
-            local damage = owner.Primary.Damage * (1 - distance / self.Radius)
+            local damage = self:GetDamage() * (1 - distance / self.Radius)
 
             local dmginfo = DamageInfo()
             dmginfo:SetAttacker(IsValid(owner) and owner or self)

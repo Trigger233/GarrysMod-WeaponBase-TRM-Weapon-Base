@@ -17,25 +17,33 @@ function SWEP:FireModeStat(index)
     end
 end
 
-local function defmode(w)
+local function defmode(w, mode)
     local defName
-    if w.Primary.Burst then
-        defName = (w.Primary.BrustNum or 3) .. "Round Brust"
-    elseif not w.Primary.BoltAction then
-        defName = w.Primary.Automatic and "FullAuto" or "SemiAuto"
+    if w[mode].Burst then
+        defName = (w[mode].BrustNum or 3) .. "Round Burst"
+    elseif not w[mode].BoltAction then
+        defName = w[mode].Automatic and "FullAuto" or "SemiAuto"
     else
         defName = "Bolt-Action"
     end
     return defName
 end
-function SWEP:GetFiremodeName()
-    local index = self:GetFiremodeIndex()
-    local def = defmode(self)
-    local stat = self.Firemode and self.Firemode[index] and self.Firemode[index].Name or false
-    local name = stat or def
-    return name
-end
 
+function SWEP:GetFiremodeName()
+    -- 如果是下挂模式
+    if self:GetUnderBarrel() then
+        return ("UnderBarrel-".. defmode(self, "Secondary"))
+    end
+
+    -- 正常主武器模式
+    local index = self:GetFiremodeIndex()
+    local stat = self.Firemode and self.Firemode[index] and self.Firemode[index].Name or false
+    if stat then
+        return stat
+    end
+
+    return defmode(self, "Primary")
+end
 concommand.Add("+trmbase_cycle_firemode", function(ply)
     local weapon = ply:GetActiveWeapon()
     if not util.IsTRMBase(weapon) or not IsValid(weapon) then return end

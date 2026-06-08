@@ -23,7 +23,7 @@ else
 end
 function SWEP:DoFireSound()
 	if self.Reverb then
-		self:HandleReverb(self.Reverb) 
+		self:HandleReverb(self.Reverb)
 	end
 	local slience = self.Slienced and true or false
 	if slience and self.Primary.SliencedSound then
@@ -37,19 +37,16 @@ function SWEP:DoFireSound()
 end
 
 function SWEP:FirePrimaryBullet()
-	if CLIENT then
-		-- 枪焰：总是播（确保每次开火都有）
-		self:DoMuzzleEffect()
-		-- 弹壳：只在预测帧播（防重复）
-		if self.Effects.Shell.Primary and IsFirstTimePredicted() then
-			self:DoShell()
-		end
-	elseif SERVER && game.SinglePlayer() then
-		self:CallOnClient("ShootEffects")
+	if (not IsFirstTimePredicted()) then return end
+	if game.SinglePlayer() and CLIENT then
+		self:MuzzleEffects()
+	else
+		self:CallOnClient("MuzzleEffects")
 	end
 
-	if (not IsFirstTimePredicted()) then return end
-
+	if self.Effects.Shell.Primary then
+		self:DoShell()
+	end
 
 	local owner = self:GetOwner()
 	local eyeAng = owner:EyeAngles()
@@ -165,7 +162,7 @@ function SWEP:FireProjectile()
 	if owner:IsNPC() and IsValid(owner:GetEnemy()) then
 		local DirLength = aimDir:Length()
 		local Ang = aimDir:Angle()
-		local additive = self:NPC_ProjectileCalc(owner, owner:GetEnemy(),self.Primary.Velocity)
+		local additive = self:NPC_ProjectileCalc(owner, owner:GetEnemy(), self.Primary.Velocity)
 		--print(additive)
 		Ang:Add(additive)
 		aimDir = Ang:Forward() * DirLength
@@ -187,9 +184,9 @@ function SWEP:FireProjectile()
 		proj:Spawn()
 		proj:SetOwner(self)
 		local phys = proj:GetPhysicsObject()
-		
 
-		if IsValid(phys) then 
+
+		if IsValid(phys) then
 			phys:Wake()
 			phys:SetVelocity(aimDir * self.Primary.Velocity + owner:GetVelocity())
 		end
@@ -199,7 +196,7 @@ function SWEP:FireProjectile()
 	self:DoVisualRecoil()
 	self:DoRecoil()
 	self:DoSpread()
-	self:SetLastFireTime(CurTime())	
+	self:SetLastFireTime(CurTime())
 	self:SetClip1(self:Clip1() - 1)
 
 	if self.Primary.BoltAction and self.Animations.Rechamber then
@@ -209,6 +206,7 @@ function SWEP:FireProjectile()
 	end
 	self:TrySetTask("Idle")
 end
+
 function SWEP:DoImpactEffect(tr, dmgType)
 	self:CallOnClient("DoImpactEffect")
 

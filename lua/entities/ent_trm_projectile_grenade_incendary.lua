@@ -3,6 +3,7 @@ AddCSLuaFile()
 ENT.Name = "Incendary Grenade"
 ENT.Base = "ent_trm_projectile_grenade"
 ENT.Timer = 10
+ENT.Damage = 20
 ENT.TrailColor = Color(255,0,0)
 DEFINE_BASECLASS(ENT.Base)
 
@@ -56,7 +57,7 @@ function ENT:DoDamage()
         local dmginfo = DamageInfo()
         dmginfo:SetAttacker(self:GetOwner() or self)
         dmginfo:SetInflictor(self)
-        dmginfo:SetDamage(owner.Primary.Damage * 0.1 )
+        dmginfo:SetDamage(self.Damage * 0.1)
         dmginfo:SetDamageType(DMG_BURN)
         target:TakeDamageInfo(dmginfo)
         target:Ignite(1,3)
