@@ -311,20 +311,7 @@ function SWEP:ViewModelDrawn(vm)
 
     vm:InvalidateBoneCache()
     vm:SetupBones()
-
-    if not self.m_NeedsBuild then
-        for _, entry in pairs(self.CurrentAttachments or {}) do
-            if entry.Class and BASE_TRM_ATTS[entry.Class].Model and not IsValid(entry.m_Model) then
-                self:BuildCustomizedGun()
-                break
-            end
-        end
-    end
-
-
-
-
-
+    self:BuildAttachmentsData(vm)
     -- 逐个调用配件的 Render
     for slot, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
