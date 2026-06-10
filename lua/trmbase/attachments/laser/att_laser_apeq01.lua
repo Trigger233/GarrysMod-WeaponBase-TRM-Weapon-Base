@@ -10,3 +10,7 @@ ATTACHMENT.Laser = {
     Width = 1 , 
     DotSize = 4 ,
 }
+
+ATTACHMENT.FlashLight = {
+    
+}

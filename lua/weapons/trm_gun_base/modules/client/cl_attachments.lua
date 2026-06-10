@@ -1123,6 +1123,7 @@ function PANEL:CreatePreviewModel(model, ent, slot, attData)
     model:SetNotSolid(true)
     model:SetMoveType(MOVETYPE_NONE)
     model:SetOwner(ent)
+    model:AddEffects(EF_PARENT_ANIMATES)
 
     if attData and attData.Scale then
         model:SetModelScale(attData.Scale)
@@ -2049,7 +2050,7 @@ end)
 
 net.Receive("TRMBase_SyncAllAttachments", function()
     local wep = net.ReadEntity()
-    if not IsValid(wep) then return end
+    if not IsValid(wep) then return end 
 
     local count = net.ReadUInt(8)
     wep.CurrentAttachments = wep.CurrentAttachments or {}
@@ -2059,9 +2060,9 @@ net.Receive("TRMBase_SyncAllAttachments", function()
         local attClass = net.ReadString()
         wep.CurrentAttachments[slot] = { Class = attClass }
     end
-
-    wep:BuildCustomizedGun()
-
+    if wep.BuildCustomizedGun then
+        wep:BuildCustomizedGun()
+    end
     if IsValid(TRM_AttachMenu_Instance) then
         TRM_AttachMenu_Instance:RefreshAll()
     end

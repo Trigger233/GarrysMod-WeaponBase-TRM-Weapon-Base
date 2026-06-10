@@ -14,8 +14,8 @@ end
 function task:Think(cycle, weapon)
     local seq = weapon:GetPlayingSequence()
     if string.find(seq, "Holster") and weapon:GetNextPrimaryFire() < CurTime() or weapon.AltSwitch then
+        weapon:SetCanSwitch(true)
         if IsValid(weapon:GetNextWeapon()) then
-            weapon:SetCanSwitch(true)
             if CLIENT and IsFirstTimePredicted() then
                 input.SelectWeapon(weapon:GetNextWeapon())
             elseif SERVER then
@@ -24,9 +24,9 @@ function task:Think(cycle, weapon)
                     ow:SendLua("input.SelectWeapon(Entity(" .. weapon:GetNextWeapon():EntIndex() .. "))")
                 end
             end
+            --weapon:Holster(weapon:GetNextWeapon())
         end
-        weapon:TrySetTask("Idle")
-        return true
+        return false
     end
 end
 

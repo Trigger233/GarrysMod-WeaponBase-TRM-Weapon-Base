@@ -10,7 +10,7 @@ local function GetHandBonePosAng(ply)
     if not IsValid(ply) then return nil, nil end
     local bone = ply:LookupBone("ValveBiped.Bip01_R_Hand")
     if not bone or bone <= 0 then
-        bone = ply:LookupBone("RightHand")
+        bone = ply:LookupBone("R Hand")
     end
     if not bone or bone <= 0 then return nil, nil end
     return ply:GetBonePosition(bone)
@@ -25,22 +25,14 @@ function SWEP:RenderOverride(flags)
     local owner = self:GetOwner()
     self:DrawModel(flags)
 
-    if self.CurrentAttachments then
-        for _, entry in pairs(self.CurrentAttachments) do
-            local att = BASE_TRM_ATTS[entry.Class]
-            if IsValid(entry.m_TpModel) and att.Render and  ( att.Bonemerge or self:GetOwner() )then
-                entry.m_TpModel:SetupBones()
-                att:Render(self,entry.m_TpModel)
-            end
-        end
-    end
+
     
     if off and not off.Bone and IsValid(owner) then
         -- == SetRenderOrigin/SetRenderAngles 模式 ==
         local handPos, handAng = GetHandBonePosAng(owner)
         if handPos then
             local origin = Vector(handPos)
-            local angles = Angle(handAng)
+            local angles = handAng
 
             if off.Pos then
                 origin:Add(angles:Right() * off.Pos.x)
@@ -48,11 +40,13 @@ function SWEP:RenderOverride(flags)
                 origin:Add(angles:Up() * off.Pos.z)
             end
             if off.Angles then
-                angles:Add(off.Angles)
+                angles:RotateAroundAxis(angles:Up(), off.Angles[1])
+                angles:RotateAroundAxis(angles:Right(), off.Angles[2])
+                angles:RotateAroundAxis(angles:Forward(), off.Angles[3])
             end
-
             self:SetRenderOrigin(origin)
             self:SetRenderAngles(angles)
+            self.m_RenderOffset = true
         end
     elseif off and off.Bone then
         -- == ManipulateBone 模式 ==
@@ -63,7 +57,21 @@ function SWEP:RenderOverride(flags)
         end
     end
 
+    if self.m_RenderOffset and not IsValid(owner)  then
+        self:SetRenderAngles(nil)
+        self:SetRenderOrigin(nil)
+        self.m_RenderOffset = false
+    end
 
+    if self.CurrentAttachments then
+        for _, entry in pairs(self.CurrentAttachments) do
+            local att = BASE_TRM_ATTS[entry.Class]
+            if IsValid(entry.m_TpModel) and att.Render then
+                entry.m_TpModel:SetupBones()
+                att:Render(self,entry.m_TpModel)
+            end
+        end
+    end
 end
 
 function SWEP:DrawWorldModel(flags)
@@ -77,12 +85,4 @@ end
 -- =============================================
 -- 清理 TP 配件模型（武器移除时子实体不会自动移除）
 -- =============================================
-function SWEP:OnRemove()
-    if self.CurrentAttachments then
-        for _, entry in pairs(self.CurrentAttachments) do
-            if entry then
-                self:RemoveAttachmentModel(entry, true)
-            end
-        end
-    end
-end
+

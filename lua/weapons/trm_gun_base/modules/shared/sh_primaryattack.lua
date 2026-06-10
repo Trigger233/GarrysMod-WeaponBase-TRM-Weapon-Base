@@ -13,6 +13,10 @@ function SWEP:CanPrimaryFire()
 		return false
 	end
 
+	if string.find(self:GetPlayingSequence(), "Holster") then
+		return false
+	end
+
 	return (not self:IsEmpty() and (self:GetNextPrimaryFire() <= CurTime()))
 end
 
@@ -91,18 +95,21 @@ function SWEP:FirePrimaryBullet()
 		Callback = function(attacker, tr, dmginfo)
 			self:BulletCallback(attacker, tr, dmginfo)
 			-- 生成曳光弹
-			if CLIENT and IsFirstTimePredicted() then
-				-- 客户端预测（给自己看）
-				self:DoTracer(owner:GetShootPos(), tr.HitPos)
-			elseif SERVER then
-				-- 服务器广播给所有玩家（包括自己）
-				net.Start("TRMBase_TracerEffect")
-				net.WriteEntity(self)
-				net.WriteVector(owner:GetShootPos())
-				net.WriteVector(tr.HitPos)
-				net.Broadcast()
+			if not self.Slienced then
+				if CLIENT and IsFirstTimePredicted() then
+					-- 客户端预测（给自己看）
+					self:DoTracer(owner:GetShootPos(), tr.HitPos)
+				elseif SERVER then
+					-- 服务器广播给所有玩家（包括自己）
+					net.Start("TRMBase_TracerEffect")
+					net.WriteEntity(self)
+					net.WriteVector(owner:GetShootPos())
+					net.WriteVector(tr.HitPos)
+					net.Broadcast()
+				end
 			end
 		end,
+
 	}
 	if not owner:IsPlayer() then
 		bullet.Spread = bullet.Spread * self.Aim.Spread
@@ -388,7 +395,7 @@ function SWEP:DoCameraRecoil()
 	local eyeAngles = owner:EyeAngles()
 	local delay = 60 / self.Primary.RPM
 	local nextRecoil = self:GetNextRecoil()
-	local isFiring = CurTime() - nextRecoil < delay
+	local isFiring = CurTime() - nextRecoil < delay + FrameTime()
 	local NextAngle = Angle(0, 0, 0)
 	local stat = self.Recoil
 
@@ -410,7 +417,7 @@ function SWEP:DoCameraRecoil()
 	if isFiring then
 		-- 射击时：应用后坐力，然后用玩家压枪输入抵消
 		NextAngle = self.m_RecoilSum * stat.Factor
-		NextAngle.p = NextAngle.p + stat.KickDown * (t < 0.5 and t or 1 - t)
+		NextAngle.p = NextAngle.p 
 		self.m_RecoilSum:Add(-NextAngle)
 		-- 玩家压枪抵消后坐力累积
 		self.m_RecoilDelta = self.m_RecoilDelta - math.min(playerPitchDelta, 0)
@@ -426,10 +433,9 @@ function SWEP:DoCameraRecoil()
 	end
 
 	eyeAngles:Add(NextAngle)
-	owner:SetEyeAngles(eyeAngles)
-
 	-- 记录当前视角供下一帧使用
 	self.m_LastEyePitch = eyeAngles.pitch
+	owner:SetEyeAngles(eyeAngles)
 end
 
 function SWEP:DoSpread()

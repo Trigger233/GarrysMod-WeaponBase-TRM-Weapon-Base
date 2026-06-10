@@ -5,7 +5,11 @@ function SWEP:CanAim()
 end
 
 function SWEP:AimIn()
-    self.m_AimDelta = math.Approach(self.m_AimDelta, 1, FrameTime() / self.m_AimTime)
+    if self.Aim.Type == "Linear" then
+        self.m_AimDelta = math.Approach(self.m_AimDelta, 1, FrameTime() / self.Aim.Time)
+    else
+        self.m_AimDelta = Lerp(2.5 *FrameTime() / self.Aim.Time, self.m_AimDelta, 1)
+    end
     if not self.m_Aiming then
         if self:IsAnimFinished() then
             self:TrySetTask("AdsIn")
@@ -15,7 +19,11 @@ function SWEP:AimIn()
 end
 
 function SWEP:AimOut()
-    self.m_AimDelta = math.Approach(self.m_AimDelta, 0, FrameTime() / self.Aim.Time)
+    if self.Aim.Type == "Linear" then
+        self.m_AimDelta = math.Approach(self.m_AimDelta, 0, FrameTime() / self.Aim.Time)
+    else 
+        self.m_AimDelta = Lerp( 2.5 *FrameTime() / self.Aim.Time, self.m_AimDelta, 0)
+    end
     if self.m_Aiming then
         if self:IsAnimFinished() then
             self:TrySetTask("AdsOut")
@@ -26,6 +34,9 @@ end
 
 local cvar_toggle = CreateClientConVar("trmbase_toggle_aim", 0, true, true, "", 0, 1)
 function SWEP:AimLogic()
+    if self.DisableIronsight then
+        return
+    end
     if not cvar_toggle:GetBool() then
         -- 这里是按住开镜
         if self:GetOwner():KeyDown(IN_ATTACK2) and self:CanAim() then

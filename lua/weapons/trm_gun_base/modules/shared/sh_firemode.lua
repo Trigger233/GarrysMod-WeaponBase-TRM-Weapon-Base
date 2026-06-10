@@ -31,7 +31,7 @@ end
 
 function SWEP:GetFiremodeName()
     -- 如果是下挂模式
-    if self:GetUnderBarrel() then
+    if self:GetUnderbarrel() then
         return ("UnderBarrel-".. defmode(self, "Secondary"))
     end
 

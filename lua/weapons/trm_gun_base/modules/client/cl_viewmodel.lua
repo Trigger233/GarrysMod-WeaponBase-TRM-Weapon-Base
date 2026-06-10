@@ -201,6 +201,9 @@ local CachePos = Vector(0, 0, 0)
 local CacheAngle = Angle(0, 0, 0)
 
 local AimOffset, AimOffsetAngle
+local back = 0
+
+local idledelta = 0
 
 function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     if not CLIENT then return end
@@ -218,23 +221,23 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
 
     local aimdelta = self:GetClientAimDelta()
     --Idle Offset
-    if not self.m_IdleDelta then self.m_IdleDelta = 1 end
-    self.m_IdleDelta = Lerp(RealFrameTime() * 10, self.m_IdleDelta or 0, self:IsInspecting() and 0 or 1) * (1 - aimdelta)
+    -- if not self.m_IdleDelta then self.m_IdleDelta = 1 end
+    idledelta = Lerp(RealFrameTime() * 10, idledelta or 0, self:IsInspecting() and 0 or 1) * (1 - aimdelta)
     CachePos = ((self.VMOffset.Idle.Pos.x + GetConVar("trmbase_vm_offsetX"):GetFloat()) * angles:Right() + (self.VMOffset.Idle.Pos.y + GetConVar("trmbase_vm_offsetY"):GetFloat()) * angles:Forward() - (self.VMOffset.Idle.Pos.z + GetConVar("trmbase_vm_offsetZ"):GetFloat()) * angles:Up()) *
-        self.m_IdleDelta
-    CacheAngle = self.VMOffset.Idle.Ang * self.m_IdleDelta
-
+        idledelta
+    CacheAngle = self.VMOffset.Idle.Ang * idledelta
     pos:Add(CachePos)
     angles:Add(CacheAngle)
     --Sway
     CacheAngle, CachePos = self:Sway()
-    local Pos            = -Vector(angles:Right() * CachePos.x, angles:Forward() * CachePos.y, angles:Up() * CachePos.z) *
+    local Pos            = -Vector(angles:Right() * CachePos.x + angles:Forward() * CachePos.y + angles:Up() * CachePos
+            .z) *
         Lerp(aimdelta, 1, 0.2)
     pos:Add(Pos)
     angles:Add(CacheAngle * Lerp(aimdelta, 1, 0.5))
     --Bob
     local BobPos, BobAngle = self:CustomBob()
-    local ApplyBobPos = Vector(angles:Right() * BobPos.x, angles:Forward() * BobPos.y, angles:Up() * BobPos.z) *
+    local ApplyBobPos = Vector(angles:Right() * BobPos.x + angles:Forward() * BobPos.y + angles:Up() * BobPos.z) *
         (1 - aimdelta)
     BobAngle:Mul(1 - aimdelta * 0.8)
     pos:Add(ApplyBobPos)
@@ -266,7 +269,7 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     angles:Add(AimOffsetAngle * aimdelta)
 
     -- 配件瞄具偏移（用骨骼自身 axis 变换，与 GenerateAimOffset 的 WorldToLocal 坐标空间一致）
-    if self.GetSight and self:GetSight() then
+    if self:GetSight() then
         local sight = self:GetSight()
         local boneAng = sight.AimBoneAng or angles
         local sightPos = (angles:Right() * sight.AimPos.x + angles:Forward() * sight.AimPos.y + angles:Up() * sight.AimPos.z) *
@@ -281,17 +284,28 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     --Visual Recoil（只有玩家持有时才应用）
     if IsValid(self:GetOwner()) and self:GetOwner():IsPlayer() then
         -- 后坐力后退（position）
-        self.m_VRecoilBack = Lerp(RealFrameTime() * 20, self.m_VRecoilBack or 0,
-            self:GetVisualRecoilBackward() or self.m_VRecoilBack)
-        pos:Add(Vector(-self.m_VRecoilBack * angles:Forward(), -self.m_VRecoilBack * angles:Right(),
-            -self.m_VRecoilBack * angles:Up()))
-
+        back = Lerp(RealFrameTime() * 20, back or 0,
+            self:GetVisualRecoilBackward() or back)
+        pos:Add(Vector(-back * angles:Forward()))
         -- 后坐力角度偏移（pitch/yaw 让 viewmodel 上跳）
         local visAng = self:GetClientVisualRecoil()
 
 
         angles:RotateAroundAxis(angles:Right(), -visAng.p * 0.63)
         angles:RotateAroundAxis(angles:Up(), visAng.y * 0.68)
+
+        ------ViewModel Recoil
+        local fireInterval = 60 / self.Primary.RPM
+        local timeToNextFire = (self:GetLastFireTime() + fireInterval) - CurTime()
+        local t = math.Clamp(timeToNextFire / fireInterval, 0, 1)
+        local Recoildelta = (t > 0.5 and 1 - t or t) * 2 -- 开火时 = 1，然后衰减到 0
+
+        local recoiloffsetpos = self.ViewmodelRecoil.Pos
+        local recoiloffsetang = self.ViewmodelRecoil.Ang
+        pos:Add(Vector(recoiloffsetpos[1] * angles:Right() + recoiloffsetpos[2] * angles:Forward() +
+            recoiloffsetpos[3] * angles:Up()) * Recoildelta)
+
+        angles:Add(recoiloffsetang * Recoildelta)
     end
 
 
@@ -306,24 +320,49 @@ function SWEP:ShouldDrawViewModel()
     return true
 end
 
-function SWEP:ViewModelDrawn(vm)
+require("trm_utils")
+function SWEP:ViewModelDrawn(vm, flag)
     if not IsValid(vm) then return end
-
-    vm:InvalidateBoneCache()
     vm:SetupBones()
-    self:BuildAttachmentsData(vm)
+    self:BuildViewmodelAttachmentsData(vm)
+
+
+
+
+
+
     -- 逐个调用配件的 Render
     for slot, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
         local data = BASE_TRM_ATTS[entry.Class]
         local model = entry.m_Model
-        if data.Render and IsValid(model) then
+        if data.Render and IsValid(model) and self:IsFirstPerson() then
             data:Render(self, model)
         end
     end
 end
 
-function SWEP:PostDrawViewModel()
+function SWEP:BuildViewmodelAttachmentsData(vm)
+    self.m_Attachment = {}
+    local stats = self.Effects
+    --PrintTable(stats)
+
+    for _, element in pairs(stats) do
+        if not element.attachment then
+            continue
+        end
+
+        local ent, attId = self:FindAttachment(vm, element.attachment)
+        if not attId then return end
+        self.m_Attachment[element.attachment] = ent:GetAttachment(attId)
+    end
+end
+
+function SWEP:GetAttachmentData(name)
+    return self.m_Attachment[name] or false
+end
+
+function SWEP:PostDrawViewModel(vm, weappon, ply, flag)
 end
 
 function SWEP:PreDrawViewModel(vm)

@@ -30,8 +30,8 @@ local function applyEvents(weapon, animation, cycle)
 end
 function SWEP:PlayAnimation(sequenceClass, useInternalDuration)
     if not (IsFirstTimePredicted() and SERVER) then return end
-    local vm = self:GetViewModel()
     if self:GetNextAnimationTime() > CurTime() then return end
+    local vm = self:GetViewModel()
 
     self:PlayWorldAnimation(sequenceClass)
     --print("Playing animation: Customize")
@@ -57,7 +57,6 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration)
     local duration = vm:SequenceDuration(vm:LookupSequence(sequencePlay))
 
     vm:SetCycle(0)
-
 
     resetEvents(self, sequenceClass)
 

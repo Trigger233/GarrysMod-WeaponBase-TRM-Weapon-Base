@@ -1,5 +1,5 @@
 AddCSLuaFile()
-module("trm_utils", package.seeall )
+module("trm_utils", package.seeall)
 
 local cachedBones = {}
 --------缓存返回指定骨骼的Id
@@ -21,7 +21,6 @@ local cachedAttachments = {}
 --------缓存返回指定附件的Id
 function trm_utils.LookupAttachmentCached(ent, attName)
     local model = ent:GetModel()
-
     if (model == nil) then
         return nil
     end
@@ -31,7 +30,6 @@ function trm_utils.LookupAttachmentCached(ent, attName)
 
     return cachedAttachments[model][attName] > 0 && cachedAttachments[model][attName] || nil
 end
-
 
 local function requireAttachment(ent, attName)
     ent.m_AttachmentRequests = ent.m_AttachmentRequests || {}
@@ -66,22 +64,19 @@ local function requireAttachment(ent, attName)
             ent.OnBuildFastAttachments = function() end --to avoid if
         end
 
-        ent:AddCallback("BuildBonePositions", function(ent, numbones)
-            local matrix = ent:GetBoneMatrix(0)
+        ent._BoneCallBack = ent:AddCallback("BuildBonePositions", function(ent, numbones)
+            if not ent.m_AttachmentRequests then return end -- 加这行
 
-            if (matrix == nil) then
-                return
-            end
+            local matrix = ent:GetBoneMatrix(0)
+            if not matrix then return end
 
             for attId, localMat in pairs(ent.m_AttachmentRequests) do
                 local newMatrix = matrix * localMat
-
                 ent.m_AttachmentDeliveries[attId].Pos = newMatrix:GetTranslation()
                 ent.m_AttachmentDeliveries[attId].Ang = newMatrix:GetAngles()
                 ent:OnBuildFastAttachments()
             end
         end)
-
         ent.m_bFastAttachment = true
     end
 end
@@ -91,6 +86,7 @@ function trm_utils.GetFastAttachment(ent, attName)
     requireAttachment(ent, attName)
     return ent.m_AttachmentDeliveries[trm_utils.LookupAttachmentCached(ent, attName)]
 end
+
 -- 清空缓存（模型变化时调用）
 function trm_utils.InvalidateCache(ent)
     local model = ent:GetModel()
@@ -101,5 +97,7 @@ function trm_utils.InvalidateCache(ent)
     ent.m_AttachmentRequests = nil
     ent.m_AttachmentDeliveries = nil
     ent.m_bFastAttachment = nil
+    if ent._BoneCallBack != nil then
+        ent:RemoveCallback("BuildBonePositions", ent._BoneCallBack)
+    end
 end
-

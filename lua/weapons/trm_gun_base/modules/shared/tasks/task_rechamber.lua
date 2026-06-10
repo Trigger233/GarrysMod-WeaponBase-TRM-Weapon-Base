@@ -1,15 +1,14 @@
 local task = {}
 task.Name = "Rechamber"
 task.Priority = 200
-task.NoAutoIdle = true
 
 function task:CanBeSet(weapon)
-    return true
+    local owner = weapon:GetOwner()
+    return weapon:CanRechamber() and weapon:GetChamberAmmo() <= 0 and not (  owner and owner:KeyDown(IN_ATTACK) and not weapon.Primary.Automatic)
 end
 
 function task:OnSet(weapon)
     if weapon.Animations.Rechamber and not weapon:IsEmpty() then
-        weapon:SetNextAnimationTime(0)
         weapon:PlayAnimation("Rechamber",true)
         local delay = 60/ weapon.Primary.RPM
         weapon:SetNextAnimationTime(CurTime() + delay)
@@ -18,11 +17,7 @@ function task:OnSet(weapon)
 end
 
 function task:Think(cycle, weapon)
-    local owner = weapon:GetOwner()
-    if owner and owner:KeyDown(IN_ATTACK) and weapon.Primary.Automatic then return end
-    if cycle >= 0.98 then
-        weapon:TrySetTask("Idle")
-    end
+    weapon:TrySetTask("Idle")
 end
 
 SWEP:RegisterTask(task)

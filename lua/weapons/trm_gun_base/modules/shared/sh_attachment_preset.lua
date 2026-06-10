@@ -53,11 +53,12 @@ function SWEP:EquipDefaultAttachments()
         end
     end
 
-    self:OnAttachmentChanged()
+    self:OnAttachmentChanged(true)
 end
 
 function SWEP:SaveAttachmentPreset()
     if not SERVER then return end
+    if not self:GetOwner() then return end
 
     local class = self:GetClass()
     if not class or class == "" then return end

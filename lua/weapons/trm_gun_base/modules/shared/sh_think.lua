@@ -1,29 +1,39 @@
+local cvar_holster = CreateConVar("trmbase_sv_holster_on_ladder",1,{FCVAR_ARCHIVE},"",0,1)
+
 function SWEP:Think()
     -- 原有逻辑...
     local owner = self:GetOwner()
-    if IsValid(owner) and owner:IsPlayer() then
-        self:SetWeaponHoldType(self.HoldType)
-        self:UpdatePoseParameters()
-        self:AimThink()
-        self:TaskThink()
-        self:bThink()
-        self:DoAnimationEvents()
-        self:DoCameraRecoil()
-        self:Recover()
+    if not IsValid(owner) or not owner:IsPlayer()  then return end
+    self:SetWeaponHoldType(self.HoldType)
+    self:UpdatePoseParameters()
+    self:AimThink()
+    self:TaskTick()
+    self:bThink()
+    self:DoAnimationEvents()
+    self:DoCameraRecoil()
+    self:Recover()
+
+    --ladder
+    if (self:GetOwner():GetMoveType() == MOVETYPE_LADDER || (owner:WaterLevel() >= 2 and owner:IsSprinting() )) and cvar_holster:GetBool() then
+        self:SetOnLadder(true)
+        self:Holster()
+    else
+        if (self:GetOnLadder()) then
+            self:Deploy()
+            self:SetOnLadder(false)
+        end
     end
+
 end
 
 function SWEP:bThink()
-    local seq = self.m_CurrentSequence
+    local seq = self:GetPlayingSequence()
     local owner = self:GetOwner()
     local task = self:GetCurrentTaskName() or ""
     local sprint = owner:IsSprinting()
-    if owner and owner:KeyDown(IN_ATTACK) and seq == "Reload" and self.ReloadType == "Single" then
+    
+    if owner and owner:KeyDown(IN_ATTACK) and self:IsReloading() and self.ReloadType == "Single" then
         self:TrySetTask("ReloadEnd")
-    end
-
-    if self.Primary.BoltAction and self.Animations.Rechamber and self:GetChamberAmmo() <= 0 and self:CanRechamber() and not self:IsReloading() and task ~= "Rechamber" then
-        self:TrySetTask("Rechamber")
     end
 
     if owner and (not owner:KeyDown(IN_ATTACK) or self:IsEmpty()) and task ~= "Charge" then
@@ -32,7 +42,8 @@ function SWEP:bThink()
     end
 
     self.m_SprintDelta = self.m_SprintDelta or 0
-    self.m_SprintDelta = Lerp(FrameTime() * 10, self.m_SprintDelta,
-        sprint and owner:OnGround() and owner:GetVelocity():Length2D() > owner:GetWalkSpeed() and self:CanSprint() and 1 or 0)
+    self.m_SprintDelta = Lerp(engine.TickInterval() * 10, self.m_SprintDelta,
+        sprint and owner:OnGround() and owner:GetVelocity():Length2D() > owner:GetWalkSpeed() and self:CanSprint() and 1 or
+        0)
     self:SetSprintDelta(self.m_SprintDelta)
 end

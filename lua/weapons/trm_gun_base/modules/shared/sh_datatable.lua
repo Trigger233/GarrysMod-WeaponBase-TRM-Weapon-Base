@@ -9,7 +9,7 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Bool", "Grip1")
     self:NetworkVar("Bool", "Grip2")
     self:NetworkVar("Bool", "FirstDeployed")
-    self:NetworkVar("Bool", "UnderBarrel")
+    self:NetworkVar("Bool", "Underbarrel")
     self:NetworkVar("Int", "CurrentTask")
     self:NetworkVar("String", "PlayingSequence")
     self:NetworkVar("Bool", "CanSwitch")
@@ -25,4 +25,12 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Float", "VisualRecoilBackward")
 
     self:NetworkVar("Int","FiremodeIndex")
+
+    self:NetworkVar("Bool","OnLadder")
+    self:NetworkVar("Bool", "FlashLightOn")
+    for _ , task in pairs(self.Tasks) do
+        if task.SetupDataTables then
+            task:SetupDataTables(self)
+        end
+    end
 end

@@ -19,17 +19,15 @@ function ATTACHMENT:Render(weapon, model)
     
     
 end
-
+require("trm_utils")
 -- 渲染红点/分划板（使用 Stencil 遮罩）
 function ATTACHMENT:RenderReticle(weapon, model)
     local ret = self.Sight
     if not ret or not ret.Material then return end
     
     -- 获取红点显示位置（附件点）
-    local attID = model:LookupAttachment(ret.Align or "reticle")
-    if attID <= 0 then return end
     
-    local att = model:GetAttachment(attID)
+    local att = trm_utils.GetFastAttachment(model, ret.Align)
     if not att then return end
     
     -- 开始 Stencil 遮罩

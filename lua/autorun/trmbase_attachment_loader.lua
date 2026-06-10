@@ -25,6 +25,7 @@ local function LoadAttachmentStats(path, fileName)
     ATTACHMENT = {}
     ATTACHMENT.ClassName = name
     ATTACHMENT.Folder = path
+    ATTACHMENT.Path = fullPath
 
     func()
 

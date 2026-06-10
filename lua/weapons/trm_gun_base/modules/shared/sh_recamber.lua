@@ -15,8 +15,5 @@ function SWEP:ResetChamberRound2(amount)
     self:SetSecondaryChamberAmmo(amount)
 end
 function SWEP:CanRechamber()
-    local seq = self.m_CurrentSequence or self:GetPlayingSequence()
-    local task = self:GetCurrentTaskName() or ""
-    if (string.find(seq, "Idle") or string.find(seq, "Rechamber") or string.find(task, "Sprint") or string.find(seq, "Sprint")) and not self:IsEmpty() then return true end
-    return false 
+    return self:GetNextPrimaryFire() <= CurTime() and not self:IsEmpty() and self.Primary.BoltAction
 end

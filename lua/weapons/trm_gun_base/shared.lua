@@ -176,6 +176,7 @@ SWEP.IronsightReload = true
 SWEP.Effects = {
     Muzzle = {
         effect = "MuzzleEffect",
+        ParticleEffect = "muzzleflash_ak74",
         attachment = "muzzle",
         Tracer = {
             Name = "Tracer",
@@ -226,7 +227,7 @@ SWEP.Aim = {
     SpreadFollowPrimary = false,
     Scale = 1.15,
     Time = 0.25,
-
+    Type = "Linear" -- "Linear" or "Lerp"
 }
 
 SWEP.Spread = {
@@ -293,6 +294,11 @@ SWEP.VisualRecoil = {
     --     end
     -- }
 
+}
+
+SWEP.ViewmodelRecoil = {
+    Pos = Vector(0 ,-0,-0) ,
+    Ang = Angle(-0.0,0,0) ,
 }
 
 SWEP.CameraShake = {
@@ -532,9 +538,8 @@ end
 
 function SWEP:Deploy()
     self:GetOwner():SetSaveValue("m_flNextAttack", 0)
-    self:SetNextAnimationTime(0)
-    self:TrySetTask("Deploy")
     self:BuildCustomizedGun()
+    self:TrySetTask("Deploy")
     self:SetCanSwitch(false)
     return true
 end
@@ -545,8 +550,7 @@ function SWEP:Restore()
         if self.EquipDefaultAttachments then self:EquipDefaultAttachments() end
         if self.LoadAttachmentPreset then self:LoadAttachmentPreset() end
     end
-    self:SyncAllAttachments()
-    --PrintTable(self.CurrentAttachments)
+    self:BuildCustomizedGun()
 end
 
 function SWEP:OnDrop(owner)
@@ -559,14 +563,9 @@ function SWEP:OnDrop(owner)
 end
 
 function SWEP:OnReloaded()
-    -- 只在客户端执行热加载
-    if not CLIENT then
-        IncludeClientFiles()
-    end
-    -- 重新包含所有客户端文件
-
-    IncludeTaskFiles()
-    self:BuildCustomizedGun()
+    timer.Simple(0.1, function()
+        self:OnAttachmentChanged(true)
+    end)
 end
 
 function SWEP:OnRestore()
@@ -581,7 +580,7 @@ function SWEP:OnRestore()
 
 
         self:BuildCustomizedGun()
-
+ 
         self:SetNextRecoil(0)
     end)
 end
@@ -592,7 +591,7 @@ end
 
 local cvar = CreateConVar("trmbase_autoreload", 1, FCVAR_ARCHIVE)
 function SWEP:PrimaryAttack()
-    if self:GetUnderBarrel() then
+    if self:GetUnderbarrel() then
         if not self:CanSecondaryFire() then
             if self:Clip2() == 0 and cvar:GetInt() == 1 then
                 self:Reload()
@@ -620,7 +619,7 @@ function SWEP:SecondaryAttack()
 end
 
 function SWEP:Reload()
-    if self:GetUnderBarrel() then
+    if self:GetUnderbarrel() then
         self:TrySetTask("UnderBarrel_Reload")
         return true
     end
@@ -734,5 +733,19 @@ function SWEP:OnDrop(owner)
     if CLIENT then
         self:InvalidateBoneCache()
         self:SetupBones()
+    end
+end
+
+function SWEP:OnRemove()
+    if self.CurrentAttachments then
+        for _, entry in pairs(self.CurrentAttachments) do
+            if entry then
+                self:RemoveAttachmentModel(entry, true)
+            end
+        end
+    end
+
+    if CLIENT then
+        self:CleanupFlashLights()
     end
 end

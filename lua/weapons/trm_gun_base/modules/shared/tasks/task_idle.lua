@@ -9,7 +9,7 @@ function task:CanBeSet(weapon)
 end
 
 function task:Think(cycle,weapon)
-    if weapon:GetUnderBarrel() then
+    if weapon:GetUnderbarrel() then
         weapon:TrySetTask("UnderBarrel")
         return
     end

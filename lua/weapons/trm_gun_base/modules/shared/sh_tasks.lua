@@ -1,6 +1,6 @@
 SWEP.Tasks = {}
 
-function SWEP:TaskThink()
+function SWEP:TaskTick()
     local vm = self:GetViewModel()
     if not IsValid(vm) or (CLIENT and game.SinglePlayer()) and not IsFirstTimePredicted() then return end
 
@@ -15,6 +15,7 @@ function SWEP:TaskThink()
     if (task.Think != nil) then
         task:Think(vm:GetCycle(), self)
     end
+    self:TrySetTask("Rechamber")
 
     if not task then
         self:TrySetTask("Idle")
@@ -37,11 +38,16 @@ function SWEP:RegisterTask(task)
     --print("Task")
 end
 
-function SWEP:TrySetTask(taskIndex)
-    local Index = self:GetTaskByName(taskIndex)
+function SWEP:TrySetTask(taskName)
+    local Index = 0
 
-    --PrintTable(self.Tasks)
-    if not Index then return end
+    for i , task in ipairs(self.Tasks) do
+        if task.Name == taskName then 
+            Index = i 
+            break
+        end
+    end
+
     local task = self.Tasks[Index]
     if not task then return end
 

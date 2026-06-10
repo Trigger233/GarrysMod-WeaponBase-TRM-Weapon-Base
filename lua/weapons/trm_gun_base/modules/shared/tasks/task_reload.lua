@@ -16,16 +16,13 @@ function task_reload:OnSet(weapon)
     if not isReloadSeq(seq) then
         if weapon.ReloadType == "Single" then
             if weapon:Clip1() == 0 and weapon.Animations.Reload_Empty then
-                weapon:PlayAnimation("Reload_Empty", true)
+                weapon:PlayAnimation(weapon:ChooseAnim( "Reload_Empty"), true)
             elseif weapon.Animations.Reload_Start then
-                weapon:PlayAnimation("Reload_Start", true)
+                weapon:PlayAnimation(weapon:ChooseAnim( "Reload_Start"), true)
             end
         else
-            if weapon:Clip1() == 0 and weapon.Animations.Reload_Empty then
-                weapon:PlayAnimation("Reload_Empty", true)
-            elseif weapon.Animations.Reload then
-                weapon:PlayAnimation("Reload", true)
-            end
+            weapon:PlayAnimation(weapon:ChooseAnim("Reload"), true)
+            
         end
     end
 end
@@ -77,12 +74,17 @@ function task_end:CanBeSet(weapon)
 end
 
 function task_end:OnSet(weapon)
-    weapon:SetNextAnimationTime(0)  
+
 end
 
 function task_end:Think(cycle, weapon)
-        weapon:PlayAnimation(weapon:ChooseAnim("Reload_End"), true)
+    if weapon:GetNextPrimaryFire() <= CurTime() then
+        if not string.find(weapon:GetPlayingSequence(), "Reload_End") then
+            weapon:SetNextAnimationTime(0) -- Make sure
+            weapon:PlayAnimation(weapon:ChooseAnim("Reload_End"), true)
+        end
         weapon:TrySetTask("Idle")
+    end
 end
 
 SWEP:RegisterTask(task_end)

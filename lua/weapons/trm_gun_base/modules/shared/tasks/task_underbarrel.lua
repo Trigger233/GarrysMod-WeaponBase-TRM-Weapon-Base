@@ -7,7 +7,7 @@ end
 
 function task_in:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
-    weapon:SetUnderBarrel(true)
+    weapon:SetUnderbarrel(true)
     weapon:PlayAnimation(weapon:ChooseAnim("UnderBarrel_In"), true)
 end
 
@@ -22,11 +22,11 @@ local task_out = {}
 task_out.Name = "UnderBarrel_Out"
 
 function task_out:CanBeSet(weapon)
-    return weapon:IsAnimFinished()
+    return true
 end
 
 function task_out:OnSet(weapon)
-    weapon:SetUnderBarrel(false)
+    weapon:SetUnderbarrel(false)
     weapon:SetNextAnimationTime(0)
     weapon:PlayAnimation(weapon:ChooseAnim("UnderBarrel_Out"), true)
 end

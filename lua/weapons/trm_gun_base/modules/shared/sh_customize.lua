@@ -188,9 +188,7 @@ end
 
 function SWEP:ChangeWeaponStats()
     self:CallOnClient("ChangeWeaponStats")
-    self:GetOriginStat()
-    self:DeepObjectCopy(self.m_OriginalStat, self)
-
+    self:DeepObjectCopy(weapons.Get(self:GetClass()), self)
 
     for name, injector in pairs(BASE_TRM_INJECTOR) do
         if type(injector) == "table" and injector.Inject then -- 只处理有 Inject 方法的
@@ -238,7 +236,7 @@ function SWEP:ChangeWeaponStats()
             self:MagzineLoaded2()
         end
         --self:MagzineLoaded()
-        self:SetSpread(self.Spread.Base)    
+        self:SetSpread(self.Spread.Base)
         self:SetSpreadVertical(self.Spread.Vertical)
         self:SetSpreadHorizonal(self.Spread.Horizontal)
     end
@@ -260,9 +258,7 @@ function SWEP:DeepObjectCopy(original, holder)
     end
 end
 
-function SWEP:GetOriginStat()
-    self.m_OriginalStat = weapons.Get(self:GetClass())
-end
+
 
 function SWEP:SpreadInit()
     local val = self.Spread
@@ -308,96 +304,21 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
     end
 end
 
-function SWEP:BuildAttachmentsData(_table, model)
-    for _, attachment in pairs(model:GetAttachments()) do
-        local stat = model:GetAttachment(attachment.id)
-        local name = attachment.name
-        if not stat then continue end -- 👈 增加 name 检查
-        _table[name] = stat
-        _table[name].Ent = model
-        _table[name].id = attachment.id
-        _table[name].LastUpdate = CurTime()
-    end
-    -- PrintTable(_table)
-end
+require("trm_utils")
 
-function SWEP:BuildBonesData(_table, model)
-    local count = model:GetBoneCount()
-    if count and count > 1 then
-        for i = 0, count - 1 do
-            local _matrix = model:GetBoneMatrix(i)
-            local name = model:GetBoneName(i)
 
-            if _matrix and name then
-                _table[name] = {
-                    Pos = _matrix:GetTranslation(),
-                    Ang = _matrix:GetAngles(),
-                    id = i,
-                    Ent = model,
-                }
-            end
-        end
-    end
-end
 
-function SWEP:BuildWeaponModelData()
-    -- -- 更新频率控制（每秒 10 次）
-    -- if self.m_NextBuildTime and CurTime() < self.m_NextBuildTime then
-    --     return
-    -- end
-    -- self.m_NextBuildTime = CurTime() + FrameTime() -- 0.1 秒更新一次
 
-    local vm = self:GetViewModel()
-    -- Attachment 数据
 
-    self.m_Attachment = {}
-    self.m_Bone = {}
-    self.wm_Attachment = {}
-    self.wm_Bone = {}
-    if IsValid(vm) then
-        self:BuildAttachmentsData(self.m_Attachment, vm)
-        self:BuildBonesData(self.m_Bone, vm)
-    end
 
-    self:BuildAttachmentsData(self.wm_Attachment, self)
-    self:BuildBonesData(self.wm_Bone, self)
 
-    -- 配件模型的 Attachments（只有 Bonemerge 模式的配件才需要）
-    if (CLIENT) then
-        if IsValid(vm) then
-            for _, model in pairs(vm:GetChildren()) do
-                self:BuildAttachmentsData(self.m_Attachment, model)
-                self:BuildBonesData(self.m_Bone, model)
-            end
-        end
-
-        for _, model in pairs(self:GetChildren()) do
-            self:BuildAttachmentsData(self.wm_Attachment, model)
-            self:BuildBonesData(self.wm_Bone, model)
-        end
-    end
-end
-
-function SWEP:GetAttachmentData(name)
-    return self.m_Attachment[name] or false
-end
-
-function SWEP:GetBoneData(name)
-    return self.m_Bone[name] or false
-end
-
-function SWEP:GetWorldAttachmentData(name)
-    return self.wm_Attachment[name] or false
-end
-
-function SWEP:GetWorldBoneData(name)
-    return self.wm_Bone[name] or false
-end
 
 ---CustomizeSystem
-function SWEP:OnAttachmentChanged()
+function SWEP:OnAttachmentChanged(shouldntsave)
     self:BuildCustomizedGun()
-    self:SaveAttachmentPreset()
+    if not shouldntsave then
+        self:SaveAttachmentPreset()
+    end
 end
 
 -- 统一移除配件模型，调用 attData:Remove 扩展钩子
@@ -405,12 +326,12 @@ function SWEP:RemoveAttachmentModel(entry, isTp)
     local model = isTp and entry.m_TpModel or entry.m_Model
     if not IsValid(model) then return end
     local attData = entry.Class and BASE_TRM_ATTS[entry.Class]
+    
     if attData and attData.Remove then
         attData:Remove(self, model)
-    else
-        model:Remove()
     end
-    if isTp then
+    
+    if isTp then 
         entry.m_TpModel = nil
     else
         entry.m_Model = nil
@@ -511,7 +432,7 @@ function SWEP:UnEquipAttachment(slot)
     --print("Unequipped:", slot, self.CurrentAttachments[slot] or "None")
 end
 
-function SWEP:ApplyAttachmentModels()
+function SWEP:ApplyCustomizationModels()
     if SERVER then return end
     local vm = self:GetViewModel()
     --if not IsValid(vm) then return end
@@ -541,10 +462,10 @@ function SWEP:ApplyAttachmentModels()
             end
         else
             if not WeaponData.Bone then continue end
-            local bone = self:GetBoneData(WeaponData.Bone)
+            local bone = self:FindBone(WeaponData.Bone, false)
             if not bone then continue end
             if IsValid(model) then
-                model:FollowBone(bone.Ent, bone.id)
+                model:FollowBone(bone.Parent, bone.Id)
                 model:SetLocalPos(Vector(0, 0, 0))
                 model:SetLocalAngles(Angle(0, 0, 0))
             end
@@ -555,9 +476,9 @@ function SWEP:ApplyAttachmentModels()
                     boneselect = WeaponData.WorldBone
                 end
 
-                local tpbone = self:GetWorldBoneData(boneselect)
+                local tpbone = self:FindBone(boneselect, true)
                 if tpbone then
-                    Tpmodel:FollowBone(tpbone.Ent, tpbone.id)
+                    Tpmodel:FollowBone(tpbone.Parent, tpbone.Id)
                     Tpmodel:SetLocalPos(Vector(0, 0, 0))
                     Tpmodel:SetLocalAngles(Angle(0, 0, 0))
                 end
@@ -665,17 +586,23 @@ end)
 function SWEP:BuildCustomizedGun()
     self:SyncAllAttachments()
 
-
     local vm = self:GetViewModel()
     local hasVM = IsValid(vm)
-    local isActive = hasVM and self:GetOwner() and self:GetOwner():GetActiveWeapon() == self
-
+    local owner = self:GetOwner()
+    local isActive = hasVM and owner and owner:GetActiveWeapon() == self
     self.sight = nil
     self.underbarrel = nil
 
-    self:SetUnderBarrel(false)
-    self:ChangeWeaponStats()
+    self.flashlight = false
+    if CLIENT then
+        self:CleanupFlashLights()
+    end
 
+    self:ChangeWeaponStats()
+    if IsValid(vm) then
+        self:InvalidateAttachments(vm)
+    end
+    self:InvalidateAttachments(self)
 
     local currentSlotKeys = {}
     if CLIENT then
@@ -694,9 +621,10 @@ function SWEP:BuildCustomizedGun()
                     model:SetNoDraw(true)
                     model:SetNotSolid(true)
                     model:SetMoveType(MOVETYPE_NONE)
-                    model:SetOwner(vm)
+                    model:SetOwner(self)
                     model:InvalidateBoneCache()
                     model:SetupBones()
+                    model:AddEffects(EF_PARENT_ANIMATES)
 
                     entry.m_Model = model
                     trm_weapon_base_util.DealWithFullUpdate(entry.m_Model)
@@ -735,21 +663,98 @@ function SWEP:BuildCustomizedGun()
     end
 
     -- 配件缓存（无论武器是否活跃，都需要更新）
-    self:BuildWeaponModelData()
-    self:ApplyAttachmentModels()
-    self:GenerateAimOffset()
 
     -- VM 相关操作只在 vm 有效时执行
-    if hasVM and vm and self:GetOwner() and isActive then
+    if hasVM and vm and owner and isActive then
         -- 确保骨骼数据已刷新
         if CLIENT then
             vm:InvalidateBoneCache()
             vm:SetupBones()
         end
-
+        local sequence = vm:GetSequence()
         self:PrecacheViewModel()
         self:PrepareViewModel()
         self:ApplyWeaponModelChange()
+        vm:ResetSequence(sequence)
     end
+
+    self:BuildWeaponModelData()
+    self:ApplyCustomizationModels()
+    self:GenerateAimOffset()
+
+    if not self.underbarrel then
+        self:SetUnderbarrel(false)
+    end
+
+    if owner.Flashlight and self.flashlight and owner:FlashlightIsOn() then
+        owner:Flashlight(false)
+    end
+
+    
+
     self:TrySetTask("Idle")
 end
+
+local function buildSingleModelBone(ent)
+    local boneCount = ent:GetBoneCount()
+    local bones = {}
+    for i = 0, boneCount - 1 do
+        local name = ent:GetBoneName(i)
+        if name and name ~= "" then
+            bones[name] = {
+                Parent = ent,
+                Id = i,
+                Name = name
+            }
+        end
+    end
+    return bones
+end
+
+local function buildCustomizedModelBone(ent, owner)
+    local bones = {}
+
+    -- 当前实体
+    table.Merge(bones, buildSingleModelBone(ent))
+
+    -- 子实体
+    for _, child in pairs(ent:GetChildren()) do
+        if child:GetClass() == "class C_BaseFlex" and child:GetOwner() == owner then
+            table.Merge(bones, buildCustomizedModelBone(child))
+        end
+    end
+
+    return bones
+end
+
+function SWEP:BuildWeaponModelData()
+    if not CLIENT then return end
+
+    local vm = self:GetViewModel()
+    if IsValid(vm) then
+        self.m_Bone = buildCustomizedModelBone(vm, self)
+    end
+    self.wm_Bone = buildCustomizedModelBone(self, self)
+end
+
+function SWEP:FindBone(name, isTp)
+    return (isTp and self.wm_Bone[name] or self.m_Bone[name] or false)
+end
+
+function SWEP:InvalidateAttachments(ent)
+    if not IsValid(ent) then return end -- 关键：实体无效直接返回
+
+    trm_utils.InvalidateCache(ent)
+
+    local children = ent:GetChildren()
+    if not children then return end -- 关键：没子实体也返回
+
+    for _, c in pairs(children) do
+        if c:GetClass() != "class BaseFlex" then
+            continue
+        end
+        self:InvalidateAttachments(c)
+    end
+end
+
+

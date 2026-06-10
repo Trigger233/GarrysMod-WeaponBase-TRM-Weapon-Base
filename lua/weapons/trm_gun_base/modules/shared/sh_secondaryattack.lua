@@ -7,7 +7,7 @@ end)
 
 function SWEP:CycleUnderBarrel()
     if not self.underbarrel then return end
-    local status = self:GetUnderBarrel()
+    local status = self:GetUnderbarrel()
     if not status then
         self:TrySetTask("UnderBarrel_In")
     else
