@@ -12,19 +12,15 @@ function SWEP:ViewModelDrawn(vm, flag)
     vm:SetupBones()
     self:BuildViewmodelAttachmentsData(vm)
 
+    for _, att in pairs(self:GetAllAttachmentsInUse()) do
+        local attData = BASE_TRM_ATTS[att.Class]
 
-
-
-
-
-    -- 逐个调用配件的 Render
-    for slot, entry in pairs(self.CurrentAttachments or {}) do
-        if not entry or not entry.Class then continue end
-        local data = BASE_TRM_ATTS[entry.Class]
-        local model = entry.m_Model
-        if data.Render and IsValid(model) and self:ShouldDrawViewModel() and self:GetOwner():GetActiveWeapon() == self then
-            model:SetupBones()
-            data:Render(self, model)
+        if att.m_Model then
+            if attData.Render then
+                attData:Render(self, att.m_Model)
+            end
+        elseif not att.m_Model and attData.Model then
+            self:BuildCustomizedGun()
         end
     end
 end

@@ -3,7 +3,7 @@ function SWEP:Holster(weapon)
         if IsValid(TRM_AttachMenu_Instance) then
             TRM_AttachMenu_Instance:Close()
         end
-
+        
         self:CleanupFlashLights()
     end
 

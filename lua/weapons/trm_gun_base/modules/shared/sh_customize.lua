@@ -435,7 +435,6 @@ end
 function SWEP:ApplyCustomizationModels()
     if SERVER then return end
     local vm = self:GetViewModel()
-    --if not IsValid(vm) then return end
     for slot, entry in pairs(self.CurrentAttachments) do
         if not entry or not entry.Class then continue end
         local AttachmentData = BASE_TRM_ATTS[entry.Class]
@@ -483,6 +482,7 @@ function SWEP:ApplyCustomizationModels()
                     Tpmodel:SetLocalAngles(Angle(0, 0, 0))
                 else
                     SafeRemoveEntity(Tpmodel)
+                    Tpmodel = nil
                 end
             end
 
@@ -585,8 +585,48 @@ net.Receive("TRMBase_Attachment", function()
 end)
 
 
+function SWEP:GetAllAttachmentsInUse()
+    return self.CurrentAttachments
+end
 
+function SWEP:CreateAttachmentModel(entry,slot)
+    if SERVER then return end
 
+    local Att = BASE_TRM_ATTS[entry.Class] 
+    if not Att or not Att.Model then return  end
+
+    local function CreateModel(att)
+    local model = ClientsideModel(att.Model,RENDERGROUP_OPAQUE)
+    model:SetOwner(self)
+    model:SetNotSolid(true)
+    model:SetNoDraw(true)
+    model:AddEffects(EF_PARENT_ANIMATES)
+
+        
+
+        return model
+    end
+
+    entry.m_Model = CreateModel(Att)
+    entry.m_TpModel = CreateModel(Att)
+
+end
+
+local function removeChildrenModel(ent)
+    local children = ent:GetChildren()
+    for _, child in ipairs(children) do
+        if IsValid(child) and child:GetClass() == "class BaseFlex" then
+            removeChildrenModel(child)
+            child:Remove()
+        end
+    end
+end
+
+function SWEP:RemoveAllAttachementModels()
+    if SERVER then return end
+    removeChildrenModel(self:GetViewModel())
+    removeChildrenModel(self)
+end
 
 ------------------------------------------------------
 function SWEP:BuildCustomizedGun()
@@ -600,75 +640,22 @@ function SWEP:BuildCustomizedGun()
     self.underbarrel = nil
 
     self.flashlight = false
+    
     if CLIENT then
         self:CleanupFlashLights()
     end
 
     self:ChangeWeaponStats()
-    if IsValid(vm) then
-        self:InvalidateAttachments(vm)
-    end
+    
+    self:InvalidateAttachments(vm)
     self:InvalidateAttachments(self)
 
-    local currentSlotKeys = {}
-    if CLIENT then
-        for slotKey, entry in pairs(self.CurrentAttachments or {}) do
-            if not entry or not entry.Class then continue end
-            currentSlotKeys[slotKey] = true
 
-            local attData = BASE_TRM_ATTS[entry.Class]
-            if not attData then continue end
+    self:RemoveAllAttachementModels()
 
-            -- ========== 第一人称模型（挂 ViewModel） ==========
-            -- 只在 vm 有效时创建/更新
-            if hasVM then
-                if not IsValid(entry.m_Model) and attData.Model then
-                    local model = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
-                    model:SetNoDraw(true)
-                    model:SetNotSolid(true)
-                    model:SetMoveType(MOVETYPE_NONE)
-                    model:SetOwner(self)
-                    model:InvalidateBoneCache()
-                    model:SetupBones()
-                    model:AddEffects(EF_PARENT_ANIMATES)
-
-                    entry.m_Model = model
-                    trm_weapon_base_util.DealWithFullUpdate(entry.m_Model)
-                end
-            end
-
-            -- ========== 第三人称模型（挂武器实体，引擎自动渲染） ==========
-            if attData.Model then
-                if not IsValid(entry.m_TpModel) then
-                    local tpModel = ClientsideModel(attData.Model, RENDERGROUP_OPAQUE)
-                    tpModel:SetNotSolid(true)
-                    tpModel:SetMoveType(MOVETYPE_NONE)
-                    tpModel:SetNoDraw(true)
-                    tpModel:InvalidateBoneCache()
-                    tpModel:SetupBones()
-                    if attData.Bonemerge then
-                        tpModel:SetParent(self)
-                        tpModel:AddEffects(EF_BONEMERGE)
-                        tpModel:AddEffects(EF_BONEMERGE_FASTCULL)
-                    end
-                    entry.m_TpModel = tpModel
-                    trm_weapon_base_util.DealWithFullUpdate(entry.m_TpModel)
-                end
-            elseif IsValid(entry.m_TpModel) then
-                self:RemoveAttachmentModel(entry, true)
-            end
-        end
-
-        -- 清除已卸载配件的模型
-        for slotKey, entry in pairs(self.CurrentAttachments or {}) do
-            if not currentSlotKeys[slotKey] and entry then
-                self:RemoveAttachmentModel(entry)
-                self:RemoveAttachmentModel(entry, true)
-            end
-        end
+    for slot , att in pairs(self:GetAllAttachmentsInUse()) do
+        self:CreateAttachmentModel(att, slot)
     end
-
-    -- 配件缓存（无论武器是否活跃，都需要更新）
 
     -- VM 相关操作只在 vm 有效时执行
     if hasVM and vm and owner and isActive then
@@ -685,6 +672,7 @@ function SWEP:BuildCustomizedGun()
     end
 
     self:BuildWeaponModelData()
+    
     self:ApplyCustomizationModels()
     self:GenerateAimOffset()
 

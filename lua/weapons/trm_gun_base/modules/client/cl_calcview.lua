@@ -298,8 +298,8 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
         local visAng = self:GetClientVisualRecoil()
 
 
-        angles:RotateAroundAxis(angles:Right(), -visAng.p * 0.33)
-        angles:RotateAroundAxis(angles:Up(), visAng.y * 0.33)
+        angles:RotateAroundAxis(angles:Right(), -visAng.p * 0.66)
+        angles:RotateAroundAxis(angles:Up(), visAng.y * 0.66)
 
         ------ViewModel Recoil
         local fireInterval = (60 / self.Primary.RPM)* 1

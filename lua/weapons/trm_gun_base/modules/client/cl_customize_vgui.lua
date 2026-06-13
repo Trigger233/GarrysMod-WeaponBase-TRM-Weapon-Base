@@ -1914,6 +1914,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
     btn:SetTall(64)
     btn:DockMargin(0, 0, 0, 6)
 
+    local BaseColor = BASE_TRM_ATTS[attClass] and BASE_TRM_ATTS[attClass].UIColor or Color(8, 15, 16, 226)
     local weapon = self.m_Weapon
 
     btn.OnCursorEntered = function(button)
@@ -1934,7 +1935,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
         elseif button:IsHovered() then
             surface.SetDrawColor(22, 38, 39, 236)
         else
-            surface.SetDrawColor(8, 15, 16, 226)
+            surface.SetDrawColor(BaseColor.r, BaseColor.g, BaseColor.b, BaseColor.a or 226)
         end
         surface.DrawRect(0, 0, w, h)
 

@@ -67,7 +67,6 @@ function SWEP:RenderOverride(flags)
         for _, entry in pairs(self.CurrentAttachments) do
             local att = BASE_TRM_ATTS[entry.Class]
             if IsValid(entry.m_TpModel) and att.Render then
-                entry.m_TpModel:SetupBones()
                 att:Render(self,entry.m_TpModel)
             end
         end

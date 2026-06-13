@@ -43,7 +43,7 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
     local attID = model:LookupAttachment(data.Attach)
     if attID <= 0 then return end
     
-    local att = trm_utils.GetFastAttachment(model, data.Attach)
+    local att = model:GetAttachment(attID)
     if not att then return end
 
     -- 缓存射线结果
@@ -87,7 +87,7 @@ function ATTACHMENT:DoFlashLight(weapon, model, data)
 
     local attId = model:LookupAttachment(data.Attach)
     if attId <= 0 then return end
-    local att = trm_utils.GetFastAttachment(model, data.Attach)
+    local att = model:GetAttachment(attId)
     if not att then return end
 
     local pos = att.Pos + att.Ang:Forward() * -5
