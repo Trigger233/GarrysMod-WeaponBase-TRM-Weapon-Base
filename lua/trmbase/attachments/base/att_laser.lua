@@ -78,14 +78,12 @@ function ATTACHMENT:Render(weapon, model)
 end
 
 
+-- att_laser.lua
 function ATTACHMENT:Stats(w)
-    if self.FlashLight then
-        w.flashlight = true
-    end
-end
 
+end 
 function ATTACHMENT:DoFlashLight(weapon, model, data)
-    if not self.FlashLight then return end
+    if not weapon.flashlight then return end
 
     local attId = model:LookupAttachment(data.Attach)
     if attId <= 0 then return end

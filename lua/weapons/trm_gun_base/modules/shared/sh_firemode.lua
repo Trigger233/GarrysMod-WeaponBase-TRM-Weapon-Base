@@ -1,3 +1,10 @@
+function SWEP:FireModeStat(index)
+    if not index then return end
+    if self.Firemode and self.Firemode[index] and self.Firemode[index].OnSet then
+        self.Firemode[index].OnSet(self)
+    end
+end
+
 if SERVER then
     util.AddNetworkString("TRMBase_FiremodeCall")
 end
@@ -6,16 +13,13 @@ if CLIENT then
     net.Receive("TRMBase_FiremodeCall", function(len, ply)
         local index = net.ReadInt(4)
         local weapon = net.ReadEntity()
-        weapon:FireModeStat(index)
+        if weapon.FireModeStat then
+            weapon:FireModeStat(index)
+        end
     end)
 end
 
-function SWEP:FireModeStat(index)
-    if not index then return end
-    if self.Firemode and self.Firemode[index] and self.Firemode[index].OnSet then
-        self.Firemode[index].OnSet(self)
-    end
-end
+
 
 local function defmode(w, mode)
     local defName
@@ -32,7 +36,7 @@ end
 function SWEP:GetFiremodeName()
     -- 如果是下挂模式
     if self:GetUnderbarrel() then
-        return ("UnderBarrel-".. defmode(self, "Secondary"))
+        return ("UnderBarrel-" .. defmode(self, "Secondary"))
     end
 
     -- 正常主武器模式
@@ -44,6 +48,7 @@ function SWEP:GetFiremodeName()
 
     return defmode(self, "Primary")
 end
+
 concommand.Add("+trmbase_cycle_firemode", function(ply)
     local weapon = ply:GetActiveWeapon()
     if not util.IsTRMBase(weapon) or not IsValid(weapon) then return end

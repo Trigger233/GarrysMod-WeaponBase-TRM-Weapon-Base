@@ -1,3 +1,4 @@
+AddCSLuaFile()
 module("trm_weapon_base_util",package.seeall)
 trm_util = trm_util or {}
 local function getBase(weapon)
@@ -43,6 +44,8 @@ if (CLIENT) then
                 ent:SetParent(fullUpdateParent)
             end
         end
+
+      
     end)
 end
 

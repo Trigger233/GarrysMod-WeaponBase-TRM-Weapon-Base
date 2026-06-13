@@ -481,6 +481,8 @@ function SWEP:ApplyCustomizationModels()
                     Tpmodel:FollowBone(tpbone.Parent, tpbone.Id)
                     Tpmodel:SetLocalPos(Vector(0, 0, 0))
                     Tpmodel:SetLocalAngles(Angle(0, 0, 0))
+                else
+                    SafeRemoveEntity(Tpmodel)
                 end
             end
 
@@ -542,6 +544,10 @@ function SWEP:GenerateAimOffset()
                 AimPos = AimPos,
                 AimAng = AimAng,
             }
+        end
+
+        if AttachmentData.Scope then
+            self.sight.zoom = AttachmentData.Scope.Zoom
         end
     end
 end

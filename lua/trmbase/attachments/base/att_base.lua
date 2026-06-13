@@ -43,6 +43,6 @@ end
 
 
 function ATTACHMENT:Remove(weapon,model)
-    model:Remove()
+    SafeRemoveEntity(model)
 end
 --

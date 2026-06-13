@@ -6,8 +6,8 @@ end
 print("trmbase_att_load")    
 
 BASE_TRM_ATTS = BASE_TRM_ATTS or {}
-TRM_BASE_REF = 69
-
+TRM_BASE_REF = 69 
+ 
 local function LoadAttachmentStats(path, fileName)
     local name = string.Replace(fileName, ".lua", "")
     local fullPath = path .. "/" .. fileName
@@ -72,10 +72,10 @@ function BASE_TRM_ATTS.Inherit(att)
     local baseClass = BASE_TRM_ATTS[att.Base]
     while baseClass  do
         inherit(att, baseClass)
-        baseClass = BASE_TRM_ATTS[baseClass.Base]
+        baseClass = BASE_TRM_ATTS[baseClass.Base] 
     end
 end
-
+ 
 local function finishAttachments()
     for name, att in pairs(BASE_TRM_ATTS) do
         if type(att) ~= "table" then
@@ -90,10 +90,7 @@ end
 finishAttachments()
 
 
-hook.Add("OnReloaded", "TRMBASE_ATT_RELOAD", function()
-    LoadAttachments("trmbase/attachments")
-    finishAttachments()
-end)
+
 
 -- 查看所有已加载配件
 concommand.Add("trm_list_atts", function()
@@ -115,8 +112,3 @@ concommand.Add("trm_att_info", function(ply, cmd, args)
     end
 end)
 
--- 重新加载所有配件（开发用）
-concommand.Add("trm_reload_atts", function()
-    LoadAttachments("trmbase/attachments")
-    finishAttachments()
-end)

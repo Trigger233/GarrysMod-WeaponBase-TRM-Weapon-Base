@@ -18,11 +18,11 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
 
     -- Melee
     if input.WasKeyPressed(cv_melee:GetInt()) and cv_melee:GetInt() > 0 then
-        RunConsoleCommand("trmbase_melee")
+        RunConsoleCommand("+trmbase_melee")
     end
 
     if input.WasKeyPressed(cv_melee:GetInt()) and cv_melee:GetInt() > 0 then
-        RunConsoleCommand("trmbase_melee")
+        RunConsoleCommand("+trmbase_melee")
     end
     -- Inspect
     if input.WasKeyPressed(cv_inspect:GetInt()) and cv_inspect:GetInt() > 0 then
@@ -41,7 +41,7 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
             RunConsoleCommand("+trmbase_customize")
             return true
         end
-    -- 路径 B：无独立按键 → 回退到 +menu_context（右键菜单）
+        -- 路径 B：无独立按键 → 回退到 +menu_context（右键菜单）
     else
         if bind == "+menu_context" and pressed and not ply:KeyDown(IN_USE) then
             RunConsoleCommand("+trmbase_customize")
@@ -56,10 +56,4 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
         RunConsoleCommand("+trmbase_cycle_firemode")
         return true
     end
-
-
-
-    
 end)
-
-

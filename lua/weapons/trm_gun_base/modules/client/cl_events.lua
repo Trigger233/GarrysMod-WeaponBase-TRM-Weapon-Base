@@ -25,8 +25,10 @@ function SWEP:DoShell()
     local stats = self.Effects.Shell
     local ent, Id = self:FindAttachment(self:IsFirstPerson() and self:GetViewModel() or self, stats.attachment)
     local attachment = self:GetAttachmentData(stats.attachment)
-
+    if not attachment then return end
     local effect = EffectData()
+
+
     effect:SetEntity(ent)
     effect:SetOrigin(attachment.Pos)
     effect:SetAngles(attachment.Ang)
@@ -51,9 +53,13 @@ function SWEP:IsFirstPerson()
 end
 
 function SWEP:DoMuzzleFlash(ent)
-    if self.Slienced then return end
     local _ent, attId = self:FindAttachment(ent, self.Effects.Muzzle.attachment)
-    local pcf = CreateParticleSystem(_ent, self.Effects.Muzzle.ParticleEffect, PATTACH_POINT_FOLLOW, attId)
+
+    
+
+    local pcf = CreateParticleSystem(_ent,
+        self.Slienced and self.Effects.Muzzle.ParticleSuppressed or self.Effects.Muzzle.ParticleEffect,
+        PATTACH_POINT_FOLLOW, attId)
     if IsValid(pcf) then
         pcf:StartEmission()
     end
@@ -61,20 +67,20 @@ end
 
 function SWEP:DoTracer(startpos, endpos)
     if self:IsFirstPerson() then
-        startpos = self:GetAttachmentData(self.Effects.Muzzle.attachment).Pos
+        local att = self:GetAttachmentData(self.Effects.Muzzle.attachment)
+        startpos =  att.Pos 
     end
 
     local stats = self.Effects.Muzzle.Tracer
-    if stats.IsParticle then
-        util.ParticleTracer(stats.Name, startpos, endpos, true)
-    else
+    -- if stats.IsParticle then
+    --     util.ParticleTracer(stats.Name, startpos, endpos, true)
+    -- else
         local tracer = EffectData()
-
         tracer:SetScale(Tracerscale)
         tracer:SetOrigin(endpos)
         tracer:SetStart(startpos)
         utilf(tracerName, tracer)
-    end
+    -- end
 end
 
 local function findAttachmentInChildren(ent, attName, weapon)

@@ -11,20 +11,34 @@ require("trm_utils")
 -- ==========================================
 -- 包含所有 shared 文件（服务端+客户端都执行）
 -- ==========================================
+local SHARED_PRIORITY = {
+    "sh_tasks.lua","sh_datatable.lua",  
+} 
+
 local function IncludeSharedFiles()
+   -- print("start load")
     local folder = "weapons/trm_gun_base/modules/shared/"
-    local files, _ = file.Find(folder .. "*.lua", "LUA")
-    for _, fileName in ipairs(files) do
-        local fullPath = folder .. fileName
-        if SERVER then
-            AddCSLuaFile(fullPath)
+    local allFiles, _ = file.Find(folder .. "*.lua", "LUA")
+
+    -- 排序：优先级高的放前面，其他按原顺序
+    table.sort(allFiles, function(a, b)
+        local aPriority = table.HasValue(SHARED_PRIORITY, a)
+        local bPriority = table.HasValue(SHARED_PRIORITY, b)
+        if aPriority ~= bPriority then
+            return aPriority -- 优先级高的排前面
         end
+        return a < b         -- 同优先级按名字排序
+    end)
+
+    for _, fileName in ipairs(allFiles) do
+        local fullPath = folder .. fileName
+        if SERVER then AddCSLuaFile(fullPath) end
         include(fullPath)
+       -- print("load trm gun base : ", fullPath)
     end
 end
 
 IncludeSharedFiles()
-
 local function IncludeTaskFiles()
     local folder = "weapons/trm_gun_base/modules/shared/tasks/"
     local files, _ = file.Find(folder .. "*.lua", "LUA")
@@ -122,6 +136,8 @@ SWEP.Primary.Automatic = false
 --     Sound = Sound() ,
 -- }
 
+--  
+
 SWEP.Primary.BoltAction = false
 
 SWEP.m_EjectDelay = 0.0
@@ -176,7 +192,8 @@ SWEP.IronsightReload = true
 SWEP.Effects = {
     Muzzle = {
         effect = "MuzzleEffect",
-        ParticleEffect = "muzzleflash_ak74",
+        ParticleEffect = "trm_muzzleflash",
+        ParticleSuppressed = "trm_suppressor",
         attachment = "muzzle",
         Tracer = {
             Name = "Tracer",
@@ -206,12 +223,16 @@ SWEP.WorldModelOffsets = {   --alternative
 
 
 SWEP.Sight = {
-    Origin = "muzzle",
-    Align = nil, -- 瞄准参考附件点（用于配件瞄具偏移计算），每把武器按 viewmodel 设正确的值，如 "ironsight"；不设则回退用 Origin
     Angles = Angle(0, 0, -90),
     Pos = Vector(0, 0, 0),
-    Type = "Attachment" -- or "Bone"
 }
+
+SWEP.LaserSight = {
+    Pos = Vector(0,0,0) ,
+    Ang = Angle(0,0,15)
+}
+
+
 
 SWEP.Melee = {
     Enabled = true,
@@ -297,8 +318,8 @@ SWEP.VisualRecoil = {
 }
 
 SWEP.ViewmodelRecoil = {
-    Pos = Vector(0 ,-0,-0) ,
-    Ang = Angle(-0.0,0,0) ,
+    Pos = Vector(0, -0, -0),
+    Ang = Angle(-0.0, 0, 0),
 }
 
 SWEP.CameraShake = {
@@ -563,6 +584,8 @@ function SWEP:OnDrop(owner)
 end
 
 function SWEP:OnReloaded()
+
+    --Reload Attachments
     timer.Simple(0.1, function()
         self:OnAttachmentChanged(true)
     end)
@@ -580,7 +603,7 @@ function SWEP:OnRestore()
 
 
         self:BuildCustomizedGun()
- 
+
         self:SetNextRecoil(0)
     end)
 end
@@ -749,3 +772,10 @@ function SWEP:OnRemove()
         self:CleanupFlashLights()
     end
 end
+
+
+concommand.Add("trm_reload_atts",function()
+    local file = "autorun/trmbase_attachment_loader.lua"
+    AddCSLuaFile(file)
+    include(file)
+end)

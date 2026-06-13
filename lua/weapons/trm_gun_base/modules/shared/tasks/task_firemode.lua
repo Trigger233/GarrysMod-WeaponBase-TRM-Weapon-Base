@@ -8,7 +8,7 @@ end
 
 function task:OnSet(weapon)
     local stat = weapon.Firemode
-    if stat and weapon:IsAnimFinished() then
+    if stat then
         local max = #stat
         local index = weapon:GetFiremodeIndex()
         if index >= max then
@@ -18,16 +18,19 @@ function task:OnSet(weapon)
         end
         weapon:SetFiremodeIndex(index)
         local info = stat[index]
-        if info and info.Animation then
+        if info and info.Animation and self.Animation[info.Animation] then
             weapon:SetNextAnimationTime(0)
             weapon:PlayAnimation(weapon:ChooseAnim(info.Animation), true)
+        else
+            weapon:EmitSound("Weapon_AR2.Empty")
         end
         weapon:FireModeStat(index)
         net.Start("TRMBase_FiremodeCall")
-        net.WriteInt(index, 8)
+        net.WriteInt(index, 4)
         net.WriteEntity(weapon)
         net.Send(weapon:GetOwner())
     end
+    weapon:TrySetTask("Idle")
 end
 
 function task:Think(cycle, weapon)
