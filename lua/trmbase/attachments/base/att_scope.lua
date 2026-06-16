@@ -16,3 +16,7 @@ end
 function ATTACHMENT:Remove(weapon,model)
 
 end
+
+function ATTACHMENT:RTCode(weapon,size)
+    
+end

@@ -157,7 +157,7 @@ function SWEP:FireSecondaryProjectile()
 
         if IsValid(phys) then
             phys:Wake()
-            phys:SetVelocity(aimDir * self.Secondary.Velocity + owner:GetVelocity())
+            phys:SetVelocityInstantaneous(aimDir * self.Secondary.Velocity + owner:GetVelocity())
         end
     end
 

@@ -181,12 +181,12 @@ local function DrawClippedPlate(x, y, w, h, line, fill, cut)
     cut = cut or math.floor(h * 0.22)
     surface.SetDrawColor(fill or COL.panelDeep)
     surface.DrawPoly({
-        { x = x, y = y },
+        { x = x,           y = y },
         { x = x + w - cut, y = y },
-        { x = x + w, y = y + cut },
-        { x = x + w, y = y + h },
-        { x = x + cut, y = y + h },
-        { x = x, y = y + h - cut }
+        { x = x + w,       y = y + cut },
+        { x = x + w,       y = y + h },
+        { x = x + cut,     y = y + h },
+        { x = x,           y = y + h - cut }
     })
 
     surface.SetDrawColor(line or COL.line)
@@ -253,7 +253,7 @@ local function GetClipData(ply, wep)
 
     return math.max(clip or 0, 0), math.max(maxClip or 0, 0), reserve or -1
 end
- 
+
 local function GetFireModeText(wep)
     if wep.GetFiremodeName then
         local ok, text = pcall(wep.GetFiremodeName, wep)
@@ -354,8 +354,10 @@ local function DrawPlayerHUD(ply, wep, scale)
     surface.DrawRect(x + math.floor(14 * scale), y + math.floor(16 * scale), icon, icon)
     surface.SetDrawColor(hCol)
     surface.DrawOutlinedRect(x + math.floor(14 * scale), y + math.floor(16 * scale), icon, icon, 1)
-    surface.DrawRect(x + math.floor(29 * scale), y + math.floor(38 * scale), math.floor(18 * scale), math.floor(5 * scale))
-    surface.DrawRect(x + math.floor(35 * scale), y + math.floor(31 * scale), math.floor(5 * scale), math.floor(19 * scale))
+    surface.DrawRect(x + math.floor(29 * scale), y + math.floor(38 * scale), math.floor(18 * scale),
+        math.floor(5 * scale))
+    surface.DrawRect(x + math.floor(35 * scale), y + math.floor(31 * scale), math.floor(5 * scale),
+        math.floor(19 * scale))
 
     draw.SimpleText(tostring(math.floor(hudState.health + 0.5)), "TRM_HUD_Ammo", x + math.floor(76 * scale),
         y + math.floor(8 * scale), hCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
@@ -405,7 +407,8 @@ local function DrawCenterStatus(ply, wep, scale)
 end
 
 local function DrawTacticalHUD(ply, wep)
-    DrawHint(ply, wep)
+    DrawScopeStats(ply, wep)
+    DrawFiremodeHint(ply, wep)
     if cv_hud_enable:GetBool() == false then return end
 
     local scale = math.Clamp(cv_hud_scale:GetFloat(), 0.75, 1.35)
@@ -436,6 +439,7 @@ local function GetCrosshairScreenPos(ply, wep)
 
     return lastScreenPos or { x = ScrW() * 0.5, y = ScrH() * 0.5 }
 end
+local meterToHu = 52.5
 
 function DebugHUD(ply, wep)
     if cv_debug:GetInt() == 0 then return end
@@ -446,10 +450,12 @@ function DebugHUD(ply, wep)
     local aimDelta = wep.GetAimDelta and math.Round(wep:GetAimDelta(), 2) or 0
     local canFire = wep.CanPrimaryAttack and wep:CanPrimaryAttack() and "true" or "false"
 
+    local tr = ply:GetEyeTraceNoCursor().HitPos
+    local distance = ply:GetPos():Distance(tr)  / meterToHu
     draw.SimpleText("Task: " .. tostring(wep.GetCurrentTask and wep:GetCurrentTask() or "None"), "Default", ScrW() / 2,
         ScrH() * 0.68, COL.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    draw.SimpleText("Aim: " .. tostring(aimDelta) .. "  Seq: " .. tostring(sequence) .. "  Can: " .. canFire, "Default",
-        ScrW() / 2, ScrH() * 0.71, COL.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    draw.SimpleText("Dis: " .. distance , "Default",
+        ScrW() * 0.75, ScrH() * 0.71, COL.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     draw.SimpleText("Cycle: " .. tostring(cycle), "Default", ScrW() / 2, ScrH() * 0.74, COL.white, TEXT_ALIGN_CENTER,
         TEXT_ALIGN_CENTER)
 end
@@ -458,8 +464,8 @@ end
 local firemodeDisplayAlpha = 0
 local lastFiremode = ""
 
--- 修改 DrawHint 函数
-function DrawHint(ply, wep)
+-- 修改 DrawFiremodeHint 函数
+function DrawFiremodeHint(ply, wep)
     local current = wep:GetFiremodeName()
 
     -- 检测开火模式变化
@@ -468,23 +474,51 @@ function DrawHint(ply, wep)
         firemodeDisplayAlpha = 255 -- 触发显示
     end
 
-    -- 淡出效果
+      -- 淡出效果
     if firemodeDisplayAlpha > 0 then
-        firemodeDisplayAlpha = firemodeDisplayAlpha - (FrameTime() * 200) -- 1秒淡出
+        firemodeDisplayAlpha = firemodeDisplayAlpha - (RealFrameTime() * 200) -- 1秒淡出
         if firemodeDisplayAlpha < 0 then firemodeDisplayAlpha = 0 end
-
-        local x, y = ScrW() / 2, ScrH() * 0.6
+        local x, y = ScrW() * 0.5, ScrH() * 0.6
         local color = Color(COL.white.r, COL.white.g, COL.white.b, firemodeDisplayAlpha)
-        draw.SimpleText(current, "TRM_HUD_AmmoReserve", x, y, color, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+        draw.SimpleText(lastFiremode, "TRM_HUD_AmmoReserve", x, y, color, TEXT_ALIGN_CENTER,
+            TEXT_ALIGN_TOP)
     end
 end
+
+local scopealpha = 0
+local scopezoom = 0
+local scopeZero = 100
+local needzero = GetConVar("trmbase_sv_physical_bullet"):GetBool()
+
+function DrawScopeStats(ply, wep)
+    local Current = math.Round(wep:GetScopeZoom(),1)
+    local zero = wep.ZeroDistance
+    if Current ~= scopezoom or scopeZero != zero then
+        scopezoom = Current
+        scopealpha = 255 
+        scopeZero = zero
+    end
+
+    local text = "Zoom : "..scopezoom.." x " .. scopeZero .. "M"
+
+     -- 淡出效果
+    if scopealpha > 0 then
+        scopealpha = scopealpha - (RealFrameTime() * 200) -- 1秒淡出
+        if scopealpha < 0 then scopealpha = 0 end
+        local x, y = ScrW() * 0.5, ScrH() * 0.65
+        local color = Color(COL.white.r, COL.white.g, COL.white.b, scopealpha)
+        draw.SimpleTextOutlined(text, "TRM_HUD_AmmoReserve", x, y, color, TEXT_ALIGN_CENTER,
+            TEXT_ALIGN_CENTER, 2, Color(0, 0, 0, scopealpha))
+    end
+end 
+
 function DrawCustomCrosshair(ply, wep)
     if cv_crosshair_enable:GetInt() == 0 then return end
 
     local alpha = cv_crosshair_alpha:GetInt()
     local sequence = wep.m_CurrentSequence or (wep.GetPlayingSequence and wep:GetPlayingSequence()) or ""
 
-    if not ply:ShouldDrawLocalPlayer() and wep.DrawCrossHairIS ~= true and wep.GetAimDelta and wep:GetAimDelta() > 0.5 and cv_debug:GetInt() == 0 then
+    if not ply:ShouldDrawLocalPlayer() and wep.DrawCrossHairIS ~= true and wep.GetAimDelta and wep:GetAimDelta() > 0.5 then
         alpha = 0
     end
 

@@ -71,11 +71,11 @@ end
 function BASE_TRM_ATTS.Inherit(att)
     local baseClass = BASE_TRM_ATTS[att.Base]
     while baseClass  do
-        inherit(att, baseClass)
+        inherit(att, baseClass) 
         baseClass = BASE_TRM_ATTS[baseClass.Base] 
     end
-end
- 
+end 
+  
 local function finishAttachments()
     for name, att in pairs(BASE_TRM_ATTS) do
         if type(att) ~= "table" then

@@ -3,6 +3,7 @@ if SERVER then
 end
 
 
+
 function SWEP:CanPrimaryFire()
 	-- local seq =	self:GetPlayingSequence()
 	if self.Primary.BoltAction and self.Animations.Rechamber and self:GetChamberAmmo() <= 0 and not self:IsEmpty() and self:GetNextPrimaryFire() <= CurTime() then
@@ -26,19 +27,21 @@ else
 	include("include/trmbase_sound.lua")
 end
 function SWEP:DoFireSound()
-	if self.Reverb then
-		self:HandleReverb(self.Reverb)
-	end
 	local slience = self.Slienced and true or false
 	if slience and self.Primary.SliencedSound then
 		self:EmitSound(self.Primary.SliencedSound)
 	elseif self.Primary.Sound then
 		self:EmitSound(self.Primary.Sound)
 	end
+	if self.Reverb then
+		self:HandleReverb(self.Reverb)
+	end
 	if self:Clip1() == 1 then
 		self:EmitSound("weapons/pistol/pistol_empty.wav", 66, 100, 1, CHAN_ITEM)
 	end
 end
+
+local cvar_bullet = CreateConVar("trmbase_sv_physical_bullet", 0, FCVAR_ARCHIVE, "", 0, 1)
 
 function SWEP:FirePrimaryBullet()
 	if (not IsFirstTimePredicted()) then return end
@@ -81,43 +84,66 @@ function SWEP:FirePrimaryBullet()
 	end
 
 	local spread = Vector(self:GetSpreadHorizonal(), self:GetSpreadVertical(), 0) * self:GetCurrentSpread()
-	local bullet = {
-		Attacker = self:GetOwner(),
-		Num = self.Primary.NumBullets,
-		Src = owner:GetShootPos(),
-		Dir = aimDir,
-		Distance = self.Primary.Range,
-		Spread = spread,
-		Tracer = 0,
-		Force = self.Primary.Force / self.Primary.NumBullets,
-		Damage = self.Primary.Damage * self.Primary.NumBullets,
-		AmmoType = self.Primary.Ammo,
-		Callback = function(attacker, tr, dmginfo)
-			self:BulletCallback(attacker, tr, dmginfo)
-			-- 生成曳光弹
-			if not self.Slienced then
-				if CLIENT and IsFirstTimePredicted() then
-					-- 客户端预测（给自己看）
-					self:DoTracer(owner:GetShootPos(), tr.HitPos)
-				elseif SERVER then
-					-- 服务器广播给所有玩家（包括自己）
-					net.Start("TRMBase_TracerEffect")
-					net.WriteEntity(self)
-					net.WriteVector(owner:GetShootPos())
-					net.WriteVector(tr.HitPos)
-					net.Broadcast()
+	if not cvar_bullet:GetBool() then
+		local bullet = {
+			Attacker = self:GetOwner(),
+			Num = self.Primary.NumBullets,
+			Src = owner:GetShootPos(),
+			Dir = aimDir,
+			Distance = self.Primary.Range,
+			Spread = spread,
+			Tracer = 0,
+			Force = self.Primary.Force / self.Primary.NumBullets,
+			Damage = self.Primary.Damage * self.Primary.NumBullets,
+			AmmoType = self.Primary.Ammo,
+			Callback = function(attacker, tr, dmginfo)
+				self:BulletCallback(attacker, tr, dmginfo)
+				-- 生成曳光弹
+				if not self.Slienced then
+					if CLIENT and IsFirstTimePredicted() then
+						-- 客户端预测（给自己看）
+						self:DoTracer(owner:GetShootPos(), tr.HitPos)
+					elseif SERVER then
+						-- 服务器广播给所有玩家（包括自己）
+						net.Start("TRMBase_TracerEffect")
+						net.WriteEntity(self)
+						net.WriteVector(owner:GetShootPos())
+						net.WriteVector(tr.HitPos)
+						net.Broadcast()
+					end
 				end
-			end
-		end,
+			end,
 
-	}
-	if not owner:IsPlayer() then
-		bullet.Spread = bullet.Spread * self.Aim.Spread
-		bullet.Damage = bullet.Damage / bullet.Num
+		}
+		if not owner:IsPlayer() then
+			bullet.Spread = bullet.Spread * self.Aim.Spread
+			bullet.Damage = bullet.Damage / bullet.Num
+		end
+		if SERVER and IsFirstTimePredicted() then
+			owner:FireBullets(bullet)
+		end
+	else
+		for i = 1, self.Primary.NumBullets do
+			local AimDirNew = Vector(aimDir)
+				local spreadScale = self:GetCurrentSpread() * 50
+				local angleOffset = Angle(
+					math.Rand(-1, 1) * self:GetSpreadVertical() * spreadScale,
+					math.Rand(-1, 1) * self:GetSpreadHorizonal() * spreadScale,
+					0
+				)
+				local AimDirNew   = aimDir:Angle()
+				AimDirNew:Add(angleOffset)
+				AimDirNew = AimDirNew:Forward()
+			local bullet = ents.Create("trm_bullet")
+			bullet:SetOwner(self)
+
+			bullet:SetPos(owner:GetShootPos()) -- 从枪口前方一点的位置发射，避免穿模
+			bullet:SetAngles(AimDirNew:Angle())
+			bullet:Spawn()
+			local phys = bullet:GetPhysicsObject()
+		end
 	end
-	if SERVER and IsFirstTimePredicted() then
-		owner:FireBullets(bullet)
-	end
+
 	self:DoFireSound()
 
 	self:DoVisualRecoil()
@@ -132,6 +158,10 @@ function SWEP:FirePrimaryBullet()
 		self:SetChamberAmmo(amount)
 	end
 	self:TrySetTask("Idle")
+end
+
+function SWEP:GetPrimaryProjBulletSpeed()
+	return 4000000
 end
 
 function SWEP:FireProjectile()
@@ -176,18 +206,20 @@ function SWEP:FireProjectile()
 	end
 
 
-	local spreadScale = self:GetCurrentSpread()
-	local spreadVec = Vector(
-		math.Rand(-1, 1) * self:GetSpreadHorizonal() * spreadScale,
+	local AimDirNew   = Vector(aimDir)
+	local spreadScale = self:GetCurrentSpread() * 50
+	local angleOffset = Angle(
 		math.Rand(-1, 1) * self:GetSpreadVertical() * spreadScale,
+		math.Rand(-1, 1) * self:GetSpreadHorizonal() * spreadScale,
 		0
 	)
-	aimDir = (aimDir + spreadVec):GetNormalized()
-
+	local AimDirNew   = aimDir:Angle()
+	AimDirNew:Add(angleOffset)
+	AimDirNew = AimDirNew:Forward()
 	if SERVER and self.Primary.SpecialAmmo != -1 then
 		local proj = ents.Create(self.Primary.SpecialAmmo)
 		proj:SetPos(owner:GetShootPos()) -- 从枪口前方一点的位置发射，避免穿模
-		proj:SetAngles(aimDir:Angle())
+		proj:SetAngles(AimDirNew:Angle())
 		proj:Spawn()
 		proj:SetOwner(self)
 		local phys = proj:GetPhysicsObject()
@@ -195,7 +227,7 @@ function SWEP:FireProjectile()
 
 		if IsValid(phys) then
 			phys:Wake()
-			phys:SetVelocity(aimDir * self.Primary.Velocity + owner:GetVelocity())
+			phys:SetVelocityInstantaneous(aimDir * self.Primary.Velocity + owner:GetVelocity())
 		end
 	end
 
@@ -417,7 +449,7 @@ function SWEP:DoCameraRecoil()
 	if isFiring then
 		-- 射击时：应用后坐力，然后用玩家压枪输入抵消
 		NextAngle = self.m_RecoilSum * stat.Factor
-		NextAngle.p = NextAngle.p 
+		NextAngle.p = NextAngle.p
 		self.m_RecoilSum:Add(-NextAngle)
 		-- 玩家压枪抵消后坐力累积
 		self.m_RecoilDelta = self.m_RecoilDelta - math.min(playerPitchDelta, 0)

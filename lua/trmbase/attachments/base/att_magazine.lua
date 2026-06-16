@@ -18,7 +18,10 @@ function ATTACHMENT:Render(weapon, model)
         model._ammo = weapon:Ammo1()
         self:SetMagFollowerPoseParam(weapon, model, weapon:GetMaxClip1() - weapon:Clip1())
     end
-    --self:MagazineBoneInit(weapon, model)
+
+    if weapon.DynamicMagazineModel then
+        weapon:DynamicMagazineModel(self, model)
+    end
 end
 
 function ATTACHMENT:SetMagFollowerPoseParam(weapon, model, val)
@@ -31,35 +34,7 @@ function ATTACHMENT:SetMagFollowerPoseParam(weapon, model, val)
     model:SetPoseParameter(ppid, math.Clamp(val, min, max))
 end
 
-local function cacheBones(model, bones)
-    for _, name in pairs(bones) do
-        model.cachedBones[name] = { id = model:LookupBone(name), remove = false }
-    end
-end
-
-function ATTACHMENT:MagazineBoneInit(weapon, model)
-    if model._mag_inited then return end
-    model._mag_inited = true
-
-    model._requestedReset = false
-    model._clip = -1
-    model._lastClip = -1
-    model._ammo = -1
-    model._lastAmmo = -1
-    model.BulletList = table.Copy(self.BulletList)
-    model.ReserveBulletList = table.Copy(self.ReserveBulletList)
-    model:SetupBones()
-    model.cachedBones = {}
-
-    for _, bones in pairs(model.BulletList) do
-        cacheBones(model, bones)
-    end
-
-    for _, bones in pairs(model.ReserveBulletList) do
-        cacheBones(model, bones)
-    end
-
-    model.magzineCallback = model:AddCallback("BuildBonePositions", function(ent, numbones)
-
-    end)
+function ATTACHMENT:ResetBullets(weapon,model)
+    model._requestedReset = true
+    self:SetMagFollowerPoseParam(weapon, model,weapon:GetMaxClip1() - (weapon:Clip1() + weapon:Ammo1()))
 end

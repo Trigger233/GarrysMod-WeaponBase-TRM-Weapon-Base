@@ -72,15 +72,16 @@ function SWEP:DoTracer(startpos, endpos)
     end
 
     local stats = self.Effects.Muzzle.Tracer
-    -- if stats.IsParticle then
-    --     util.ParticleTracer(stats.Name, startpos, endpos, true)
-    -- else
+    
+    if stats.IsParticle then
+        util.ParticleTracerEx(stats.Name, startpos, endpos, true ,self:EntIndex() , -1 )
+    else
         local tracer = EffectData()
         tracer:SetScale(Tracerscale)
         tracer:SetOrigin(endpos)
         tracer:SetStart(startpos)
         utilf(tracerName, tracer)
-    -- end
+    end
 end
 
 local function findAttachmentInChildren(ent, attName, weapon)

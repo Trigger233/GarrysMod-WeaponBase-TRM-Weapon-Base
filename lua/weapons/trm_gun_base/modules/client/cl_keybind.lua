@@ -49,6 +49,18 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
         end
     end
 
+    if weapon:GetAimDelta() > 0.2 then
+        if bind == "invnext" then
+            weapon:Scroll(1)
+            return true
+            
+        end
+        if bind == "invprev" then
+            weapon:Scroll(-1)
+
+            return true
+        end
+    end
 
 
     -- 阻止普通缩放行为（由武器管理系统接管）

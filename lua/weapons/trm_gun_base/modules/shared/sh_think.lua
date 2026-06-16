@@ -32,7 +32,7 @@ function SWEP:bThink()
     local task = self:GetCurrentTaskName() or ""
     local sprint = owner:IsSprinting()
     
-    if owner and owner:KeyDown(IN_ATTACK) and self:IsReloading() and self.ReloadType == "Single" then
+    if owner and owner:KeyPressed(IN_ATTACK) and self:IsReloading() and self.ReloadType == "Single" then
         self:TrySetTask("ReloadEnd")
     end
 

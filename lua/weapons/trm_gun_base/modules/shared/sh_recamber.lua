@@ -1,3 +1,6 @@
+function SWEP:DoBolt(a)
+    self:ResetChamberRound(a)
+end
 
 function SWEP:ResetChamberRound(amount)
     if not amount then

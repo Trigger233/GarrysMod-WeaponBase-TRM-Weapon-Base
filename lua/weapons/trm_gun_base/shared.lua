@@ -12,11 +12,11 @@ require("trm_utils")
 -- 包含所有 shared 文件（服务端+客户端都执行）
 -- ==========================================
 local SHARED_PRIORITY = {
-    "sh_tasks.lua","sh_datatable.lua",  
-} 
+    "sh_tasks.lua", "sh_datatable.lua",
+}
 
 local function IncludeSharedFiles()
-   -- print("start load")
+    -- print("start load")
     local folder = "weapons/trm_gun_base/modules/shared/"
     local allFiles, _ = file.Find(folder .. "*.lua", "LUA")
 
@@ -34,11 +34,11 @@ local function IncludeSharedFiles()
         local fullPath = folder .. fileName
         if SERVER then AddCSLuaFile(fullPath) end
         include(fullPath)
-       -- print("load trm gun base : ", fullPath)
+        -- print("load trm gun base : ", fullPath)
     end
 end
 
-IncludeSharedFiles()
+
 local function IncludeTaskFiles()
     local folder = "weapons/trm_gun_base/modules/shared/tasks/"
     local files, _ = file.Find(folder .. "*.lua", "LUA")
@@ -50,7 +50,7 @@ local function IncludeTaskFiles()
         include(fullPath)
     end
 end
-IncludeTaskFiles()
+
 -- ==========================================
 -- 包含所有 client 文件（只在客户端执行，但需要发送给客户端）
 -- ==========================================
@@ -68,6 +68,23 @@ local function IncludeClientFiles()
     end
 end
 
+local function IncludeClientAttachmentsFiles()
+    local folder = "weapons/trm_gun_base/modules/client/attachments/"
+    local files, _ = file.Find(folder .. "*.lua", "LUA")
+    for _, fileName in ipairs(files) do
+        local fullPath = folder .. fileName
+        if SERVER then
+            AddCSLuaFile(fullPath) -- 发送给客户端
+        end
+        if CLIENT then
+            include(fullPath) -- 客户端执行
+        end
+    end
+end
+
+IncludeClientAttachmentsFiles()
+IncludeSharedFiles()
+IncludeTaskFiles()
 IncludeClientFiles()
 
 SWEP.IsTRMWeapon = true
@@ -136,7 +153,7 @@ SWEP.Primary.Automatic = false
 --     Sound = Sound() ,
 -- }
 
---  
+--
 
 SWEP.Primary.BoltAction = false
 
@@ -145,7 +162,7 @@ SWEP.m_EjectDelay = 0.0
 SWEP.Primary.Damage = 8
 -- SWEP.Primary.Range = 5000
 SWEP.Primary.Force = 1
-SWEP.Primary.Velocity = 3000
+SWEP.Primary.Velocity = 500
 SWEP.Primary.Sound = Sound("")
 SWEP.Primary.SliencedSound = nil
 SWEP.Slienced = false
@@ -228,8 +245,8 @@ SWEP.Sight = {
 }
 
 SWEP.LaserSight = {
-    Pos = Vector(0,0,0) ,
-    Ang = Angle(0,0,15)
+    Pos = Vector(0, 0, 0),
+    Ang = Angle(0, 0, 15)
 }
 
 
@@ -553,8 +570,6 @@ function SWEP:Equip()
     if cvar_attachment:GetBool() then
         self:LoadAttachmentPreset()
     end
-    self:BuildCustomizedGun()
-    -- 先加载保存的配件配置
 end
 
 function SWEP:Deploy()
@@ -576,7 +591,6 @@ end
 
 function SWEP:OnDrop(owner)
     --owner:SetActiveWeapon(NULL)
-
     if IsValid(TRM_AttachMenu_Instance) then
         TRM_AttachMenu_Instance:Close()
     end
@@ -584,11 +598,7 @@ function SWEP:OnDrop(owner)
 end
 
 function SWEP:OnReloaded()
-
-    --Reload Attachments
-    timer.Simple(0.1, function()
-        self:OnAttachmentChanged(true)
-    end)
+    self:OnAttachmentChanged()
 end
 
 function SWEP:OnRestore()
@@ -753,29 +763,26 @@ end
 
 function SWEP:OnDrop(owner)
     self:BuildCustomizedGun()
-    if CLIENT then
-        self:InvalidateBoneCache()
-        self:SetupBones()
-    end
 end
 
 function SWEP:OnRemove()
-    if self.CurrentAttachments then
-        for _, entry in pairs(self.CurrentAttachments) do
-            if entry then
-                self:RemoveAttachmentModel(entry, true)
-            end
-        end
-    end
+    self:RemoveAllAttachementModels()
 
     if CLIENT then
         self:CleanupFlashLights()
     end
 end
 
-
-concommand.Add("trm_reload_atts",function()
-    local file = "autorun/trmbase_attachment_loader.lua"
+concommand.Add("trm_reload_atts", function()
+    local file = "autorun/trm_loader.lua"
     AddCSLuaFile(file)
     include(file)
+    for _ , ent in ents.Iterator() do
+        if ent:IsWeapon() and ent.BuildCustomizedGun then
+            ent:BuildCustomizedGun()
+        end
+    end
+
 end)
+
+

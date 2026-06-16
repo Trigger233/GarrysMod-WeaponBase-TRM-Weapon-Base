@@ -10,6 +10,12 @@ hook.Add("PopulateToolMenu","TRM_weapon_base_q_menu",function()
         panel:CheckBox(language.GetPhrase("TRMBase_LoadAttOnPickup"),"trmbase_load_attachment_on_pickup")
         panel:CheckBox(language.GetPhrase("TRMBase_Holster"), "trmbase_sv_holster_on_ladder")
     end)
+
+    spawnmenu.AddToolMenuOption("TriggerMiku_Work", "WeaponBase", "trmbase_admin_bullet", "Bullet", "", "", function(panel)
+        panel:ClearControls()
+            panel:CheckBox(language.GetPhrase("TRMBase_Physical_Bullet"), "trmbase_sv_physical_bullet")
+        end)
+
     spawnmenu.AddToolMenuOption("TriggerMiku_Work", "WeaponBase", "trmbase_npc", "NPC", "", "", function(panel)
         panel:ClearControls()
         panel:CheckBox(language.GetPhrase("TRMBase_ReplaceNPC"),"trmbase_replace_npc")

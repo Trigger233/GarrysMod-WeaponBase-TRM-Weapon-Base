@@ -79,6 +79,7 @@ function SWEP:LoadAttachmentPreset()
 
     local data = util.JSONToTable(json)
     ApplyAttachmentTable(self, data)
+    self:OnAttachmentChanged()
 end
 
 function SWEP:SaveAttachmentLoadout(slot)

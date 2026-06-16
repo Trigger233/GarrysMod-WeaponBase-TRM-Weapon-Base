@@ -72,9 +72,8 @@ function SWEP:PrecacheViewModel()
     self.m_ViewmodelCache = nil
     self.m_SkinCache = 0
     self.m_BodyGroupCache = {}
-    self.m_PoseParameter = {}
-    self.m_PoseParameter2 = {}
-
+    self.m_PoseParameter = self.GripPoseParameters.Left or {}
+    self.m_PoseParameter2 = self.GripPoseParameters.Right or {}
 
     for _, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
@@ -548,6 +547,9 @@ function SWEP:GenerateAimOffset()
 
         if AttachmentData.Scope then
             self.sight.zoom = AttachmentData.Scope.Zoom
+
+            self.sight.MaxZoom = AttachmentData.Scope.Max or self.sight.zoom
+            self.sight.MinZoom = AttachmentData.Scope.Min or self.sight.zoom
         end
     end
 end
@@ -588,34 +590,63 @@ end)
 function SWEP:GetAllAttachmentsInUse()
     return self.CurrentAttachments
 end
-
-function SWEP:CreateAttachmentModel(entry,slot)
-    if SERVER then return end
-
-    local Att = BASE_TRM_ATTS[entry.Class] 
-    if not Att or not Att.Model then return  end
-
-    local function CreateModel(att)
-    local model = ClientsideModel(att.Model,RENDERGROUP_OPAQUE)
-    model:SetOwner(self)
-    model:SetNotSolid(true)
-    model:SetNoDraw(true)
-    model:AddEffects(EF_PARENT_ANIMATES)
-
-        
-
-        return model
+local function buildSingleModelBone(ent)
+    if not ent or not IsValid(ent) then
+        return
     end
-
-    entry.m_Model = CreateModel(Att)
-    entry.m_TpModel = CreateModel(Att)
-
+    local boneCount = ent:GetBoneCount()
+    local bones = {}
+    for i = 0, boneCount - 1 do
+        local name = ent:GetBoneName(i)
+        if name and name ~= "" then
+            bones[name] = {
+                Parent = ent,
+                Id = i,
+                Name = name
+            }
+        end
+    end
+    return bones
 end
 
-local function removeChildrenModel(ent)
+function SWEP:CreateAttachmentModel(entry, slot)
+    if SERVER then return end
+
+    local Att = BASE_TRM_ATTS[entry.Class]
+    if not Att or not Att.Model then return end
+
+    local function CreateModel(att)
+        local model = ClientsideModel(att.Model, RENDERGROUP_OPAQUE)
+        model:SetOwner(self)
+        model:SetNotSolid(true)
+        model:SetNoDraw(true)
+        model:AddEffects(EF_PARENT_ANIMATES)
+
+        model:InvalidateBoneCache()
+        model:SetupBones()
+
+        model._IsAttachment  =  true
+
+        -- 立即缓存骨骼并返回
+        local bones = buildSingleModelBone(model)
+        return model, bones
+    end
+
+    local model, vBones = CreateModel(Att)
+    entry.m_Model = model
+    table.Merge(self.m_Bone, vBones)
+
+    local tpModel, tpBones = CreateModel(Att)
+    entry.m_TpModel = tpModel
+    table.Merge(self.wm_Bone, tpBones)
+end
+
+local function removeChildrenModel(ent,owner)
+    if not ent then return {} end
     local children = ent:GetChildren()
+    if not children then return end
     for _, child in ipairs(children) do
-        if IsValid(child) and child:GetClass() == "class BaseFlex" then
+        if IsValid(child) and child:GetClass() == "class C_BaseFlex" and child:GetOwner() == owner then
             removeChildrenModel(child)
             child:Remove()
         end
@@ -624,8 +655,13 @@ end
 
 function SWEP:RemoveAllAttachementModels()
     if SERVER then return end
-    removeChildrenModel(self:GetViewModel())
-    removeChildrenModel(self)
+    removeChildrenModel(self:GetViewModel(),self)
+    removeChildrenModel(self,self)
+end
+
+function SWEP:ResetWeaponModelData()
+    self.m_Bone = {}
+    self.wm_Bone = {}
 end
 
 ------------------------------------------------------
@@ -636,6 +672,7 @@ function SWEP:BuildCustomizedGun()
     local hasVM = IsValid(vm)
     local owner = self:GetOwner()
     local isActive = hasVM and owner and owner:GetActiveWeapon() == self
+    
     self.sight = nil
     self.underbarrel = nil
 
@@ -649,6 +686,12 @@ function SWEP:BuildCustomizedGun()
     
     self:InvalidateAttachments(vm)
     self:InvalidateAttachments(self)
+
+    self:ResetWeaponModelData()
+    if IsValid(vm ) then
+    self.m_Bone = buildSingleModelBone(vm) 
+    end
+    self.wm_Bone = buildSingleModelBone(self)
 
 
     self:RemoveAllAttachementModels()
@@ -671,7 +714,6 @@ function SWEP:BuildCustomizedGun()
         vm:ResetSequence(sequence)
     end
 
-    self:BuildWeaponModelData()
     
     self:ApplyCustomizationModels()
     self:GenerateAimOffset()
@@ -689,47 +731,8 @@ function SWEP:BuildCustomizedGun()
     self:TrySetTask("Idle")
 end
 
-local function buildSingleModelBone(ent)
-    local boneCount = ent:GetBoneCount()
-    local bones = {}
-    for i = 0, boneCount - 1 do
-        local name = ent:GetBoneName(i)
-        if name and name ~= "" then
-            bones[name] = {
-                Parent = ent,
-                Id = i,
-                Name = name
-            }
-        end
-    end
-    return bones
-end
 
-local function buildCustomizedModelBone(ent, owner)
-    local bones = {}
 
-    -- 当前实体
-    table.Merge(bones, buildSingleModelBone(ent))
-
-    -- 子实体
-    for _, child in pairs(ent:GetChildren()) do
-        if child:GetClass() == "class C_BaseFlex" and child:GetOwner() == owner then
-            table.Merge(bones, buildCustomizedModelBone(child))
-        end
-    end
-
-    return bones
-end
-
-function SWEP:BuildWeaponModelData()
-    if not CLIENT then return end
-
-    local vm = self:GetViewModel()
-    if IsValid(vm) then
-        self.m_Bone = buildCustomizedModelBone(vm, self)
-    end
-    self.wm_Bone = buildCustomizedModelBone(self, self)
-end
 
 function SWEP:FindBone(name, isTp)
     return (isTp and self.wm_Bone[name] or self.m_Bone[name] or false)

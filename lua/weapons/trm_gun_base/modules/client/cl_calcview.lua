@@ -127,7 +127,7 @@ function SWEP:GetClientVisualRecoil()
     if not self.m_Client_VisualRecoil then
         self.m_Client_VisualRecoil = source
     end
-    self.m_Client_VisualRecoil = LerpAngle(RealFrameTime() * 50, self.m_Client_VisualRecoil, source)
+    self.m_Client_VisualRecoil = LerpAngle(RealFrameTime() * 25, self.m_Client_VisualRecoil, source)
 
     return self.m_Client_VisualRecoil
 end
@@ -262,11 +262,11 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     pos:Add(sprintPos)
     angles:Add(sprintAngle)
     -- Aim Pose（基础偏移用 VM 朝向）
-    AimOffset =  Vector(self.Sight.Pos) 
-    AimOffsetAngle =  Angle(self.Sight.Ang) 
+    AimOffset = Vector(self.Sight.Pos)
+    AimOffsetAngle = Angle(self.Sight.Ang)
 
- 
-    
+
+
 
 
 
@@ -289,7 +289,7 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
 
 
     --Visual Recoil（只有玩家持有时才应用）
-    if IsValid(self:GetOwner()) and self:GetOwner():IsPlayer() and not ( self:GetSight() and self:GetSight().zoom and aimdelta > 0.2 ) then
+    if IsValid(self:GetOwner()) and self:GetOwner():IsPlayer() then
         -- 后坐力后退（position）
         back = Lerp(RealFrameTime() * 20, back or 0,
             self:GetVisualRecoilBackward() or back)
@@ -297,24 +297,63 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
         -- 后坐力角度偏移（pitch/yaw 让 viewmodel 上跳）
         local visAng = self:GetClientVisualRecoil()
 
-
         angles:RotateAroundAxis(angles:Right(), -visAng.p * 0.66)
         angles:RotateAroundAxis(angles:Up(), visAng.y * 0.66)
+        if not (self:GetSight() and self:GetSight().zoom and aimdelta > 0.2) then
+            ------ViewModel Recoil
+            local fireInterval = (60 / self.Primary.RPM) * 1
+            local timeToNextFire = self:GetNextRecoil() - CurTime()
+            local t = math.Clamp(timeToNextFire / fireInterval, 0, 1)
+            local Recoildelta = math.min((t > 0.5 and 1 - t or t) * 2, 1) -- 开火时 = 1，然后衰减到 0
 
-        ------ViewModel Recoil
-        local fireInterval = (60 / self.Primary.RPM)* 1
-        local timeToNextFire = self:GetNextRecoil() - CurTime()
-        local t = math.Clamp(timeToNextFire / fireInterval, 0, 1)
-        local Recoildelta = (t > 0.5 and 1 - t or t) * 2 -- 开火时 = 1，然后衰减到 0
+            local recoiloffsetpos = self.ViewmodelRecoil.Pos
+            local recoiloffsetang = self.ViewmodelRecoil.Ang
+            pos:Add(Vector(recoiloffsetpos[1] * angles:Right() + recoiloffsetpos[2] * angles:Forward() +
+                recoiloffsetpos[3] * angles:Up()) * Recoildelta)
 
-        local recoiloffsetpos = self.ViewmodelRecoil.Pos
-        local recoiloffsetang = self.ViewmodelRecoil.Ang
-       pos:Add(Vector(recoiloffsetpos[1] * angles:Right() + recoiloffsetpos[2] * angles:Forward() +
-            recoiloffsetpos[3] * angles:Up()) * Recoildelta)
-
-       angles:Add(recoiloffsetang * Recoildelta)
+            angles:Add(recoiloffsetang * Recoildelta)
+        end
     end
 
 
     return pos, angles
+end
+
+local cvar_mdv = CreateClientConVar("trmbase_sight_mdv", 1.33, true, false, "None Description", 0, 3)
+local function MDVSensitivity(curFOV, defFOV, mdv)
+    -- 限制 mdv 最小值，避免 tan 爆炸
+    mdv = math.max(mdv or 1.33, 0.5) -- 最小 0.5
+
+    if mdv == 0 then
+        return curFOV / defFOV
+    end
+
+    -- 保护：避免角度接近 90°
+    local angleA = math.rad(defFOV / 2) / mdv
+    local angleB = math.rad(curFOV / 2) / mdv
+
+    -- 角度超过 85° 时钳制，避免 tan 爆炸
+    local maxAngle = math.rad(85)
+    if angleA > maxAngle then angleA = maxAngle end
+    if angleB > maxAngle then angleB = maxAngle end
+
+    local a = math.tan(angleA)
+    local b = math.tan(angleB)
+
+    return math.Clamp(b / a, 0.01, 1)
+end
+
+
+function SWEP:AdjustMouseSensitivity(defaultSensitivity, localFOV, _)
+    local defaultFOV = GetConVar("fov_desired"):GetInt()
+    local currentFOV = localFOV
+    local scope =  self.sight and self.sight.zoom or false
+    local aim = self:GetAimDelta()
+    if scope then
+        currentFOV = Lerp(aim, defaultFOV, self:GetScopeZoomFov())
+    else
+        currentFOV = Lerp(aim, defaultFOV, localFOV / self.Aim.Scale)
+    end
+    --chat.AddText(scope)
+    return MDVSensitivity(currentFOV, defaultFOV, cvar_mdv:GetFloat())
 end

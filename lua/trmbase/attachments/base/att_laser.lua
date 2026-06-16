@@ -39,12 +39,13 @@ end
 require("trm_utils")
 function ATTACHMENT:DoLaserRender(weapon, model, data)
     if not self.Laser then return end
-
+    if weapon:GetAimDelta() > 0.2 then return end
     local attID = model:LookupAttachment(data.Attach)
     if attID <= 0 then return end
     
     local att = model:GetAttachment(attID)
     if not att then return end
+
 
     -- 缓存射线结果
     if not self._nextTrace or CurTime() > self._nextTrace then

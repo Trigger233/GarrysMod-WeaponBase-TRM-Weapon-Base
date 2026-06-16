@@ -9,7 +9,7 @@ ATTACHMENT.Pos = Vector(0, 0, 0)
 ATTACHMENT.Sight = {
     Pos = Vector(0, 4, 1.0),
     Align = "scope_origin",
-    Size = 360,
+    Size = 45,
     Color = Color(255, 255, 255) ,
     Material = Material("models/weapons/tfa_ins2/optics/mk4_crosshair"),
 }
@@ -17,11 +17,12 @@ ATTACHMENT.Sight = {
 ATTACHMENT.Scope = {
     Align = "scope_origin",
     Zoom = 8,
-    RTSize = 600,
     Offset = Vector(0,0,0) ,
     Angle = Angle(0,0,-90),
     DrawAt = 0.35,
-    Lens = {"lense_rt"}
+    Lens = {"lense_rt"} ,
+    Max = 16 ,
+    DynamicCrosshair = true
 }
 function ATTACHMENT:ChangeWeaponStats(weapon)
     weapon.Aim.Time = weapon.Aim.Time * 1.1
