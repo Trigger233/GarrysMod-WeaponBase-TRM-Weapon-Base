@@ -18,7 +18,7 @@ function task:OnSet(weapon)
         end
         weapon:SetFiremodeIndex(index)
         local info = stat[index]
-        if info and info.Animation and self.Animation[info.Animation] then
+        if info and info.Animation then
             weapon:SetNextAnimationTime(0)
             weapon:PlayAnimation(weapon:ChooseAnim(info.Animation), true)
         else

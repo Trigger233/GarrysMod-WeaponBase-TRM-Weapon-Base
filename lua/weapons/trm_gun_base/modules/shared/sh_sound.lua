@@ -1,3 +1,9 @@
+if SERVER then
+    AddCSLuaFile("include/trmbase_sound.lua")
+else
+    include("include/trmbase_sound.lua")
+end
+
 -- =============================================
 -- 空间混响检测（移植自 Modern Bentleyfare Base）
 -- 静默多方向射线检测室内/室外，用于枪声混响
@@ -11,6 +17,22 @@ local REVERB_REFRESH_TIME = 0.3
 local reverbHull = Vector(4, 4, 4)
 local reverbCoroutines = {}
 
+function SWEP:DoFireSound()
+    if self.Reverb then
+        self:HandleReverb(self.Reverb)
+    end  
+    local slience = self.Slienced and true or false
+    
+    if slience and self.Primary.SliencedSound then
+        self:EmitSound(self.Primary.SliencedSound)
+    elseif self.Primary.Sound then
+        self:EmitSound(self.Primary.Sound)
+    end
+
+    if self:Clip1() == 1 then
+        self:EmitSound("weapons/pistol/pistol_empty.wav", 66, 100, 1, CHAN_ITEM)
+    end
+end
 local function CheckRoomScale(dist)
     return dist > (REVERB_ROOMSIZE * REVERB_ROOMSIZE)
 end

@@ -301,7 +301,7 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
         angles:RotateAroundAxis(angles:Up(), visAng.y * 0.66)
         if not (self:GetSight() and self:GetSight().zoom and aimdelta > 0.2) then
             ------ViewModel Recoil
-            local fireInterval = (60 / self.Primary.RPM) * 1
+            local fireInterval = (60 / self.Primary.RPM) * 0.9
             local timeToNextFire = self:GetNextRecoil() - CurTime()
             local t = math.Clamp(timeToNextFire / fireInterval, 0, 1)
             local Recoildelta = math.min((t > 0.5 and 1 - t or t) * 2, 1) -- 开火时 = 1，然后衰减到 0

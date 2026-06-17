@@ -268,6 +268,9 @@ SWEP.Aim = {
     Type = "Linear" -- "Linear" or "Lerp"
 }
 
+SWEP.ShootPosOffset = Vector(0, -0, -0)
+SWEP.ShootPosOffsetAim = Vector(0, -0, -0)
+
 SWEP.Spread = {
     Base = 0.05,
     Vertical = 1.0,
@@ -531,7 +534,7 @@ function SWEP:Initialize()
 
     self:SetFiremodeIndex(1)
     self:FireModeStat(1)
-
+    
 
 
     self.m_Attachment = {}

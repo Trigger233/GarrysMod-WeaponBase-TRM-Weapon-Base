@@ -143,7 +143,7 @@ end
 
 function SWEP:ApplySpecialAnimationStat(vm, sequenceClass, duration, animData)
     if string.find(sequenceClass, "Ads") then
-        local AdsSpeed = (animData.Length or 1) * (animData.RealLength or duration) / self.Aim.Time
+        local AdsSpeed =  (animData.RealLength or duration) / self.Aim.Time
         vm:SetPlaybackRate(AdsSpeed)
     end
 
@@ -172,6 +172,6 @@ function SWEP:ChooseAnim(animationClass)
 end
 
 function SWEP:IsAnimFinished()
-    return self:GetNextAnimationTime() <= CurTime()
+    return self:GetNextAnimationTime() < CurTime()
 end
 

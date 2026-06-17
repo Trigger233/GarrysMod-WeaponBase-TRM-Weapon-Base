@@ -23,6 +23,9 @@ function task_charge:Think(cycle, weapon)
         weapon.m_NextFireTime = CurTime() + stat.Time
     end
     weapon:PlayAnimation(weapon:ChooseAnim("Charge"), true)
+    weapon:SetNextPrimaryFire(weapon.m_NextFireTime)
+    weapon:SetNextAnimationTime(weapon.m_NextFireTime)
+    
     local owner = weapon:GetOwner()
     if not IsValid(owner) then return end
     if weapon.m_NextFireTime and CurTime() >= weapon.m_NextFireTime then

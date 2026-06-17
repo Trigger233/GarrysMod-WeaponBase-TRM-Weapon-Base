@@ -13,22 +13,22 @@ ENT.Trail = {
     {
         color = Color(255, 187, 0) ,
         width1 = 20 ,
-        width2 = 20 ,
-        lifetime = 0.1 ,
+        width2 = 10 ,
+        lifetime = 0.05 ,
         mat = "trails/laser"
     },
     {
         color = Color(255, 255, 255),
-        width1 = 10,
+        width1 = 1,
         width2 = 1,
-        lifetime = 1,
+        lifetime = 0.4,
         mat = "trails/laser"
     },
 }
 
 ENT.bWhizz = false
 
-ENT.Maxs = Vector(2, 2, 2) -- 碰撞盒大小
+ENT.Maxs = Vector(6, 6, 6) -- 碰撞盒大小
 local meterToHu = 52.4934383
 
 
@@ -91,16 +91,19 @@ function ENT:PhysicsUpdate(phys)
     -- end
 
     local startPos = self.LastPos or self:GetPos()
-    local endPos = phys:GetPos()
+    local endPos = phys:GetPos() + self:GetAngles():Forward() * engine.TickInterval() * self:GetAbsVelocity():Length()
 
     -- 飞线检测（防止穿透）
-    local tr = util.TraceLine({
-        start = startPos,
-        endpos = endPos,
-        filter = { self, self.Attacker },
-        mask = MASK_SHOT
+    local tr = util.TraceHull({
+        start = self.LastPos,
+        endpos = phys:GetPos(),
+        filter = {self:GetOwner():GetOwner(), self:GetOwner(), self },
+        mask = MASK_SHOT_PORTAL,
+        collisiongroup = COLLISION_GROUP_PROJECTILE,
+        mins = -self.Maxs,
+        maxs = self.Maxs
     })
-
+    
     if tr.Hit then
         self:Impact(tr, phys)
         return
@@ -114,12 +117,18 @@ function ENT:Impact(tr, phys)
     self.bCollided = true
     local weapon = self:GetOwner()
 
+    local damage = weapon.Primary.Damage * weapon.Primary.NumBullets
+
+    if weapon:GetOwner():IsNPC() then
+        damage = damage / weapon.Primary.NumBullets
+    end
+
     weapon:FireBullets({
         Attacker = weapon:GetOwner(),
         Num = 1,
         Tracer = 0,
         Src = self.LastPos,
-        Damage = weapon.Primary.Damage * weapon.Primary.NumBullets,
+        Damage = damage,
         Dir = (phys:GetPos() - self.LastPos):GetNormalized(),
         HullSize = 0,
 

@@ -9,14 +9,13 @@ end
 function task_in:OnSet(weapon)
     if not weapon:IsReloading() and weapon:CanAim() then
         weapon:SetNextAnimationTime(0)
-        weapon:PlayAnimation(weapon:ChooseAnim("Ads_In"), false)
+        weapon:PlayAnimation(weapon:ChooseAnim("Ads_In"), true)
+        weapon:SetNextFireTime(0)
     end
 end
 
 function task_in:Think(cycle, weapon)
-    if cycle > 0.98 then
-        weapon:TrySetTask("Idle")
-    end
+    weapon:TrySetTask("Idle")
 end
 
 SWEP:RegisterTask(task_in)
@@ -32,7 +31,8 @@ end
 function task_out:OnSet(weapon)
     if not weapon:IsReloading() and weapon:CanAim() then
         weapon:SetNextAnimationTime(0)
-        weapon:PlayAnimation(weapon:ChooseAnim("Ads_Out"), false)
+        weapon:PlayAnimation(weapon:ChooseAnim("Ads_Out"), true)
+        weapon:SetNextFireTime(0)
     end
 end
 

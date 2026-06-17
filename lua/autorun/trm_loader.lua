@@ -3,7 +3,6 @@ if SERVER then
 end
 
 
-print("trmbase_att_load")    
 
 BASE_TRM_ATTS = BASE_TRM_ATTS or {}
 TRM_BASE_REF = 69 
@@ -37,7 +36,6 @@ end
 
 local function LoadAttachments(path)
     local files, folders = file.Find(path .. "/*", "LUA")
-    print("loading att : " , files)
     for _, fileName in ipairs(files) do
         if string.EndsWith(fileName, ".lua") then
             LoadAttachmentStats(path, fileName)

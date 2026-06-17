@@ -21,25 +21,7 @@ function SWEP:CanPrimaryFire()
 	return (not self:IsEmpty() and (self:GetNextPrimaryFire() <= CurTime()))
 end
 
-if SERVER then
-	AddCSLuaFile("include/trmbase_sound.lua")
-else
-	include("include/trmbase_sound.lua")
-end
-function SWEP:DoFireSound()
-	local slience = self.Slienced and true or false
-	if slience and self.Primary.SliencedSound then
-		self:EmitSound(self.Primary.SliencedSound)
-	elseif self.Primary.Sound then
-		self:EmitSound(self.Primary.Sound)
-	end
-	if self.Reverb then
-		self:HandleReverb(self.Reverb)
-	end
-	if self:Clip1() == 1 then
-		self:EmitSound("weapons/pistol/pistol_empty.wav", 66, 100, 1, CHAN_ITEM)
-	end
-end
+
 
 local cvar_bullet = CreateConVar("trmbase_sv_physical_bullet", 0, FCVAR_ARCHIVE, "", 0, 1)
 
@@ -57,7 +39,7 @@ function SWEP:FirePrimaryBullet()
 
 	local owner = self:GetOwner()
 	local eyeAng = owner:EyeAngles()
-	local aimDir = owner:GetAimVector()
+	local aimDir = self:GetAimVector()
 
 	--Shake
 	if owner:IsPlayer() then
@@ -75,13 +57,7 @@ function SWEP:FirePrimaryBullet()
 
 
 
-	--Visual Recoil
-	if owner:IsPlayer() then
-		local length = aimDir:Length()
-		local dir = aimDir:Angle()
-		dir:Add(self:GetVisualRecoil())
-		aimDir = dir:Forward() * length
-	end
+
 
 	local spread = Vector(self:GetSpreadHorizonal(), self:GetSpreadVertical(), 0) * self:GetCurrentSpread()
 	if not cvar_bullet:GetBool() then
@@ -124,21 +100,26 @@ function SWEP:FirePrimaryBullet()
 		end
 	else
 		for i = 1, self.Primary.NumBullets do
-			local AimDirNew = Vector(aimDir)
-				local spreadScale = self:GetCurrentSpread() * 50
-				local angleOffset = Angle(
-					math.Rand(-1, 1) * self:GetSpreadVertical() * spreadScale,
-					math.Rand(-1, 1) * self:GetSpreadHorizonal() * spreadScale,
-					0
-				)
-				local AimDirNew   = aimDir:Angle()
-				AimDirNew:Add(angleOffset)
-				AimDirNew = AimDirNew:Forward()
+			local AimDirNew   = Vector(aimDir)
+			local spreadScale = self:GetCurrentSpread() * 50
+			local angleOffset = Angle(
+				math.Rand(-1, 1) * self:GetSpreadVertical() * spreadScale,
+				math.Rand(-1, 1) * self:GetSpreadHorizonal() * spreadScale,
+				0
+			)
+			local AimDirNew   = aimDir:Angle()
+			AimDirNew:Add(angleOffset)
+			AimDirNew = AimDirNew:Forward()
 			local bullet = ents.Create("trm_bullet")
 			bullet:SetOwner(self)
 
-			bullet:SetPos(owner:GetShootPos()) -- 从枪口前方一点的位置发射，避免穿模
-			bullet:SetAngles(AimDirNew:Angle())
+			local start = self:GetShootPos()
+			local angle = owner:IsPlayer() and
+			(owner:GetEyeTraceNoCursor().HitPos - start):Angle() - owner:GetAimVector():Angle() or Angle(0, 0, 0)
+
+			bullet:SetPos(start) -- 从枪口前方一点的位置发射，避免穿模
+
+			bullet:SetAngles(AimDirNew:Angle() + angle)
 			bullet:Spawn()
 			local phys = bullet:GetPhysicsObject()
 		end
@@ -152,7 +133,7 @@ function SWEP:FirePrimaryBullet()
 	self:SetLastFireTime(CurTime())
 	self:SetClip1(self:Clip1() - 1)
 
-	if self.Primary.BoltAction and self.Animations.Rechamber then
+	if self.Primary.BoltAction then
 		local amount = self:GetChamberAmmo()
 		amount = math.max(amount - 1, 0)
 		self:SetChamberAmmo(amount)
@@ -504,4 +485,38 @@ function SWEP:GetCurrentSpread()
 	end
 
 	return baseSpread
+end
+
+function SWEP:GetShootPos()
+	local owner = self:GetOwner()
+	local pos = owner:GetShootPos()
+
+	if not owner:IsPlayer() then
+		return pos
+	end
+	local ang = self:GetAimVector():Angle()
+	local aim = self:GetAimDelta()
+
+	local muzoffset = LerpVector(aim, self.ShootPosOffset, self.ShootPosOffsetAim)
+
+
+	pos:Add(muzoffset.x * ang:Right() + muzoffset.y * ang:Forward() + muzoffset.z * ang:Up())
+	return pos
+end
+
+function SWEP:GetAimVector()
+	local owner = self:GetOwner()
+	local aimVector = owner:GetAimVector()
+	if owner:IsNPC() then
+		return aimVector
+	end
+
+	local recoil = self:GetVisualRecoil()
+
+	local ang = aimVector:Angle()
+
+	ang:Add(recoil)
+	ang:Normalize()
+
+	return ang:Forward() * aimVector:Length()
 end

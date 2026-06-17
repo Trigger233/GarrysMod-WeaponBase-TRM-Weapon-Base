@@ -13,7 +13,7 @@ local meterToHu = 52.4934383
 local gravity = GetConVar("sv_gravity"):GetInt() or 600 -- Hu/s²
 local needzero = GetConVar("trmbase_sv_physical_bullet")
 
-local zero_const = 8
+local zero_const = 14.5
 
 SWEP.ZeroDistance = 50
 local cachescopezero = {}
@@ -42,9 +42,9 @@ function SWEP:Scroll(dir)
     if not zoom then return end
     local owner = self:GetOwner()
 
-    if owner:KeyDown(IN_USE) and needzero then
+    if owner:KeyDown(IN_WALK) and needzero then
         local shouldzero = self.ZeroDistance - dir * 25
-        self.ZeroDistance = math.Clamp(shouldzero, 0, 400)
+        self.ZeroDistance = math.Clamp(shouldzero, 0, 500)
         --print(self.ZeroDistance)
         if shouldzero == self.ZeroDistance then
             surface.PlaySound("Weapon_Pistol.Empty")
@@ -221,12 +221,12 @@ function SWEP:RenderScopeViewAttachment(model, att)
     local fps = math.min(144, 1 / RealFrameTime())
 
     if CurTime() - nextRTUpdate < 0 then return end
-    nextRTUpdate = CurTime() + (1 / fps) * 0.5
+    nextRTUpdate = CurTime() + (1 / fps) * 1
 
     render.PushRenderTarget(model.SceneRT)
     render.Clear(0, 0, 0, 255, true, true)
     render.SetAmbientLight(0, 0, 0)
-
+   
     self:RTCode(size)
     if att.RTCode then
         att:RTCode(self, size)
@@ -254,7 +254,6 @@ function SWEP:RenderScopeViewAttachment(model, att)
 
     render.Clear(0, 0, 0, 0, true, true)
 
-    DrawMotionBlur(1, 1, RealFrameTime() * 1)
 
     cam.Start2D()
 
@@ -264,6 +263,7 @@ function SWEP:RenderScopeViewAttachment(model, att)
 
     surface.SetMaterial(model._SceneMaterial)
     surface.DrawTexturedRect(0, 0, size, size)
+    
 
     self:RenderScopeReticle(model, att, reticleStats, size, self:GetScopeZoom())
     cam.End2D()
@@ -295,7 +295,7 @@ function SWEP:RenderScopeReticle(model, att, stat, rtSize, zoomScale)
     )
 end
 
-hook.Add("PostRender", "TRMBASE_ScopeUpdate", function()
+hook.Add("PreRender", "TRMBASE_ScopeUpdate", function()
     local ply = LocalPlayer()
     local _self = ply:GetActiveWeapon()
     if IsValid(_self) and _self.RenderScopeView then
