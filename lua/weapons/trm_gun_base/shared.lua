@@ -160,6 +160,15 @@ SWEP.Primary.BoltAction = false
 SWEP.m_EjectDelay = 0.0
 
 SWEP.Primary.Damage = 8
+
+SWEP.Bullet = {
+    Penetration = {
+        Multiplier = 0.5,
+        Max = 2,
+        DamageMultiplier = 0.5,
+    }
+}
+
 -- SWEP.Primary.Range = 5000
 SWEP.Primary.Force = 1
 SWEP.Primary.Velocity = 500
@@ -240,13 +249,13 @@ SWEP.WorldModelOffsets = {   --alternative
 
 
 SWEP.Sight = {
-    Angles = Angle(0, 0, -90),
+    Ang = Angle(0, 0, -0),
     Pos = Vector(0, 0, 0),
 }
 
-SWEP.LaserSight = {
-    Pos = Vector(0, 0, 0),
-    Ang = Angle(0, 0, 15)
+SWEP.TacSight = {
+    Pos = Vector(-2, 0, -2),
+    Ang = Angle(0, 0, -45)
 }
 
 
@@ -534,7 +543,7 @@ function SWEP:Initialize()
 
     self:SetFiremodeIndex(1)
     self:FireModeStat(1)
-    
+
 
 
     self.m_Attachment = {}
@@ -573,6 +582,7 @@ function SWEP:Equip()
     if cvar_attachment:GetBool() then
         self:LoadAttachmentPreset()
     end
+    self:BuildCustomizedGun()
 end
 
 function SWEP:Deploy()
@@ -581,15 +591,6 @@ function SWEP:Deploy()
     self:TrySetTask("Deploy")
     self:SetCanSwitch(false)
     return true
-end
-
--- 读档后恢复配件数据
-function SWEP:Restore()
-    if SERVER then
-        if self.EquipDefaultAttachments then self:EquipDefaultAttachments() end
-        if self.LoadAttachmentPreset then self:LoadAttachmentPreset() end
-    end
-    self:BuildCustomizedGun()
 end
 
 function SWEP:OnDrop(owner)
@@ -606,17 +607,12 @@ end
 
 function SWEP:OnRestore()
     timer.Simple(FrameTime() * 5, function()
-        self:OnReloaded()
-        self:EquipDefaultAttachments()
-        self:TrySetTask("Idle")
         if SERVER and cvar_attachment:GetBool() then
             -- 先加载保存的配件配置
+            self:EquipDefaultAttachments()
             self:LoadAttachmentPreset()
         end
-
-
         self:BuildCustomizedGun()
-
         self:SetNextRecoil(0)
     end)
 end
@@ -684,6 +680,7 @@ hook.Add("PlayerPostThink", "PoseParameterControl", function(ply)
         return
     end
 
+    --weapon:bThink()
     weapon:Sprint()
 end)
 
@@ -780,12 +777,9 @@ concommand.Add("trm_reload_atts", function()
     local file = "autorun/trm_loader.lua"
     AddCSLuaFile(file)
     include(file)
-    for _ , ent in ents.Iterator() do
+    for _, ent in ents.Iterator() do
         if ent:IsWeapon() and ent.BuildCustomizedGun then
             ent:BuildCustomizedGun()
         end
     end
-
 end)
-
-

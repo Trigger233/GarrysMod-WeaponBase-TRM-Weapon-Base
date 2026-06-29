@@ -143,13 +143,15 @@ end
 
 function SWEP:ApplySpecialAnimationStat(vm, sequenceClass, duration, animData)
     if string.find(sequenceClass, "Ads") then
-        local AdsSpeed =  (animData.RealLength or duration) / self.Aim.Time
+        local AdsSpeed =  (animData.RealLength or duration) / self:GetAimTime()
         vm:SetPlaybackRate(AdsSpeed)
     end
 
 end
 
 function SWEP:ChooseAnim(animationClass)
+    if not SERVER then return end
+
     local empty = self:IsEmpty()
     local aim = self:GetAimDelta() > 0.5 and true or false
     local function hasAnim(Class)

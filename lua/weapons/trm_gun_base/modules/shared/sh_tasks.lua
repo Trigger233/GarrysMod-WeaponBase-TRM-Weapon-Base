@@ -38,7 +38,7 @@ function SWEP:RegisterTask(task)
     --print("Task")
 end
 
-function SWEP:TrySetTask(taskName)
+function SWEP:TrySetTask(taskName , forceSet)
     local Index = 0
 
     for i , task in ipairs(self.Tasks) do
@@ -59,7 +59,7 @@ function SWEP:TrySetTask(taskName)
     --     end
     -- end
 
-    if task.CanBeSet and task:CanBeSet(self) == false then
+    if task.CanBeSet and task:CanBeSet(self) == false and not forceSet then
         return false
     end
     --print(Index)

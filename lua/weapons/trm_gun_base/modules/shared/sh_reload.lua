@@ -33,7 +33,7 @@ function SWEP:CanReload()
 	local reserveAmmo = self:GetOwner():GetAmmoCount(self:GetPrimaryAmmoType())
 	local seq = self:GetPlayingSequence()
 
-	if self:GetNextAnimationTime() > CurTime() then return false end
+	if self:GetNextPrimaryFire() > CurTime() then return false end
 
 	local max = cvar_debug_reload:GetBool() and 2 or (self.Primary.ClipSize +
 		(self.Primary.BoltAction and self:GetChamberAmmo() or self.Primary.Chamber))

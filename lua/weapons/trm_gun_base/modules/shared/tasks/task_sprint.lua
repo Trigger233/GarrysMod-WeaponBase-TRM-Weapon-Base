@@ -26,6 +26,7 @@ function task_sprint:CanBeSet(weapon)
 end
 
 function task_sprint:OnSet(weapon)
+    weapon:SetNextAnimationTime(0)
 end
 
 function task_sprint:Think(cycle, weapon)
@@ -35,7 +36,7 @@ function task_sprint:Think(cycle, weapon)
     end
 
     local owner = weapon:GetOwner()
-    if IsValid(owner) and (not owner:KeyDown(IN_SPEED) or not owner:OnGround()) then
+    if IsValid(owner) and (not owner:KeyDown(IN_SPEED) or not owner:OnGround()  ) then
         weapon:TrySetTask("SprintOut")
     end
 end

@@ -299,23 +299,23 @@ hook.Add("PlayerDroppedWeapon", "TRMBASE_ReplaceDrop", function(owner, ent)
     end)
 end)
 
--- 定期扫描（处理地图预放置的实体）
-local LastThink = 0
-hook.Add("Think", "TRMBASE_ReplacerThink", function()
-    if CurTime() - LastThink < refresh  then return end
-    LastThink = CurTime()
+-- -- 定期扫描（处理地图预放置的实体）
+-- local LastThink = 0
+-- hook.Add("Think", "TRMBASE_ReplacerThink", function()
+--     if CurTime() - LastThink < refresh  then return end
+--     LastThink = CurTime()
 
-    for _, ent in ents.Iterator() do
-        if not IsValid(ent) then continue end
+--     for _, ent in ents.Iterator() do
+--         if not IsValid(ent) then continue end
 
-        -- 检查是否需要处理
-        if ent:IsNPC() or
-            (ent:IsWeapon() and ent:GetOwner() == NULL) or
-            AmmoBoxMap[ent:GetClass()] then
-            replace(ent)
-        end
-    end
-end)
+--         -- 检查是否需要处理
+--         if ent:IsNPC() or
+--             (ent:IsWeapon() and ent:GetOwner() == NULL) or
+--             AmmoBoxMap[ent:GetClass()] then
+--             replace(ent)
+--         end
+--     end
+-- end)
 
 -- 读档后重新扫描
 hook.Add("Restored", "TRMBASE_ReplaceRestored", function()

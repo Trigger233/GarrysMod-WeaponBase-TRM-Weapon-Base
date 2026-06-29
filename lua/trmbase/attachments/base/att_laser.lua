@@ -1,11 +1,11 @@
 ATTACHMENT.Name = "att_laser"
-ATTACHMENT.Category = nil 
+ATTACHMENT.Category = nil
 ATTACHMENT.Base = "att_base"
 ATTACHMENT.Selectable = true
 
 ATTACHMENT.Laser = {
     Attach = "Laser",
-    Color = Color(255,0,0,197),
+    Color = Color(255, 0, 0, 197),
     Width = 1,
     DotSize = 4,
 }
@@ -36,14 +36,17 @@ function ATTACHMENT:GetDotMat()
     end
     return dotMat
 end
+
 require("trm_utils")
 function ATTACHMENT:DoLaserRender(weapon, model, data)
     if not self.Laser then return end
-    if weapon:GetAimDelta() > 0.2 then return end
+    -- if weapon:GetAimDelta() > 0.2 and weapon.sight.zoom then return end
     local attID = model:LookupAttachment(data.Attach)
     if attID <= 0 then return end
-    
-    local att = model:GetAttachment(attID)
+
+    model:InvalidateBoneCache()
+    model:SetupBones()
+    local att = trm_utils.GetFastAttachment(model, data.Attach)
     if not att then return end
 
 
@@ -52,18 +55,18 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
         self._lastTrace = util.TraceLine({
             start = att.Pos + att.Ang:Forward() * -10,
             endpos = att.Pos + att.Ang:Forward() * 1000,
-            filter = {weapon, weapon:GetOwner()},
+            filter = { weapon, weapon:GetOwner() },
             mask = MASK_SHOT
         })
         local updateFps = 55
-        self._nextTrace = CurTime() + math.min(1 / updateFps ,RealFrameTime() )
+        self._nextTrace = CurTime() + math.min(1 / updateFps, RealFrameTime())
     end
 
     local tr = self._lastTrace
     if not tr then return end
     local distance = tr.HitPos:Distance(tr.StartPos)
     if distance < 10 then return end
-    local scale = math.random(0.2,1)
+    local scale = math.random(0.2, 1)
     render.SetMaterial(self:GetLineMat())
     render.DrawBeam(att.Pos, tr.HitPos or tr.endpos, data.Width * scale, 0, 1, data.Color)
     if tr.Hit then
@@ -74,15 +77,17 @@ end
 
 function ATTACHMENT:Render(weapon, model)
     model:DrawModel()
-    self:DoLaserRender(weapon, model, self.Laser)
-    self:DoFlashLight(weapon,model,self.FlashLight)
+    if CLIENT and weapon:IsCarriedByLocalPlayer() then
+        self:DoLaserRender(weapon, model, self.Laser)
+        self:DoFlashLight(weapon, model, self.FlashLight)
+    end
 end
-
 
 -- att_laser.lua
 function ATTACHMENT:Stats(w)
 
-end 
+end
+
 function ATTACHMENT:DoFlashLight(weapon, model, data)
     if not weapon.flashlight then return end
 
@@ -95,9 +100,10 @@ function ATTACHMENT:DoFlashLight(weapon, model, data)
     local ang = att.Ang
 
     if weapon.DrawCustomizionFlashLight then
-        weapon:DrawCustomizionFlashLight(pos, ang,self)
+        weapon:DrawCustomizionFlashLight(pos, ang, self)
     end
 end
-function ATTACHMENT:Remove(weapon,model)
+
+function ATTACHMENT:Remove(weapon, model)
     model:Remove()
 end

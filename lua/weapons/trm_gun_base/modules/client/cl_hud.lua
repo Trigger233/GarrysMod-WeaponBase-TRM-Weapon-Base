@@ -518,7 +518,7 @@ function DrawCustomCrosshair(ply, wep)
     local alpha = cv_crosshair_alpha:GetInt()
     local sequence = wep.m_CurrentSequence or (wep.GetPlayingSequence and wep:GetPlayingSequence()) or ""
 
-    if not ply:ShouldDrawLocalPlayer() and wep.DrawCrossHairIS ~= true and wep.GetAimDelta and wep:GetAimDelta() > 0.5 then
+    if not ply:ShouldDrawLocalPlayer() and wep.DrawCrossHairIS ~= true and wep.GetAimDelta and wep:GetAimDelta() > 0.5 and not wep:GetTacSight() then
         alpha = 0
     end
 

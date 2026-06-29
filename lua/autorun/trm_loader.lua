@@ -48,8 +48,7 @@ local function LoadAttachments(path)
 end
 
 LoadAttachments("trmbase/attachments")
-
-
+LoadAttachments("trmbase/att")
 
 local function inherit(current, base)
     for k, v in pairs(base) do
@@ -69,6 +68,11 @@ end
 function BASE_TRM_ATTS.Inherit(att)
     local baseClass = BASE_TRM_ATTS[att.Base]
     while baseClass  do
+
+        if baseClass == att.ClassName then
+            break
+        end
+
         inherit(att, baseClass) 
         baseClass = BASE_TRM_ATTS[baseClass.Base] 
     end

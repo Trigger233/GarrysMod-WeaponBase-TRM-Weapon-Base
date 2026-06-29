@@ -1,4 +1,3 @@
-
 -- =============================================
 -- 世界模型渲染 — SetRenderOrigin/Angles 兼容模式
 -- WorldModelOffsets 支持两种模式：
@@ -20,13 +19,12 @@ end
 -- DrawWorldModel — 每帧由引擎调用
 -- =============================================
 function SWEP:RenderOverride(flags)
-
     local off = self.WorldModelOffsets
     local owner = self:GetOwner()
     self:DrawModel(flags)
 
 
-    
+
     if off and not off.Bone and IsValid(owner) then
         -- == SetRenderOrigin/SetRenderAngles 模式 ==
         local handPos, handAng = GetHandBonePosAng(owner)
@@ -57,7 +55,7 @@ function SWEP:RenderOverride(flags)
         end
     end
 
-    if self.m_RenderOffset and not IsValid(owner)  then
+    if self.m_RenderOffset and not IsValid(owner) then
         self:SetRenderAngles(nil)
         self:SetRenderOrigin(nil)
         self.m_RenderOffset = false
@@ -67,13 +65,18 @@ function SWEP:RenderOverride(flags)
         for _, entry in pairs(self.CurrentAttachments) do
             local att = BASE_TRM_ATTS[entry.Class]
             if IsValid(entry.m_TpModel) and att.Render then
-                att:Render(self,entry.m_TpModel)
+                att:Render(self, entry.m_TpModel)
             end
         end
     end
 end
 
+local cvar_holster = GetConVar("trmbase_sv_holster_on_ladder")
 function SWEP:DrawWorldModel(flags)
+    local owner = self:GetOwner()
+    if owner:IsPlayer() and owner:GetActiveWeapon() == self and owner:GetMoveType() == MOVETYPE_LADDER and cvar_holster:GetBool() then
+        return
+    end
     self:DrawModel(flags)
 end
 
@@ -84,4 +87,3 @@ end
 -- =============================================
 -- 清理 TP 配件模型（武器移除时子实体不会自动移除）
 -- =============================================
-

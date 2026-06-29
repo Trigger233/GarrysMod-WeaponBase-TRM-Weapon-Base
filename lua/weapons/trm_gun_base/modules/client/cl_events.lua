@@ -49,7 +49,7 @@ end
 
 function SWEP:IsFirstPerson()
     local owner = self:GetOwner()
-    return not (owner:IsPlayer() and owner:ShouldDrawLocalPlayer())
+    return (owner:IsPlayer() and not owner:ShouldDrawLocalPlayer())
 end
 
 function SWEP:DoMuzzleFlash(ent)

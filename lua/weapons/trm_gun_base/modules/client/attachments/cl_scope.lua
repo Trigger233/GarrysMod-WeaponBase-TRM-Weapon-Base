@@ -11,7 +11,6 @@ local inActiveScopeLenMaterial = CreateMaterial(inActiveScopeLenMatName, "Vertex
 })
 local meterToHu = 52.4934383
 local gravity = GetConVar("sv_gravity"):GetInt() or 600 -- Hu/s²
-local needzero = GetConVar("trmbase_sv_physical_bullet")
 
 local zero_const = 14.5
 
@@ -19,6 +18,7 @@ SWEP.ZeroDistance = 50
 local cachescopezero = {}
 
 function SWEP:GetScopeZeroAngle()
+    local needzero = GetConVar("trmbase_sv_physical_bullet")
     if not needzero:GetBool() then
         return Angle(0, 0, 0)
     end
@@ -41,8 +41,9 @@ function SWEP:Scroll(dir)
     local zoom = self.sight.zoom or false
     if not zoom then return end
     local owner = self:GetOwner()
+    local needzero = GetConVar("trmbase_sv_physical_bullet")
 
-    if owner:KeyDown(IN_WALK) and needzero then
+    if owner:KeyDown(IN_WALK) and needzero:GetBool() then
         local shouldzero = self.ZeroDistance - dir * 25
         self.ZeroDistance = math.Clamp(shouldzero, 0, 500)
         --print(self.ZeroDistance)
@@ -57,8 +58,8 @@ function SWEP:Scroll(dir)
 
     local max = stat.MaxZoom or zoom
     local min = stat.MinZoom or zoom
-    local shouldzoom = self.sight.zoom - dir
-    self.sight.zoom = math.Clamp(self.sight.zoom - dir, min, max)
+    local shouldzoom = self.sight.zoom - dir * 0.5
+    self.sight.zoom = math.Clamp(self.sight.zoom - dir * 0.5, min, max)
 
     if self.sight.zoom == shouldzoom then
         surface.PlaySound("Weapon_AR2.Empty")
@@ -79,7 +80,7 @@ function SWEP:GetScopeZoomFov()
 end
 
 function SWEP:GetScopeResolution(att)
-    return 768
+    return 1024
 end
 
 function SWEP:RenderScopeSight(model, att)
@@ -116,9 +117,6 @@ local function findLenMaterialIndex(model, att)
     return CacheScopeLenMaterialIndex[modelName] or false
 end
 
-
-
-
 function SWEP:ApplyInActiveScopeMaterial(model, att)
     --print(1)
     local indexs = findLenMaterialIndex(model, att)
@@ -136,7 +134,7 @@ function SWEP:ApplyActiveScopeMaterial(model, att)
     local indexs = findLenMaterialIndex(model, att)
     if not indexs then return end
 
-    local _, _, matName = self:EnsureRenderTarget(model, att)
+    local _, _, matName = self:EnsureRenderTarget(att)
     for _, i in pairs(indexs) do
         model:SetSubMaterial(i, "!" .. matName) -- 关键：用 RT 材质名
     end
@@ -144,78 +142,72 @@ function SWEP:ApplyActiveScopeMaterial(model, att)
 end
 
 local oldRenderResolutionCache = 0
-function SWEP:EnsureRenderTarget(model, att)
+function SWEP:EnsureRenderTarget(att)
     local size = self:GetScopeResolution()
 
-    if (model.RT and model.RTMaterialName and model.RTMaterial) and size == oldRenderResolutionCache then
-        return model.RT, model.RTMaterial, model.RTMaterialName
+    if (self.RT and self.RTMaterialName and self.RTMaterial) and size == oldRenderResolutionCache then
+        return self.RT, self.RTMaterial, self.RTMaterialName
     end
 
     oldRenderResolutionCache = size
 
-    local rtName = "trmbase_pip_RTName"
-    local sceneRTName = "trmbase_pip_sceneRT"
-    local matName = "trmbase_pip_matName"
+    local rtName = "trmbase_pip_RTName_" .. self:EntIndex()
+    local sceneRTName = "trmbase_pip_sceneRT_" .. self:EntIndex()
+    local matName = "trmbase_pip_matName_" .. self:EntIndex()
 
-    model.RT = GetRenderTarget(rtName, size, size)
-    model.SceneRT = GetRenderTarget(sceneRTName, size, size)
+    self.RT = GetRenderTarget(rtName, size, size)
+    self.SceneRT = GetRenderTarget(sceneRTName, size, size)
 
-    model.RTSize = size
-    model.RTMaterialName = matName
+    self.RTSize = size
+    self.RTMaterialName = matName
 
-    model.RTMaterial = CreateMaterial(matName, "VertexLitGeneric", {
-        ["$basetexture"] = model.RT:GetName(),
+    self.RTMaterial = CreateMaterial(matName, "VertexLitGeneric", {
+        ["$basetexture"] = self.RT:GetName(),
         ["$model"] = "1",
         ["$selfillum"] = "1",
-        ["$translucent"] = "1",
-        ["$vertexcolor"] = "1",
-        ["$vertexalpha"] = "1",
-        ["$nocull"] = "1",
-        ["$nodecal"] = "1"
     })
 
-
-
-    model._SceneMaterial = CreateMaterial(matName .. "_scene", "UnlitGeneric", {
-        ["$basetexture"] = model.SceneRT:GetName(),
-        ["$translucent"] = "1",
+    self._SceneMaterial = CreateMaterial(matName .. "_scene", "UnlitGeneric", {
+        ["$basetexture"] = self.SceneRT:GetName(),
         ["$vertexcolor"] = "1",
         ["$vertexalpha"] = "1",
-        ["$nocull"] = "1",
-        ["$nodecal"] = "1"
     })
 
-    return model.RT, model.RTMaterial, model.RTMaterialName
+    return self.RT, self.RTMaterial, self.RTMaterialName
 end
 
+local cvar_cheapscope = CreateClientConVar("trmbase_cl_cheapscope", 0, true, true, "", 0, 1)
 function SWEP:RenderScopeView()
     for _, entry in pairs(self.CurrentAttachments) do
-        if entry.m_Model and entry.m_Model.RT then
-            self:RenderScopeViewAttachment(entry.m_Model, BASE_TRM_ATTS[entry.Class])
+        if entry.m_Model and self.RT then
+            if ! cvar_cheapscope:GetBool() then
+                self:DoRTScope(entry.m_Model, BASE_TRM_ATTS[entry.Class])
+            else
+                self:DoCheapScope(entry.m_Model, BASE_TRM_ATTS[entry.Class])
+            end
         end
     end
 end
 
 local additiveZero = Angle(0, 0, 0)
 local nextRTUpdate = 0
-function SWEP:RenderScopeViewAttachment(model, att)
+
+function SWEP:DoRTScope(model, att)
     if not isModelApplyActiveScope[model] then
         return
     end
 
-    local rt = self:EnsureRenderTarget(model, att)
+    local rt = self:EnsureRenderTarget(att)
     if not rt then return end
     local size = self:GetScopeResolution(att)
 
-  --  local modelAttachment = model:GetAttachment(trm_utils.LookupAttachmentCached(model, att.Scope.Align))
-
     local owner = self:GetOwner()
-    additiveZero = Lerp(RealFrameTime() * 10, additiveZero, self:GetScopeZeroAngle())
+    additiveZero = LerpAngle(RealFrameTime() * 10, additiveZero, self:GetScopeZeroAngle())
+    local recoil = Angle(self:GetVisualRecoil())
 
-    local origin, angles =  owner:EyePos(),
-        self:GetOwner():EyeAngles() + self:GetClientVisualRecoil() + additiveZero
+    local origin, angles = owner:EyePos(),
+        self:GetOwner():EyeAngles() + recoil + additiveZero
     local zoomfov = self:GetScopeZoomFov()
-    local scopeStats = att.Scope
     local reticleStats = att.Sight
 
     local fps = math.min(144, 1 / RealFrameTime())
@@ -223,10 +215,10 @@ function SWEP:RenderScopeViewAttachment(model, att)
     if CurTime() - nextRTUpdate < 0 then return end
     nextRTUpdate = CurTime() + (1 / fps) * 1
 
-    render.PushRenderTarget(model.SceneRT)
-    render.Clear(0, 0, 0, 255, true, true)
+    render.PushRenderTarget(self.SceneRT)
+    render.Clear(0, 0, 0, 0, true, true)
     render.SetAmbientLight(0, 0, 0)
-   
+
     self:RTCode(size)
     if att.RTCode then
         att:RTCode(self, size)
@@ -247,25 +239,23 @@ function SWEP:RenderScopeViewAttachment(model, att)
         znear = 4,
     })
 
-
     render.PopRenderTarget()
-    --------Final Render
-    render.PushRenderTarget(model.RT)
 
+    self:DrawThermal(self.SceneRT, att)
+
+    render.PushRenderTarget(self.RT)
     render.Clear(0, 0, 0, 0, true, true)
-
 
     cam.Start2D()
 
 
-
     surface.SetDrawColor(255, 255, 255, 255)
-
-    surface.SetMaterial(model._SceneMaterial)
+    surface.SetMaterial(self._SceneMaterial)
     surface.DrawTexturedRect(0, 0, size, size)
-    
 
     self:RenderScopeReticle(model, att, reticleStats, size, self:GetScopeZoom())
+    self:DrawParallax(model, size, att)
+
     cam.End2D()
 
     render.PopRenderTarget()
@@ -280,12 +270,21 @@ function SWEP:RenderScopeReticle(model, att, stat, rtSize, zoomScale)
     local centerX = rtSize / 2
     local centerY = rtSize / 2
 
+    local sway, _ = self:Sway()
+
+    local additive = cvar_cheapscope:GetBool() and self:GetClientVisualRecoil() + self:GetScopeZeroAngle() or
+        Angle(0, 0, 0) + sway * 5
+    local function AngleToPixel(num)
+        return math.tan(math.rad(num))
+    end
+
+    centerX = centerX - AngleToPixel(additive.yaw) * ScrW() * zoomScale
+
+    centerY = centerY + AngleToPixel(additive.p) * ScrH() * zoomScale
+
     local _size = stat.Size * 5 * (att.Scope.DynamicCrosshair and zoomScale or 1)
     surface.SetMaterial(stat.Material)
     surface.SetDrawColor(stat.Color or Color(255, 255, 255))
-
-    -- 如果准星是世界位置的（全息镜效果），需要投影到屏幕坐标
-    -- 暂时简化为画在中心
 
     surface.DrawTexturedRect(
         centerX - _size / 2,
@@ -295,10 +294,147 @@ function SWEP:RenderScopeReticle(model, att, stat, rtSize, zoomScale)
     )
 end
 
-hook.Add("PreRender", "TRMBASE_ScopeUpdate", function()
+local parallaxMat = Material("models/weapons/tfa_ins2/optics/parallax_mask", "smooth")
+function SWEP:DrawParallax(model, rtSize, att)
+    local centerX = rtSize / 2
+    local centerY = rtSize / 2
+
+    local sway, _ = self:Sway()
+
+    local additive = sway
+    local function AngleToPixel(num)
+        return math.tan(math.rad(num))
+    end
+
+    centerX = centerX - AngleToPixel(additive.yaw) * ScrW()
+
+    centerY = centerY + AngleToPixel(additive.p) * ScrH()
+
+    local _size = rtSize * 1.05
+    surface.SetMaterial(att.Scope.Parallax or parallaxMat)
+    surface.SetDrawColor(Color(255, 255, 255))
+
+    surface.DrawTexturedRect(
+        centerX - _size / 2,
+        centerY - _size / 2,
+        _size,
+        _size
+    )
+end
+
+hook.Add("RenderScene", "TRMBASE_ScopeUpdate", function()
+    if cvar_cheapscope:GetBool() then return end
     local ply = LocalPlayer()
     local _self = ply:GetActiveWeapon()
     if IsValid(_self) and _self.RenderScopeView then
         _self:RenderScopeView()
     end
 end)
+
+
+
+function SWEP:DoCheapScope(model, att)
+    if not isModelApplyActiveScope[model] then
+        return
+    end
+
+    local screen = render.GetRenderTarget()
+    if screen and screen:GetName() == "_rt_resolvedfullframedepth" then return end
+
+    local rt = self:EnsureRenderTarget(att)
+    if not rt then return end
+    local size = self:GetScopeResolution(att)
+
+    additiveZero = LerpAngle(RealFrameTime() * 10, additiveZero, self:GetScopeZeroAngle())
+
+    local reticleStats = att.Sight
+
+    render.PushRenderTarget(self.SceneRT)
+    render.Clear(0, 0, 0, 255, true, true)
+    render.PopRenderTarget()
+
+    render.CopyTexture(screen, self.SceneRT)
+
+    self:DrawThermal(self.SceneRT, att)
+
+
+
+    render.PushRenderTarget(self.RT)
+    render.Clear(0, 0, 0, 0, true, true)
+
+    cam.Start2D()
+    surface.SetDrawColor(255, 255, 255, 255)
+    surface.SetMaterial(self._SceneMaterial)
+
+    local w, h = ScrW(), ScrH()
+
+    surface.DrawTexturedRect((-size * 0.5), 0, (w + size), h)
+
+    self:RenderScopeReticle(model, att, reticleStats, size, self:GetScopeZoom())
+    self:DrawParallax(model, size, att)
+
+    cam.End2D()
+    render.PopRenderTarget()
+end
+
+function SWEP:DrawThermal(tx, att)
+    if not att.Scope or not att.Scope.Thermal then
+        return
+    end
+
+    if not tx then
+        tx = render.GetRenderTarget()
+    end
+
+
+    render.PushRenderTarget(tx)
+
+    cam.Start3D(EyePos(), cvar_cheapscope:GetBool() and EyeAngles() or self:GetOwner():EyeAngles())
+    -- 1. 用 Stencil 标记 NPC
+    render.SetStencilEnable(true)
+    render.ClearStencil()
+
+    local sw = ScrH()
+    local sh = sw
+
+    local sx = (ScrW() - sw) / 2
+    local sy = (ScrH() - sh) / 2
+
+
+
+    render.SetStencilWriteMask(255)
+    render.SetStencilTestMask(255)
+    render.SetStencilReferenceValue(1)
+    render.SetStencilCompareFunction(STENCIL_ALWAYS)
+    render.SetStencilPassOperation(STENCIL_REPLACE)
+    render.SetStencilFailOperation(STENCIL_KEEP)
+
+    -- 画 NPC 到 Stencil（只标记，不画颜色）
+    for _, v in ents.Iterator() do
+        if v == self then continue end
+
+        if IsValid(v) and v:Alive() and (v:IsNPC() or v:IsRagdoll()) and not v:GetNoDraw() then
+            render.SetBlend(0) -- 透明绘制，只写 Stencil
+            v:DrawModel()
+        end
+    end
+    render.SetBlend(1)
+
+    -- 2. 只在 Stencil 标记区域画热成像
+    render.SetStencilCompareFunction(STENCIL_EQUAL)
+    render.SetStencilPassOperation(STENCIL_KEEP)
+
+    -- 用 3D 空间画热成像覆盖（参考 mod 的 PostDrawTranslucentRenderables 思路）
+    -- 方法A：画一个全屏四边形，但只在 Stencil 区域显示
+    cam.Start2D()
+    local color = att.Scope.Thermal or Color(38, 255, 0, 200)
+    surface.SetDrawColor(color.r, color.g, color.b, color.a)
+    surface.DrawRect(0, 0, ScrW(), ScrH())
+    cam.End2D()
+    
+
+    render.SetStencilEnable(false)
+    cam.End3D()
+
+    render.PopRenderTarget()
+end

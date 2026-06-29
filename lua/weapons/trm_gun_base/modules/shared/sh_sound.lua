@@ -102,16 +102,16 @@ local function StartReverbCoroutine(wep)
     end)
 end
 
--- 每帧驱动协程
--- local cv_debug_reverb = CreateConVar("trmbase_debug_reverb", 0, FCVAR_ARCHIVE)
--- hook.Add("Think", "TRMBase_ReverbThink", function()
---     for id, co in pairs(reverbCoroutines) do
---         local ok, err = coroutine.resume(co)
---         if not ok then
---             reverbCoroutines[id] = nil
---         end
---     end
--- end)
+--每帧驱动协程
+local cv_debug_reverb = CreateConVar("trmbase_debug_reverb", 0, FCVAR_ARCHIVE)
+hook.Add("Think", "TRMBase_ReverbThink", function()
+    for id, co in pairs(reverbCoroutines) do
+        local ok, err = coroutine.resume(co)
+        if not ok then
+            reverbCoroutines[id] = nil
+        end
+    end
+end)
 
 function SWEP:HandleReverb(tbl)
     tbl = tbl or self.Reverb

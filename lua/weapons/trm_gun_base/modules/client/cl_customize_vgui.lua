@@ -1188,6 +1188,7 @@ function PANEL:BuildModelBone(ent)
 
     -- 更新配件模型的骨骼
     for _, model in pairs(self.m_PreviewModels) do
+        if not BASE_TRM_ATTS[model.Class].Bonemerge then continue end
         model:InvalidateBoneCache()
         model:SetupBones()
         local count = model:GetBoneCount()

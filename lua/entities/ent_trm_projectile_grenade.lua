@@ -29,6 +29,16 @@ function ENT:Initialize()
     end
 end
 
+local function getOwner(ent)
+    if not IsValid(ent) then return nil end
+
+    local owner = ent:GetOwner()
+    if IsValid(owner) then
+        return getOwner(owner)
+    end
+    return ent
+end
+
 function ENT:Explode()
     if self.m_Exploded or not SERVER then return end
     self.m_Exploded = true
@@ -41,7 +51,7 @@ function ENT:Explode()
     local explosion = ents.Create("env_explosion")
     if IsValid(explosion) then
         explosion:SetPos(pos)
-        explosion:SetOwner(IsValid(owner) and owner or self)
+        explosion:SetOwner(getOwner(self))
         explosion:Spawn()
         explosion:SetKeyValue("iMagnitude", damage) -- 不用它的伤害，我们自己处理
         explosion:SetKeyValue("iRadiusOverride", radius)
@@ -76,7 +86,7 @@ function ENT:Explode()
         local force = forceDir * finalDamage * 200
 
         local dmginfo = DamageInfo()
-        dmginfo:SetAttacker(IsValid(owner) and owner or self)
+        dmginfo:SetAttacker(getOwner(self))
         dmginfo:SetInflictor(self)
         dmginfo:SetDamage(finalDamage)
         dmginfo:SetDamageForce(force)
@@ -144,7 +154,7 @@ function ENT:CollisionDamage(data, phys)
     if IsValid(hitEnt) and hitEnt.TakeDamageInfo then
         local owner = self:GetOwner()
         local damage = self:GetDamage() -- 物理撞击伤害
-        if self:GetVelocity():Length() < 200 then
+        if self:GetVelocity():Length() < 400 then
             damage = 0
         end
         local dmginfo = DamageInfo()
@@ -158,8 +168,7 @@ function ENT:CollisionDamage(data, phys)
         hitEnt:TakeDamageInfo(dmginfo)
 
         -- 播放撞击音效
-        self:EmitSound("weapons/bullet_impact.wav", 65, math.random(90, 110))
-
+        self:EmitSound("physics/body/body_medium_impact_hard1.wav", 65, math.random(90, 110))
     end
 end
 
