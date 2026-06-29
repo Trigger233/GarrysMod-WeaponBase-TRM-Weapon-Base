@@ -90,10 +90,10 @@ end
 -- 清空缓存（模型变化时调用）
 function trm_utils.InvalidateCache(ent)
     local model = ent:GetModel()
-    if model then
-        cachedBones[model] = nil
-        cachedAttachments[model] = nil
-    end
+    -- if model then
+    --     cachedBones[model] = nil
+    --     cachedAttachments[model] = nil
+    -- end
     ent.m_AttachmentRequests = nil
     ent.m_AttachmentDeliveries = nil
     ent.m_bFastAttachment = nil

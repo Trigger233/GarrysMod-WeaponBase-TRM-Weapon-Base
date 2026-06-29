@@ -23,32 +23,36 @@ function SWEP:ViewModelDrawn(vm, flag)
     end
 end
 
+local NextUpdate = 0
 function SWEP:BuildViewmodelAttachmentsData(vm)
     if not IsValid(vm) then return end
+    if CurTime() - NextUpdate > 0 then
+        self.m_Attachment = self.m_Attachment or {}
+        local stats = self.Effects
+        if not stats then return end
 
-    self.m_Attachment = self.m_Attachment or {}
-    local stats = self.Effects
-    if not stats then return end
+        for _, element in pairs(stats) do
+            if not element or not element.attachment then
+                continue
+            end
+            local attName =element.attachment
 
-    for _, element in pairs(stats) do
-        if not element or not element.attachment then
-            continue
+            local ent, attId = self:FindAttachment(vm,attName )
+            if not IsValid(ent) or not attId or attId == -1 then
+                -- 可选：用默认值或跳过
+                self.m_Attachment[element.attachment] = false
+                continue
+            end
+
+            local att = ent:GetAttachment(attId)
+            if not att then
+                self.m_Attachment[element.attachment] = false
+                continue
+            end
+
+            self.m_Attachment[element.attachment] = att
         end
-
-        local ent, attId = self:FindAttachment(vm, element.attachment)
-        if not IsValid(ent) or not attId or attId == -1 then
-            -- 可选：用默认值或跳过
-            self.m_Attachment[element.attachment] = false
-            continue
-        end
-
-        local att = ent:GetAttachment(attId)
-        if not att then
-            self.m_Attachment[element.attachment] = false
-            continue
-        end
-
-        self.m_Attachment[element.attachment] = att
+        NextUpdate = CurTime() + RealFrameTime()
     end
 end
 
@@ -60,9 +64,11 @@ function SWEP:PostDrawViewModel(vm, weappon, ply, flag)
 end
 
 function SWEP:PreDrawViewModel(vm)
+    if GetConVar("trmbase_cl_cheapscope"):GetBool() then
+        self:RenderScopeView()
+    end
+
 end
-
-
 
 concommand.Add("trm_clear_test_model", function(ply)
     local wep = ply:GetActiveWeapon()
@@ -116,7 +122,7 @@ concommand.Add("trm_test_ents", function()
     local count = 0
     for _, e in ents.Iterator() do
         count = count + 1
-        print(e,e:GetParent(),e:GetModel(),e:GetOwner())
+        print(e, e:GetParent(), e:GetModel(), e:GetOwner())
     end
     print(count)
 end)
