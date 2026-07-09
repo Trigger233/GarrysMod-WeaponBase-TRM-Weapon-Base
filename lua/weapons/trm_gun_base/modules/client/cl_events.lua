@@ -68,7 +68,7 @@ end
 function SWEP:DoTracer(startpos, endpos)
     if self:IsFirstPerson() then
         local att = self:GetAttachmentData(self.Effects.Muzzle.attachment)
-        startpos =  att.Pos 
+        startpos = att and att.Pos or startpos 
     end
 
     local stats = self.Effects.Muzzle.Tracer
@@ -87,21 +87,21 @@ end
 local function findAttachmentInChildren(ent, attName, weapon)
     local attId = trm_utils.LookupAttachmentCached(ent, attName)
 
-    for _, c in pairs(ent:GetChildren()) do
-        if c:GetClass() == "gmod_hands" then
+    for _, child in pairs(ent:GetChildren()) do
+        if child:GetClass() == "gmod_hands" then
             continue
         end
 
-        if c:GetOwner() != weapon then
+        if child:GetOwner() != weapon then
             continue
         end
 
-        local ce, ca = findAttachmentInChildren(c, attName)
+        local child_ent, child_att = findAttachmentInChildren(child, attName)
 
-        if (ca != nil) then
-            attId = ca
-            ent = ce
-        end
+        if (child_att != nil) then
+            attId = child_att
+            ent = child_ent
+        end 
     end
 
     return ent, attId

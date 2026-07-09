@@ -3,6 +3,7 @@ function SWEP:CanAim()
     if self:GetSprintDelta() > 0.8 or (self.IronsightReload == false and self:IsReloading()) or string.find(seq, "Melee") or string.find(seq, "Holster") or string.find(seq, "Draw") then return false end
     return true
 end
+
 local cvar_aimspeed = CreateConVar("trmbase_sv_mod_aimspeed", 1, FCVAR_ARCHIVE, "", 0, 10)
 function SWEP:GetAimSpeed()
     return FrameTime() / self.Aim.Time * cvar_aimspeed:GetFloat()
@@ -12,12 +13,11 @@ function SWEP:GetAimTime()
     return self.Aim.Time / cvar_aimspeed:GetFloat()
 end
 
-
 function SWEP:AimIn()
     if self.Aim.Type == "Linear" then
         self.m_AimDelta = math.Approach(self.m_AimDelta, 1, self:GetAimSpeed())
     else
-        self.m_AimDelta = Lerp(2.5 * self:GetAimSpeed() , self.m_AimDelta, 1)
+        self.m_AimDelta = Lerp(2.5 * self:GetAimSpeed(), self.m_AimDelta, 1)
     end
     if not self.m_Aiming then
         if self:IsAnimFinished() then
@@ -80,16 +80,10 @@ function SWEP:AimThink()
 end
 
 function SWEP:CycleTacSight(bool)
-    if bool then
-        self:SetTacSight(bool)
-        return
-    end
-
-    self:SetTacSight(not self:GetTacSight())
-
+    self:SetTacSight(bool or not self:GetTacSight())
 end
 
-concommand.Add("+trmbase_cycle_tacsight",function(ply)
+concommand.Add("+trmbase_cycle_tacsight", function(ply)
     local weapon = ply:GetActiveWeapon()
     if weapon.CycleTacSight then
         weapon:CycleTacSight()

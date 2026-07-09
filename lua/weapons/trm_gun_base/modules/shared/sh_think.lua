@@ -2,7 +2,6 @@ local cvar_holster = CreateConVar("trmbase_sv_holster_on_ladder",1,{FCVAR_ARCHIV
 
 function SWEP:Think()
 
-    if SERVER and not IsFirstTimePredicted() then return end
 
     -- 原有逻辑...
     local owner = self:GetOwner()
@@ -29,6 +28,7 @@ function SWEP:Think()
 
 end
 
+local SprintDelta = 0
 function SWEP:bThink()
     local seq = self:GetPlayingSequence()
     local owner = self:GetOwner()
@@ -44,9 +44,9 @@ function SWEP:bThink()
         self.s_TriggerSound = false
     end
 
-    self.m_SprintDelta = self.m_SprintDelta or 0
-    self.m_SprintDelta = Lerp( 50 , self.m_SprintDelta,
+    
+    SprintDelta = Lerp(50, SprintDelta,
         sprint and owner:OnGround() and owner:GetVelocity():Length2D() > owner:GetWalkSpeed() and self:CanSprint() and 1 or
         0)
-    self:SetSprintDelta(self.m_SprintDelta)
+    self:SetSprintDelta(SprintDelta)
 end

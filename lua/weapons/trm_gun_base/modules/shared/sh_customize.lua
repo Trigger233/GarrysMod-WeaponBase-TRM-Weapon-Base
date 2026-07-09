@@ -658,6 +658,7 @@ function SWEP:BuildCustomizedGun()
     end
 
     self:ChangeWeaponStats()
+    self:FireModeStat(self:GetFiremodeIndex())
 
     self:InvalidateAttachments(vm)
     self:InvalidateAttachments(self)

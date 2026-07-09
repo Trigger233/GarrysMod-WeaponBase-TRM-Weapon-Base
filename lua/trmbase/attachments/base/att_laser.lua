@@ -44,22 +44,22 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
     local attID = model:LookupAttachment(data.Attach)
     if attID <= 0 then return end
 
-    model:InvalidateBoneCache()
-    model:SetupBones()
+    --model:InvalidateBoneCache()
+    --model:SetupBones()
     local att = trm_utils.GetFastAttachment(model, data.Attach)
     if not att then return end
 
 
     -- 缓存射线结果
-    if not self._nextTrace or CurTime() > self._nextTrace then
+    if not self._nextTrace or SysTime() > self._nextTrace then
         self._lastTrace = util.TraceLine({
             start = att.Pos + att.Ang:Forward() * -10,
-            endpos = att.Pos + att.Ang:Forward() * 1000,
+            endpos = LerpVector( weapon:IsReloading() and 0  or weapon:GetAimDelta()  ,att.Pos   + att.Ang:Forward() * 1000 ,weapon:GetShootPos() + weapon:GetAimVector() * 1000)  ,
             filter = { weapon, weapon:GetOwner() },
             mask = MASK_SHOT
         })
-        local updateFps = 55
-        self._nextTrace = CurTime() + math.min(1 / updateFps, RealFrameTime())
+        local updateFps = 30
+        self._nextTrace = SysTime() + math.min(1 / updateFps, RealFrameTime())
     end
 
     local tr = self._lastTrace

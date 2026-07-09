@@ -382,16 +382,17 @@ function SWEP:DoRecoil()
 	Recoil:Normalize()
 
 	self:SetRecoil(Recoil)
-	self:SetNextRecoil(CurTime() + delay)
+	self:SetNextRecoil(UnPredictedCurTime() + delay)
 end
 
 function SWEP:DoCameraRecoil()
+	if not ( game.SinglePlayer() and SERVER or CLIENT ) then return end
 	local owner = self:GetOwner()
 	if not IsValid(owner) then return end
 	local eyeAngles = owner:EyeAngles()
 	local delay = 60 / self.Primary.RPM
 	local nextRecoil = self:GetNextRecoil()
-	local isFiring = CurTime() - nextRecoil < delay + FrameTime()
+	local isFiring = UnPredictedCurTime() - nextRecoil < delay + FrameTime()
 	local NextAngle = Angle(0, 0, 0)
 	local stat = self.Recoil
 

@@ -26,7 +26,7 @@ end
 local NextUpdate = 0
 function SWEP:BuildViewmodelAttachmentsData(vm)
     if not IsValid(vm) then return end
-    if CurTime() - NextUpdate > 0 then
+    if SysTime() - NextUpdate > 0 then
         self.m_Attachment = self.m_Attachment or {}
         local stats = self.Effects
         if not stats then return end
@@ -52,7 +52,7 @@ function SWEP:BuildViewmodelAttachmentsData(vm)
 
             self.m_Attachment[element.attachment] = att
         end
-        NextUpdate = CurTime() + RealFrameTime()
+        NextUpdate = SysTime() + 1 / 30 
     end
 end
 
@@ -70,25 +70,11 @@ function SWEP:PreDrawViewModel(vm)
 
 end
 
-concommand.Add("trm_clear_test_model", function(ply)
-    local wep = ply:GetActiveWeapon()
-    if not IsValid(wep) then return end
 
-    if wep.test and IsValid(wep.test.m_model) then
-        wep.test.m_model:Remove()
-        wep.test.m_model = nil
-        print("测试模型已清除")
-    else
-        print("没有找到测试模型")
-    end
-end)
 
 -- 调试 ConVar
 CreateClientConVar("trmbase_freeze_vm", 0)
 
--- =============================================
--- 调试：冻结 viewmodel 位置/角度
--- =============================================
 
 concommand.Add("trmbase_freeze_vm", function(ply, cmd, args)
     local wep = ply:GetActiveWeapon()
@@ -118,11 +104,3 @@ concommand.Add("trmbase_freeze_vm", function(ply, cmd, args)
     end
 end)
 
-concommand.Add("trm_test_ents", function()
-    local count = 0
-    for _, e in ents.Iterator() do
-        count = count + 1
-        print(e, e:GetParent(), e:GetModel(), e:GetOwner())
-    end
-    print(count)
-end)
