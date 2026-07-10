@@ -3,15 +3,13 @@ task_in.Name = "AdsIn"
 task_in.Priority = 100
 
 function task_in:CanBeSet(weapon)
-    return true
+    return (weapon:CanAim() )
 end
 
 function task_in:OnSet(weapon)
-    if not weapon:IsReloading() and weapon:CanAim() then
         weapon:SetNextAnimationTime(0)
         weapon:PlayAnimation(weapon:ChooseAnim("Ads_In"), true)
         weapon:SetNextFireTime(0)
-    end
 end
 
 function task_in:Think(cycle, weapon)
@@ -29,11 +27,9 @@ function task_out:CanBeSet(weapon)
 end
 
 function task_out:OnSet(weapon)
-    if not weapon:IsReloading() and weapon:CanAim() then
         weapon:SetNextAnimationTime(0)
         weapon:PlayAnimation(weapon:ChooseAnim("Ads_Out"), true)
         weapon:SetNextFireTime(0)
-    end
 end
 
 function task_out:Think(cycle, weapon)

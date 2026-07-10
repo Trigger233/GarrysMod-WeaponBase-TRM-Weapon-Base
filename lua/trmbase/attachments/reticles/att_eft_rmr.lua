@@ -3,7 +3,7 @@ ATTACHMENT.Category = "att_sight_pistol"
 ATTACHMENT.Base = "att_reticle"
 ATTACHMENT.Selectable = true
 
-ATTACHMENT.Angles     = Angle(-180, 90, 180) 
+ATTACHMENT.Angles     = Angle(-90, 0, 0) 
 ATTACHMENT.Pos        = Vector(1.5, 0, 0)
 ATTACHMENT.Sight = {
     Pos = Vector(0.00,0, 1.35 ) ,

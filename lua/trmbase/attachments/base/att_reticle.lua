@@ -3,26 +3,19 @@ ATTACHMENT.Base = "att_base"
 ATTACHMENT.Name = "att_sight"
 ATTACHMENT.Description = "The Base for Sight Attachments"
 
--- 默认配置，子类可以覆盖
-ATTACHMENT.Sight = {}
-ATTACHMENT.Scope = {}
 
 function ATTACHMENT:Render(weapon, model)
-    BASE_TRM_ATTS[self.Base]:Render(weapon,model)
-    -- 先渲染模型本身
-    --model:DrawModel()
     
     -- 如果有分划板配置，渲染红点/分划板
     if self.Sight and self.Sight.Material then
-        self:RenderReticle(weapon, model)
+        self:RenderReticle(weapon, model,self.Sight)
     end
     
     
 end
 require("trm_utils")
 -- 渲染红点/分划板（使用 Stencil 遮罩）
-function ATTACHMENT:RenderReticle(weapon, model)
-    local ret = self.Sight
+function ATTACHMENT:RenderReticle(weapon, model,ret)
     if not ret or not ret.Material then return end
     
     -- 获取红点显示位置（附件点）
@@ -45,6 +38,7 @@ function ATTACHMENT:RenderReticle(weapon, model)
     render.SetStencilCompareFunction(STENCIL_LESSEQUAL)
     
     -- 渲染红点
+    local length = 1000
     local size = ret.Size or 5.12
     local color = ret.Color or Color(255, 0, 0, 255)
     render.SetMaterial(ret.Material)

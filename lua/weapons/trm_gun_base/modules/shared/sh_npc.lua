@@ -21,8 +21,8 @@ function SWEP:NPCShoot_Primary(pos, dir)
         else
             self:FireProjectile()
         end
-        
-        self:SetNextFireTime(60 / self.Primary.RPM)
+        local NextFire = self.Primary.BoltAction and 2 or  60 / self.Primary.RPM
+        self:SetNextFireTime(NextFire)
     end
 end
 

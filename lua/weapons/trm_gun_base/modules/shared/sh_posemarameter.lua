@@ -16,6 +16,13 @@ function SWEP:LookupRangeCache(name)
     return 1
 end
 
+local aimPose = 0
+local sprintPose = 0
+local emptyPose = 0
+local walkPose = 0
+local grip1Pose = 0
+local grip2Pose = 0
+
 function SWEP:UpdatePoseParameters()
     if SERVER then return end
 
@@ -28,79 +35,64 @@ function SWEP:UpdatePoseParameters()
     local speed = IsValid(owner) and owner:GetVelocity():Length2D() or 0
     local runSpeed = IsValid(owner) and owner:GetRunSpeed() or 1
     local walkSpeed = IsValid(owner) and owner:GetWalkSpeed() or 1
-    local dt = engine.TickInterval() * 0.5
+    local dt = game.SinglePlayer() and engine.TickInterval() * 0.5 or RealFrameTime() * 5
 
     -- Aim Pose
     if self.Sight and self.Sight.PoseParameter then
-        self.m_AimPose = Lerp(dt * 20, self.m_AimPose or 0, self:GetAimDelta()) or 0
+        aimPose = Lerp(dt * 10, aimPose, self:GetAimDelta())
         for _, Pose in pairs(self.Sight.PoseParameter) do
-            vm:SetPoseParameter(Pose, self.m_AimPose)
+            vm:SetPoseParameter(Pose, aimPose)
         end
     end
 
     -- Sprint Pose
     if self.BasePoseParameter and self.BasePoseParameter.Sprint then
         local sprintVal = self:CanSprint() and speed > walkSpeed and self:GetSprintDelta() or 0
-        self.m_SprintPose = Lerp(dt * 10, self.m_SprintPose or 0, sprintVal) or 0
+        sprintPose = math.Approach(sprintPose, sprintVal, dt *2 )
         for _, Pose in pairs(self.BasePoseParameter.Sprint) do
             local max = self:LookupRangeCache(Pose) or 1
-            vm:SetPoseParameter(Pose, self.m_SprintPose * max)
+            vm:SetPoseParameter(Pose, sprintPose * max)
         end
     end
 
     -- Empty Pose
     if self.BasePoseParameter and self.BasePoseParameter.Empty then
-        self.m_EmptyPose = Lerp(dt * 10, self.m_EmptyPose or 0, self:IsEmpty() and 1 or 0) or 0
+        emptyPose = math.Approach(emptyPose, self:IsEmpty() and 1 or 0, dt * 10)
         for _, Pose in pairs(self.BasePoseParameter.Empty) do
-            vm:SetPoseParameter(Pose, self.m_EmptyPose)
+            vm:SetPoseParameter(Pose, emptyPose)
         end
     end
 
     -- Walk Pose
     if self.BasePoseParameter and self.BasePoseParameter.Walk then
         local walkVal = self:GetAimDelta() < 0.25 and (speed / walkSpeed) * (1 - self:GetSprintDelta()) or 0
-        self.m_WalkPose = Lerp(dt * 10, self.m_WalkPose or 0, walkVal) or 0
+        walkPose = math.Approach(walkPose, walkVal, dt *2)
         for _, Pose in pairs(self.BasePoseParameter.Walk) do
-            vm:SetPoseParameter(Pose, self.m_WalkPose)
+            vm:SetPoseParameter(Pose, walkPose)
         end
     end
 
-    --PrintTable(self.m_PoseParameter)
 
     -- ======== 配件 Pose 参数（Grip1） ========
-    -- 记录上次设过的参数名，卸下配件后自动重置为 0
-    self.m_LastPoseParameter = self.m_LastPoseParameter or {}
-    self.m_grippose = Lerp(dt * 10, self.m_grippose or 0, (self:GetGrip1() and 1 or 0))
+    grip1Pose = Lerp(dt * 10, grip1Pose or 0, (self:GetGrip1() and 1 or 0))
 
-    -- 先把上一帧的所有配件 pose 重置为 0
-    for name in pairs(self.m_LastPoseParameter) do
-        vm:SetPoseParameter(name, 0)
-        self.m_LastPoseParameter[name] = nil
-    end
 
     -- 再设置当前配件的 pose
     if self.m_PoseParameter then
         for _, poseName in pairs(self.m_PoseParameter) do
-            local val = self:LookupRangeCache(poseName) * self.m_grippose
+            local val = self:LookupRangeCache(poseName) * grip1Pose
             vm:SetPoseParameter(poseName, val)
-            self.m_LastPoseParameter[poseName] = true
         end
     end
 
     -- ======== 配件 Pose 参数（Grip2） ========
-    self.m_LastPoseParameter2 = self.m_LastPoseParameter2 or {}
-    self.m_grippose2 = Lerp(dt * 10, self.m_grippose2 or 0, (self:GetGrip2() and 1 or 0))
+    grip2Pose = Lerp(dt * 10, grip2Pose or 0, (self:GetGrip2() and 1 or 0))
 
-    for name in pairs(self.m_LastPoseParameter2) do
-        vm:SetPoseParameter(name, 0)
-        self.m_LastPoseParameter2[name] = nil
-    end
 
     if self.m_PoseParameter2 then
         for _, poseName in pairs(self.m_PoseParameter2) do
-            local val = self:LookupRangeCache(poseName) * self.m_grippose2
+            local val = self:LookupRangeCache(poseName) * grip2Pose
             vm:SetPoseParameter(poseName, val)
-            self.m_LastPoseParameter2[poseName] = true
         end
     end
 

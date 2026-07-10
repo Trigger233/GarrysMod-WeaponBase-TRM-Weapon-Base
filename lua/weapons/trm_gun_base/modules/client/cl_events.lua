@@ -42,6 +42,7 @@ function SWEP:DoShell()
     if (IsValid(owner)) then
         effect:SetNormal(owner:GetVelocity():GetNormalized())
         effect:SetMagnitude(owner:GetVelocity():Length())
+            
     end
 
     utilf(stats.effect, effect)
@@ -49,7 +50,8 @@ end
 
 function SWEP:IsFirstPerson()
     local owner = self:GetOwner()
-    return (owner:IsPlayer() and not owner:ShouldDrawLocalPlayer())
+    local localPly = LocalPlayer()
+    return (owner == localPly and not localPly:ShouldDrawLocalPlayer())
 end
 
 function SWEP:DoMuzzleFlash(ent)
@@ -63,7 +65,9 @@ function SWEP:DoMuzzleFlash(ent)
     if IsValid(pcf) then
         pcf:StartEmission()
     end
+
 end
+
 
 function SWEP:DoTracer(startpos, endpos)
     if self:IsFirstPerson() then

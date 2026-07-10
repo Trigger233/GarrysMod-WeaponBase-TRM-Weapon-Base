@@ -1,3 +1,5 @@
+require("trm_utils")
+require("trm_math")
 function SWEP:RefreshAttTable()
     for slot, entry in pairs(self.CurrentAttachments) do
         if not entry or not entry.Class then continue end
@@ -222,7 +224,6 @@ function SWEP:ChangeWeaponStats()
             self.Animations[Class] = Data
         end
     end
-
     -- self:FireModeStat(self:GetFiremodeIndex())
 
     if SERVER then
@@ -266,13 +267,6 @@ function SWEP:SpreadInit()
     self:SetRecoilProgress(0)
     self:SetVisualRecoilProgress(0)
 end
-
-require("trm_utils")
-
-
-
-
-
 
 
 
@@ -398,7 +392,7 @@ end
 function SWEP:ApplyCustomizationModels()
     if SERVER then return end
     local vm = self:GetViewModel()
-    for slot, entry in pairs(self.CurrentAttachments) do
+    for slot, entry in pairs(self:GetAllAttachmentsInUse()) do
         if not entry or not entry.Class then continue end
         local AttachmentData = BASE_TRM_ATTS[entry.Class]
         local WeaponData = self.Attachments and self.Attachments[tonumber(slot)]
@@ -424,9 +418,8 @@ function SWEP:ApplyCustomizationModels()
             end
         else
             if not WeaponData.Bone then continue end
-            local bone = self:FindBone(WeaponData.Bone, false)
-            if not bone then continue end
-            if IsValid(model) then
+            local bone = self:FindBone(WeaponData.Bone)
+            if IsValid(model) and bone then
                 model:FollowBone(bone.Parent, bone.Id)
                 model:SetLocalPos(Vector(0, 0, 0))
                 model:SetLocalAngles(Angle(0, 0, 0))
@@ -450,16 +443,35 @@ function SWEP:ApplyCustomizationModels()
             end
 
             -- 组合偏移：槽位偏移 + 配件自身偏移
-            local finalPos = WeaponData.Pos and Vector(WeaponData.Pos) or Vector(0, 0, 0)
-            local finalAng = WeaponData.Ang and Angle(WeaponData.Ang) or Angle(0, 0, 0)
-            if AttachmentData.Pos and isvector(AttachmentData.Pos) then finalPos:Add(AttachmentData.Pos) end
-            if AttachmentData.Angles and isangle(AttachmentData.Angles) then finalAng:Add(AttachmentData.Angles) end
+            local finalAng = Angle()
+
+            local addAng = Angle()
+            if WeaponData.Ang then
+                addAng:Add(WeaponData.Ang)
+            end
+
+            if AttachmentData.Angles then
+                addAng:Add(AttachmentData.Angles)
+            end
+            trm_math.RotateAxis(finalAng, addAng)
+
+            local addPos = Vector(0, 0, 0)
+
+            if WeaponData.Pos then
+                addPos:Add(WeaponData.Pos)
+            end
+
+            if AttachmentData.Pos then
+                addPos:Add(AttachmentData.Pos)
+            end
+
+
             if IsValid(model) then
-                model:SetLocalPos(finalPos)
+                model:SetLocalPos(addPos)
                 model:SetLocalAngles(finalAng)
             end
             if IsValid(Tpmodel) then
-                Tpmodel:SetLocalPos(finalPos)
+                Tpmodel:SetLocalPos(addPos)
                 Tpmodel:SetLocalAngles(finalAng)
             end
 
@@ -479,17 +491,20 @@ function SWEP:GetSight()
     return self.sight or false
 end
 
-function SWEP:GenerateAimOffset()
+function SWEP:GenerateCustomizationStats()
     if (SERVER) then
         return
     end
+
+    self.m_Foregrip = nil
+    self.laser = false
 
     for slot, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
         local AttachmentData = BASE_TRM_ATTS[entry.Class]
         if not AttachmentData or AttachmentData.Model == nil then continue end
 
-        if AttachmentData.Sight then
+        if AttachmentData.Sight != nil then
             local align = self.Attachments[tonumber(slot)]
             if not align then continue end
 
@@ -507,6 +522,28 @@ function SWEP:GenerateAimOffset()
                 AimPos = AimPos,
                 AimAng = AimAng,
             }
+
+
+            if AttachmentData.HybridSight != nil then
+                self.sight = self.sight or {}
+
+                local stats = AttachmentData.HybridSight
+                local localPos2 = Vector(0, 0, 0)
+                if stats.Pos then
+                    localPos2:Add(stats.Pos)
+                end
+                if align.SightPos != nil then
+                    localPos2:Add(align.SightPos)
+                end
+                self.sight.HybridSight = {
+                    AimPos = localPos2,
+                    AimAng = align.SightAng or Angle(0, 0, 0),
+                }
+            end
+
+            if self.sight.HybridSight == nil and self:HasFlag("HybridOn") then
+                self:SwitchHybrid()
+            end
         end
 
         if AttachmentData.Scope then
@@ -514,6 +551,18 @@ function SWEP:GenerateAimOffset()
 
             self.sight.MaxZoom = AttachmentData.Scope.Max or self.sight.zoom
             self.sight.MinZoom = AttachmentData.Scope.Min or self.sight.zoom
+        end
+
+        if AttachmentData.LHIK then
+            self.m_Foregrip = {
+                Viewmodel = entry.m_Model,
+                Data = AttachmentData,
+                Worldmodel = entry.m_TpModel
+            }
+        end
+
+        if AttachmentData.Laser then
+            self.laser = true
         end
     end
 end
@@ -593,8 +642,15 @@ function SWEP:CreateAttachmentModel(entry, slot)
 
         model._IsAttachment = true
 
+        if att.Init then
+            att.Init(self, model)
+        end
+
         -- 立即缓存骨骼并返回
-        local bones         = buildSingleModelBone(model)
+        local bones = buildSingleModelBone(model)
+
+
+
         return model, bones
     end
 
@@ -648,6 +704,8 @@ function SWEP:BuildCustomizedGun()
     local owner = self:GetOwner()
     local isActive = hasVM and owner and owner:GetActiveWeapon() == self
 
+
+
     self.sight = nil
     self.underbarrel = nil
 
@@ -678,22 +736,22 @@ function SWEP:BuildCustomizedGun()
 
     -- VM 相关操作只在 vm 有效时执行
     if hasVM and vm and owner and isActive then
+        local sequence = vm:GetSequence()
         -- 确保骨骼数据已刷新
         if CLIENT then
             vm:InvalidateBoneCache()
             vm:SetupBones()
         end
-        local sequence = vm:GetSequenceName(vm:GetSequence())
         self:PrecacheViewModel()
         self:PrepareViewModel()
         self:ApplyWeaponModelChange()
+        self:SetupViewmodel()
         vm:ResetSequence(sequence)
-        --self:SetupViewmodel(vm)
     end
 
 
     self:ApplyCustomizationModels()
-    self:GenerateAimOffset()
+    self:GenerateCustomizationStats()
 
     if not self.underbarrel then
         self:SetUnderbarrel(false)
@@ -708,7 +766,7 @@ function SWEP:BuildCustomizedGun()
     self:TrySetTask("Idle", true)
 end
 
-function SWEP:FindBone(name, isTp)
+function SWEP:FindBone(name)
     return (self.m_Bone[name])
 end
 
@@ -744,16 +802,22 @@ function SWEP:SetupViewmodel()
         if not wep or not util.IsTRMBase(wep) then
             v.RenderOverride = nil
         end
+        if not IsValid(v) then
+            v.RenderOverride = nil
+        end
+        --self:BuildViewmodelAttachmentsData(v)
 
-        self:BuildViewmodelAttachmentsData(v)
-
+        self.m_OverDraw = true
+        v:DestroyShadow()
         v:DrawModel()
 
         for _, att in pairs(self:GetAllAttachmentsInUse()) do
             local tbl = BASE_TRM_ATTS[att.Class]
             if att.m_Model and tbl.Render then
+                att.m_Model:DestroyShadow()
                 tbl:Render(self, att.m_Model)
             end
         end
+        self.m_OverDraw = false
     end
 end

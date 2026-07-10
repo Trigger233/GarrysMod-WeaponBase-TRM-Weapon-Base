@@ -153,6 +153,7 @@ local function DoNPCReplace(npc)
     npc:Give(newClass)
 
     timer.Simple(refresh, function()
+    if not IsValid(npc) then return end
         local newWep = npc:GetActiveWeapon()
         if IsValid(newWep) then
             RandomizeAttachments(newWep)

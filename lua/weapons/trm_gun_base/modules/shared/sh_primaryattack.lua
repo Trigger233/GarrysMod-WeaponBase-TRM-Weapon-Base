@@ -34,7 +34,7 @@ function SWEP:ApplyShake()
 		shakeDir = -shakeDir
 		shake    = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 1) * shakeDir *
 			cvar_shake:GetFloat()
-		owner:SetViewPunchAngles(Angle(0, 0, shake))
+		owner:SetViewPunchAngles(Angle(0, 0, shake ))
 		owner:SetViewPunchVelocity(Angle(0, 0, shake * 100))
 	end
 end
@@ -71,6 +71,7 @@ function SWEP:FirePrimaryBullet()
 				Distance = self.Primary.Range,
 				Spread = spread,
 				Tracer = 0,
+				--HullSize = 1 ,
 				Force = self.Primary.Force / self.Primary.NumBullets,
 				Damage = self.Primary.Damage * self.Primary.NumBullets,
 				AmmoType = self.Primary.Ammo,
@@ -385,8 +386,19 @@ function SWEP:DoRecoil()
 	self:SetNextRecoil(UnPredictedCurTime() + delay)
 end
 
+function SWEP:GetRecoilMultiplier()
+	local base = cvar_recoil:GetFloat()
+	
+	if (VManip != nil and VManip:IsActive()) then
+		base = base * 2
+	end
+
+	return base
+end
+
+
 function SWEP:DoCameraRecoil()
-	if not ( game.SinglePlayer() and SERVER or CLIENT ) then return end
+	if not SERVER then return end
 	local owner = self:GetOwner()
 	if not IsValid(owner) then return end
 	local eyeAngles = owner:EyeAngles()
@@ -439,7 +451,7 @@ function SWEP:GetCurrentSpread()
 	local baseSpread = self:GetSpread()
 	local aimDelta = self:GetAimDelta()
 	local owner = self:GetOwner()
-	local tac = self:GetTacSight()
+	local tac = self:HasFlag("Tacsight")
 	if not IsValid(owner) then return baseSpread end
 	if not owner.GetWalkSpeed then return baseSpread end
 	local walkSpeed = owner:GetWalkSpeed()
@@ -465,6 +477,8 @@ function SWEP:GetCurrentSpread()
 	else
 		baseSpread = Lerp(aimDelta, baseSpread, self.Spread.Base * 0.5)
 	end
+
+	baseSpread = math.Clamp(baseSpread, self.Spread.Base, self.Spread.Max)
 	return baseSpread
 end
 

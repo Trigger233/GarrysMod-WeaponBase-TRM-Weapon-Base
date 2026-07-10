@@ -86,15 +86,7 @@ function SWEP:BulletInterval(attacker, tr, dmginfo)
     if (output != nil) then
         self:SetPenetrationCount(current - 1)
 
-        --fire back to the wall to make hole
-        self:GetOwner():FireBullets({
-            Attacker = self:GetOwner(),
-            Src = output.StartPos,
-            Dir = -tr.Normal,
-            Num = 1,
-            Tracer = 0,
-            Damage = 0
-        })
+
 
         --fire forward
         self:GetOwner():FireBullets({

@@ -5,18 +5,23 @@ task.Name = "Idle"
 task.Priority = 1
 
 function task:CanBeSet(weapon)
-    return true
+    return not(string.find(weapon:GetPlayingSequence(),"Holster"))
 end
 
 function task:Think(cycle,weapon)
+
     if weapon:GetUnderbarrel() then
         weapon:TrySetTask("UnderBarrel")
         return
     end
-    weapon:PlayAnimation(weapon:ChooseAnim("Idle"))
+    if cycle >= 1 then 
+        weapon:PlayAnimation(weapon:ChooseAnim("Idle"))
+    end
 end
 
 function task:OnSet(weapon)
+    
+        weapon:PlayAnimation(weapon:ChooseAnim("Idle"))
 end
 
 SWEP:RegisterTask(task)

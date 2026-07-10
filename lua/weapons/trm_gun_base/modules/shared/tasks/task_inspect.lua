@@ -7,6 +7,7 @@ function task:CanBeSet(weapon)
 end
 
 function task:OnSet(weapon)
+    weapon:SetNextAnimationTime(0)
     if weapon:IsEmpty() and weapon.Animations.Inspect_Empty then
         weapon:PlayAnimation("Inspect_Empty")
     elseif weapon.Animations.Inspect then

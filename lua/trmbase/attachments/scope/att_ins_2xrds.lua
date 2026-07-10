@@ -1,4 +1,4 @@
-ATTACHMENT.Name = "AimPoint 2x"
+ATTACHMENT.Name = "AimPoint 2x Sight"
 ATTACHMENT.Category = "att_sight"
 ATTACHMENT.Base = "att_scope"
 ATTACHMENT.Selectable = true

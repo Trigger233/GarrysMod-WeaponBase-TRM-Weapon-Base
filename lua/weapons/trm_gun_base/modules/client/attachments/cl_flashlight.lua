@@ -4,9 +4,9 @@ local flashlightMat = "effects/flashlight/hard"
 SWEP.m_ProjectTexture = {} -- 存储投影纹理 { [attachmentName] = ProjectedTexture }
 
 function SWEP:DrawCustomizionFlashLight(pos, ang, attachment)
-    if not self.flashlight  then return end
+    if not self.flashlight then return end
 
-    if not self:GetFlashLightOn()   then
+    if not self:HasFlag("FlashLightOn") then
         self:CleanupFlashLights()
         return
     end
@@ -21,6 +21,7 @@ function SWEP:DrawCustomizionFlashLight(pos, ang, attachment)
         proj:SetBrightness(0.8)
         proj:SetColor(Color(255, 255, 200))
         proj:SetTexture(flashlightMat)
+        
     end
 
     local proj = self.m_ProjectTexture[attachment]

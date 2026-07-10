@@ -8,19 +8,18 @@ end
 
 require("trm_utils")
 function SWEP:ViewModelDrawn(vm, flag)
-    if not IsValid(vm) then return end
-    vm:SetupBones()
+    if not IsValid(vm) or self.m_OverDraw then return end
     self:BuildViewmodelAttachmentsData(vm)
 
-    for _, att in pairs(self:GetAllAttachmentsInUse()) do
-        local attData = BASE_TRM_ATTS[att.Class]
+    -- for _, att in pairs(self:GetAllAttachmentsInUse()) do
+    --     local attData = BASE_TRM_ATTS[att.Class]
 
-        if IsValid(att.m_Model) and self:IsFirstPerson() then
-            if attData.Render then
-                attData:Render(self, att.m_Model)
-            end
-        end
-    end
+    --     if IsValid(att.m_Model) and self:IsFirstPerson() then
+    --         if attData.Render then
+    --             attData:Render(self, att.m_Model)
+    --         end
+    --     end
+    -- end
 end
 
 local NextUpdate = 0
@@ -61,12 +60,18 @@ function SWEP:GetAttachmentData(name)
 end
 
 function SWEP:PostDrawViewModel(vm, weappon, ply, flag)
+    if self.m_OverDraw then return end
+
+
+
 end
 
 function SWEP:PreDrawViewModel(vm)
+    if self.m_OverDraw then return end
     if GetConVar("trmbase_cl_cheapscope"):GetBool() then
         self:RenderScopeView()
     end
+   self:DoLHIK()
 
 end
 

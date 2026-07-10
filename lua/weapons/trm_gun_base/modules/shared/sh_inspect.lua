@@ -12,9 +12,12 @@ end)
 function SWEP:CanInspect()
     local task = self:GetCurrentTaskName()
     local taskStr = task or ""
+    if self:GetNextPrimaryFire() > CurTime() then
+        return false
+    end
+
     return (taskStr == "Idle" or taskStr == "Rechamber" or string.find(taskStr, "Sprint")) and
-        (self.Animations.Inspect or self.Animations.Inspect_Empty) and
-        not string.find(self:GetPlayingSequence(), "Inspect")
+        (self.Animations.Inspect or self.Animations.Inspect_Empty) 
 end
 
 function SWEP:IsInspecting()

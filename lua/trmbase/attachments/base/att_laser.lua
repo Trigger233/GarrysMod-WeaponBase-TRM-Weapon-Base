@@ -54,7 +54,7 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
     if not self._nextTrace or SysTime() > self._nextTrace then
         self._lastTrace = util.TraceLine({
             start = att.Pos + att.Ang:Forward() * -10,
-            endpos = LerpVector( weapon:IsReloading() and 0  or weapon:GetAimDelta()  ,att.Pos   + att.Ang:Forward() * 1000 ,weapon:GetShootPos() + weapon:GetAimVector() * 1000)  ,
+            endpos =LerpVector(weapon:HasFlag("Tacsight") and not weapon:IsReloading() and weapon:GetAimDelta() or 0 , att.Pos + att.Ang:Forward() * 1000 , weapon:GetShootPos() + weapon:GetAimVector()* 1000  ),
             filter = { weapon, weapon:GetOwner() },
             mask = MASK_SHOT
         })

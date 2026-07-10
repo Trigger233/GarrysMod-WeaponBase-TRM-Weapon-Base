@@ -28,9 +28,14 @@ local function applyEvents(weapon, animation, cycle)
         end
     end
 end
-function SWEP:PlayAnimation(sequenceClass, useInternalDuration)
+
+function SWEP:GetAnimation(Class)
+    return self.Animations[Class] or false
+end
+
+function SWEP:PlayAnimation(sequenceClass, useInternalDuration,forceoverride)
     if not (IsFirstTimePredicted() and SERVER) then return end
-    if self:GetNextAnimationTime() > CurTime() then return end
+    if self:GetNextAnimationTime() > CurTime()  then return end
     local vm = self:GetViewModel()
 
     self:PlayWorldAnimation(sequenceClass)
@@ -50,6 +55,7 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration)
 
     self:SetPlayingSequence(sequenceClass)
 
+
     vm:SendViewModelMatchingSequence(vm:LookupSequence(sequencePlay))
 
     self:SetGrip1(true)
@@ -66,7 +72,7 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration)
 
     self:ApplySpecialAnimationStat(vm, sequenceClass, duration, animData)
 
-    if useInternalDuration then
+    if useInternalDuration and SERVER then
         local nexttime = (animData.RealLength or duration) * (animData.Length or 1) / speed
         self:SetNextAnimationTime(CurTime() + nexttime)
         self:SetNextFireTime(nexttime)
@@ -85,6 +91,9 @@ function SWEP:DoAnimationEvents()
     if not sequenceClass or not self.Animations or not self.Animations[sequenceClass] or not self.Animations[sequenceClass].events then
         return
     end
+
+
+
 
     applyEvents(self, sequenceClass, progress)
 end
@@ -143,10 +152,9 @@ end
 
 function SWEP:ApplySpecialAnimationStat(vm, sequenceClass, duration, animData)
     if string.find(sequenceClass, "Ads") then
-        local AdsSpeed =  (animData.RealLength or duration) / self:GetAimTime()
+        local AdsSpeed = (animData.RealLength or duration) / self:GetAimTime()
         vm:SetPlaybackRate(AdsSpeed)
     end
-
 end
 
 function SWEP:ChooseAnim(animationClass)
@@ -177,3 +185,14 @@ function SWEP:IsAnimFinished()
     return self:GetNextAnimationTime() < CurTime()
 end
 
+if (SERVER) then
+    util.AddNetworkString("TRMBase_LHIKAnimation")
+
+    function SWEP:PlayIKAnimation(seq, duration)
+        net.Start("TRMBase_LHIKAnimation")
+        net.WriteString(seq)
+        net.WriteBool(duration or false)
+        net.WriteEntity(self)
+        net.Broadcast()
+    end
+end

@@ -55,7 +55,7 @@ function ENT:Initialize()
 
         if IsValid(phys) then
             phys:Wake()
-            phys:SetVelocityInstantaneous(self:GetAngles():Forward() * 1000 * meterToHu)
+            phys:SetVelocityInstantaneous(self:GetAngles():Forward() * 10000 * meterToHu)
         end
         -- 记录武器和发射者
         self.Weapon = self:GetOwner() -- 注意：SetOwner 需要在 Spawn 前调用

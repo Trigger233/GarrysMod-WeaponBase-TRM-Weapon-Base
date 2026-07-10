@@ -1,4 +1,4 @@
-ATTACHMENT.Base = "att_base"
+ATTACHMENT.Base = "att_reticle"
 ATTACHMENT.Name = "att_optic"
 ATTACHMENT.Description = "The Base for Magnified Optics"
 ATTACHMENT.Selectable = false

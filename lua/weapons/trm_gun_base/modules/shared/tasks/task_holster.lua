@@ -30,4 +30,6 @@ function task:Think(cycle, weapon)
     end
 end
 
+
+
 SWEP:RegisterTask(task)

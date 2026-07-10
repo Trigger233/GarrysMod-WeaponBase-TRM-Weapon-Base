@@ -527,6 +527,7 @@ function SWEP:Initialize()
     self.m_SprintDeltaLerp = 0
     self.m_SprintPose = 0
 
+    self.WeaponFlags = {}
 
     self.m_MoveSpeed = self.MoveSpeed
     self.m_Spread = self.Spread.Base
@@ -544,7 +545,7 @@ function SWEP:Initialize()
     self:SetFiremodeIndex(1)
     self:FireModeStat(1)
 
-
+    self.ZeroDistance = 50
 
     self.m_Attachment = {}
     self.m_Bone = {}
@@ -565,6 +566,8 @@ function SWEP:Initialize()
     self:BuildCustomizedGun()
     self:SetClip1(self.Primary.ClipSize)
     self:SetClip2(self.Secondary.ClipSize)
+
+    self:MakeIcon()
 end
 
 SWEP.Attachments = {}
@@ -595,8 +598,11 @@ end
 
 function SWEP:OnDrop(owner)
     --owner:SetActiveWeapon(NULL)
-    if IsValid(TRM_AttachMenu_Instance) then
-        TRM_AttachMenu_Instance:Close()
+    if CLIENT then
+        if IsValid(TRM_AttachMenu_Instance) then
+            TRM_AttachMenu_Instance:Close()
+        end
+        self:CleanupFlashLights()
     end
     return true
 end
@@ -772,14 +778,3 @@ function SWEP:OnRemove()
         self:CleanupFlashLights()
     end
 end
-
-concommand.Add("trm_reload_atts", function()
-    local file = "autorun/trm_loader.lua"
-    AddCSLuaFile(file)
-    include(file)
-    for _, ent in ents.Iterator() do
-        if ent:IsWeapon() and ent.BuildCustomizedGun then
-            ent:BuildCustomizedGun()
-        end
-    end
-end)

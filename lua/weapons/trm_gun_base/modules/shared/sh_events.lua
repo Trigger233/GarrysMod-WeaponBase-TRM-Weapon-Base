@@ -25,5 +25,5 @@ end)
 function SWEP:SwitchFlashLight()
     self:EmitSound("weapons/zoom.wav")
 
-    self:SetFlashLightOn(not self:GetFlashLightOn())
+    self:ToggleFlag("FlashLightOn")
 end

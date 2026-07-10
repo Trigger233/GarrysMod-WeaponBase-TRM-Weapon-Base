@@ -1,5 +1,5 @@
 if SERVER then return end
-
+require("trm_math")
 local MENU_BG = Color(2, 4, 4, 118)
 local BENCH_BG = Color(3, 6, 6, 158)
 local PANEL_BG = Color(6, 11, 12, 202)
@@ -14,7 +14,7 @@ local BLUE_SOFT = Color(88, 148, 204)
 local PANEL_DARK = Color(2, 6, 7, 228)
 local ZERO_VECTOR = Vector(0, 0, 0)
 local ZERO_ANGLE = Angle(0, 0, 0)
-local FONT_FAMILY = "Roboto"
+local FONT_FAMILY = "Hitmarker Text"
 local TRM_MARK = Material("trmbase/ui/trm_mark.png", "smooth")
 local TRM_SOUNDS = {
     Menu = "trmbase/modern/ui_open.wav",
@@ -922,7 +922,7 @@ function PANEL:SetupModel()
     self.m_ModelPanel:SetModel(model)
     local ent = self.m_ModelPanel:GetEntity()
     if not IsValid(ent) then return end
-
+    ent:ResetSequence(self.m_Weapon.Animations.Idle.sequence[1])
     ent:InvalidateBoneCache()
     ent:SetupBones()
     --ent:SetPredictable(true)
@@ -1157,8 +1157,12 @@ function PANEL:ApplyPreviewModel(ent)
             if slotEntry.Ang then LocalAngle:Add(slotEntry.Ang) end
             if attData.Pos then LocalPos:Add(attData.Pos) end
             if attData.Angles then LocalAngle:Add(attData.Angles) end
+
+            local finalAng = Angle()
+            trm_math.RotateAxis(finalAng, LocalAngle)
+
             model:SetLocalPos(LocalPos)
-            model:SetLocalAngles(LocalAngle)
+            model:SetLocalAngles(finalAng)
         end
     end
 end
@@ -2171,3 +2175,7 @@ hook.Add("HUDShouldDraw", "HideWhileCustomizing", function()
         end
     end
 end)
+
+function SWEP:IsCustomizing()
+    return IsValid(TRM_AttachMenu_Instance) and TRM_AttachMenu_Instance.m_Weapon == self
+end

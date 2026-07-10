@@ -52,16 +52,14 @@ function task_out:CanBeSet(weapon)
 end
 
 function task_out:OnSet(weapon)
-    weapon:SetNextAnimationTime(0)
     weapon:SetNextFireTime(0.0)
-    if weapon:IsEmpty() and weapon.Animations.SprintOut_Empty then
-        weapon:PlayAnimation("SprintOut_Empty")
-    elseif weapon.Animations.SprintOut then
-        weapon:PlayAnimation("SprintOut")
+    if weapon.Animations.SprintOut then
+        weapon:PlayAnimation(weapon:ChooseAnim("SprintOut"))
     end
 end
 
 function task_out:Think(cycle, weapon)
+    weapon:SetNextAnimationTime(0)
     weapon:TrySetTask("Idle")
 end
 

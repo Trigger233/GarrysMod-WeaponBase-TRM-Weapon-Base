@@ -12,6 +12,7 @@ local cv_customize = GetConVar("trmbase_cl_keybind_customize")
 local cv_firemode = GetConVar("trmbase_cl_keybind_firemode")
 local cv_underbarrel = CreateClientConVar("trmbase_cl_keybind_ub", 0, true, false, "Underbarrel keybind")
 
+SWEP.BindState = {}
 
 hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
     local weapon = LocalPlayer():GetActiveWeapon()
@@ -50,19 +51,23 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
         end
     end
 
-    if weapon:GetAimDelta() > 0.2 then
-        if bind == "invnext" then
+    if weapon:GetAimDelta() > 0.2 and pressed then
+        if bind == "invnext" and pressed then
             weapon:Scroll(1)
             return true
-            
         end
-        if bind == "invprev" then
+        if bind == "invprev" and pressed then
             weapon:Scroll(-1)
 
             return true
         end
         if bind == "+use" and pressed then
-            RunConsoleCommand("+trmbase_cycle_tacsight")
+            if SysTime() - weapon:GetBindState("use") < 0.25 then
+                RunConsoleCommand("+trmbase_cycle_tacsight")
+                weapon:SetBindState("use", 0)
+            else
+                weapon:SetBindState("use", SysTime())
+            end
             return true
         end
     end
@@ -74,3 +79,13 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
         return true
     end
 end)
+
+
+function SWEP:GetBindState(keyName)
+    self.BindState[keyName] = self.BindState[keyName] or 0
+    return self.BindState[keyName]
+end
+
+function SWEP:SetBindState(keyName, value)
+    self.BindState[keyName] = value
+end

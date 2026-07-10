@@ -5,7 +5,8 @@ function SWEP:CanMelee()
         return true
     end
 
-    return false
+
+    return self:GetNextPrimaryFire() <= CurTime()
 end
 
 concommand.Add("+trmbase_melee", function(ply)

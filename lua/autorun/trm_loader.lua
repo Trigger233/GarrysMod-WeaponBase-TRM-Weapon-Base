@@ -2,17 +2,17 @@ if SERVER then
     AddCSLuaFile()
 end
 
-
+TRMWeaponBase = TRMWeaponBase or {}   
 
 BASE_TRM_ATTS = BASE_TRM_ATTS or {}
-TRM_BASE_REF = 69 
- 
+TRM_BASE_REF = 69
+
 local function LoadAttachmentStats(path, fileName)
     local name = string.Replace(fileName, ".lua", "")
     local fullPath = path .. "/" .. fileName
 
     if SERVER then
-        AddCSLuaFile(fullPath)
+        AddCSLuaFile(fullPath)  
     end
 
     local func = CompileFile(fullPath)
@@ -47,8 +47,7 @@ local function LoadAttachments(path)
     end
 end
 
-LoadAttachments("trmbase/attachments")
-LoadAttachments("trmbase/att")
+
 
 local function inherit(current, base)
     for k, v in pairs(base) do
@@ -65,19 +64,18 @@ local function inherit(current, base)
     end
 end
 
-function BASE_TRM_ATTS.Inherit(att)
+function TRMWeaponBase.Inherit(att)
     local baseClass = BASE_TRM_ATTS[att.Base]
-    while baseClass  do
-
+    while baseClass do
         if baseClass == att.ClassName then
             break
         end
 
-        inherit(att, baseClass) 
-        baseClass = BASE_TRM_ATTS[baseClass.Base] 
+        inherit(att, baseClass)
+        baseClass = BASE_TRM_ATTS[baseClass.Base]
     end
-end 
-  
+end
+
 local function finishAttachments()
     for name, att in pairs(BASE_TRM_ATTS) do
         if type(att) ~= "table" then
@@ -85,32 +83,24 @@ local function finishAttachments()
             continue
         end
         if att.Base then
-            BASE_TRM_ATTS.Inherit(att)
+            TRMWeaponBase.Inherit(att)
         end
     end
 end
-finishAttachments()
-
-
-
-
--- 查看所有已加载配件
-concommand.Add("trm_list_atts", function()
-    PrintTable(BASE_TRM_ATTS)
-end)
-
--- 查看某个配件的详细信息
-concommand.Add("trm_att_info", function(ply, cmd, args)
-    local name = args[1]
-    if not name then
-        print("Usage: trm_att_info <attachment_name>")
-        return
+local function Load()
+    LoadAttachments("trmbase/attachments")
+    LoadAttachments("trmbase/att")
+    finishAttachments()
+    
+    for _ , ent in ents.Iterator() do
+        if ent:IsWeapon() and ent.BuildCustomizedGun then
+            ent:BuildCustomizedGun()
+        end
     end
-    local att = BASE_TRM_ATTS[name]
-    if att then
-        PrintTable(att)
-    else
-        print("Attachment not found: " .. name)
-    end
-end)
+end
 
+Load() 
+ 
+
+
+    

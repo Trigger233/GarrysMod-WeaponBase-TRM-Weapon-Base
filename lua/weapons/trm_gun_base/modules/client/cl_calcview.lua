@@ -1,5 +1,5 @@
 if SERVER then return end
-
+SWEP.ClientState = {}
 
 local offsetX = CreateClientConVar("trmbase_vm_offsetX", 0, true, true, "ViewModel X Offset", -10, 10)
 local offsetY = CreateClientConVar("trmbase_vm_offsetY", 0, true, true, "ViewModel Y Offset", -10, 10)
@@ -7,6 +7,7 @@ local offsetZ = CreateClientConVar("trmbase_vm_offsetZ", 0, true, true, "ViewMod
 local rft = RealFrameTime()
 
 local bobt = 0
+local airDelta = 0
 
 function SWEP:CustomBob()
     if not CLIENT then
@@ -22,7 +23,7 @@ function SWEP:CustomBob()
 
     -- 移动时累积，停止时衰减
     if speed > 10 and owner:OnGround() then
-        bobt = (bobt or 0) + RealFrameTime() * math.min(speed, 200) * 0.05
+        bobt = (bobt or 0) + RealFrameTime() * math.min(speed, 150) * 0.05
         -- 不限制范围，让 sin 自然循环
     elseif speed < 10 then
         bobt = (bobt or 0) * 0.95 -- 停止时归零
@@ -42,6 +43,10 @@ function SWEP:CustomBob()
         math.sin(bobt) * 1 * mult,       -- Yaw
         math.sin(bobt * 1.5) * 2 * mult  -- Roll
     )
+        airDelta = Lerp(RealFrameTime()  * 10 , airDelta, not owner:OnGround() and 1 or 0)
+    
+        ang.p = ang.p + 5 * airDelta
+        pos.z = pos.z + 1 * airDelta
 
     return pos, ang
 end
@@ -90,18 +95,17 @@ function SWEP:Sway()
     return swayAng, posSway
 end
 
-local aimdelta = 0
 function SWEP:GetClientAimDelta()
     if not CLIENT then
         return self:GetAimDelta()
     end
 
-    local target = self:GetAimDelta() or 0
+    self.ClientState["aim"] = self.ClientState["aim"] or 0
+    local target            = self:GetAimDelta() or 0
     local smoothSpeed = 20 -- 平滑速度，越大越快
 
-    aimdelta = Lerp(RealFrameTime() * smoothSpeed, aimdelta, target)
-
-    return aimdelta
+    self.ClientState["aim"] = Lerp(RealFrameTime() * smoothSpeed, self.ClientState["aim"], target) or 0
+    return self.ClientState["aim"] or 0
 end
 
 local r = Angle(0, 0, 0)
@@ -127,6 +131,8 @@ end
 
 local cvar_camera = CreateClientConVar("trmbase_camera_animation_scale", 1.0)
 
+local CamAngDelta = Angle()
+local ZERO_ANGLE  = Angle(0, 0, 0)
 function SWEP:CalcView(ply, pos, angles, fov)
     self:ScaleViewmodelFov()
 
@@ -136,12 +142,15 @@ function SWEP:CalcView(ply, pos, angles, fov)
     -- 不需要相机跟随的动画
     local ignoreAnims = { "Fire", "Idle", "Sprint" }
     local currentSeq = self.m_CurrentSequence or self:GetPlayingSequence() or ""
+    local shouldFollow = true
 
     for _, anim in ipairs(ignoreAnims) do
         if string.find(currentSeq, anim) then
-            return pos, angles, fov
+            shouldFollow = false
+            break
         end
     end
+
 
     local attachmentID = vm:LookupAttachment(self.CameraAttachment)
     if not attachmentID or attachmentID <= 0 then
@@ -150,17 +159,24 @@ function SWEP:CalcView(ply, pos, angles, fov)
 
     local attachment = vm:GetAttachment(attachmentID)
     if not attachment then return pos, angles, fov end
-    if self.CameraOffset then
-        angles:Add(self.CameraOffset)
-    end
 
     local localAng = vm:WorldToLocalAngles(attachment.Ang)
-    local mul = cvar_camera:GetFloat()
-    if self.CameraReserve == true then
+
+    if self.CameraReserve then
         localAng:Mul(-1)
     end
-    localAng:Mul(mul)
-    angles:Add(localAng)
+
+    if self.CameraOffset then
+        localAng:Add(self.CameraOffset)
+    end
+
+    local targetAng = shouldFollow and localAng or ZERO_ANGLE
+    if self.CameraLerp then
+        CamAngDelta = LerpAngle(RealFrameTime() * 10, CamAngDelta, targetAng)
+    else
+        CamAngDelta = targetAng
+    end
+    angles:Add(CamAngDelta)
 
     return pos, angles, fov
 end
@@ -177,7 +193,7 @@ local back = 0
 local idledelta = 0
 local const_vrec = 0.5
 local Vrecoil_Mul = 0
-local visAng = Angle( )
+local visAng = Angle()
 
 local vmanipDef = {
     pos = Vector(1.5, 0, -1.5),
@@ -269,14 +285,14 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     -- Aim Pose（基础偏移用 VM 朝向）
     AimOffset = Vector(self.Sight.Pos)
     AimOffsetAngle = Angle(self.Sight.Ang)
-    local tac = self:GetTacSight()
+    local tac = self:HasFlag("Tacsight")
 
     if tac then
         AimOffset:Add(self.TacSight.Pos)
         AimOffsetAngle:Add(self.TacSight.Ang)
     end
 
-    aimOffset = LerpVector(RealFrameTime() * 10, aimOffset  , AimOffset)
+    aimOffset = LerpVector(RealFrameTime() * 10, aimOffset, AimOffset)
     aimAngle = LerpAngle(RealFrameTime() * 10, aimAngle, AimOffsetAngle)
 
 
@@ -284,11 +300,18 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
         aimdelta
     pos:Add(applyAimPos)
     angles:Add(aimAngle * aimdelta)
-    -- 配件瞄具偏移（用骨骼自身 axis 变换，与 GenerateAimOffset 的 WorldToLocal 坐标空间一致）
-    if self:GetSight() and not self:GetTacSight() then
+    -- 配件瞄具偏移（用骨骼自身 axis 变换，与 GenerateCustomizationStats 的 WorldToLocal 坐标空间一致）
+    if self:GetSight() and not self:HasFlag("Tacsight") then
         local sight = self:GetSight()
-        local boneAng = sight.AimBoneAng or angles
-        local sightPos = (angles:Right() * sight.AimPos.x + angles:Forward() * sight.AimPos.y + angles:Up() * sight.AimPos.z) *
+
+        local AimPos = sight.AimPos
+
+        if self:HasFlag("HybridOn") and sight.HybridSight then
+            AimPos = sight.HybridSight.AimPos or AimPos
+        end
+
+
+        local sightPos = (angles:Right() * AimPos.x + angles:Forward() * AimPos.y + angles:Up() * AimPos.z) *
             aimdelta
         pos:Add(sightPos)
         local applyAng = sight.AimAng * aimdelta
@@ -298,28 +321,28 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
 
 
     --Visual Recoil（只有玩家持有时才应用）
-    if IsValid(self:GetOwner()) and self:GetOwner():IsPlayer()  then
+    if IsValid(self:GetOwner()) and self:GetOwner():IsPlayer() then
         -- 后坐力后退（position）
         back = Lerp(RealFrameTime() * 20, back or 0,
             self:GetVisualRecoilBackward() or back)
         pos:Add(Vector(-back * angles:Forward()))
         -- 后坐力角度偏移（pitch/yaw 让 viewmodel 上跳）
-        visAng =self:GetClientVisualRecoil()
+        visAng = self:GetClientVisualRecoil()
 
-        local rad = math.rad(self:GetTacSight() and self.TacSight.Ang.r or 0)
+        local rad = math.rad(self:HasFlag("Tacsight") and self.TacSight.Ang.r or 0)
 
-        visAng = dealTacsight( visAng ,rad)
+        visAng = dealTacsight(visAng, rad)
 
         Vrecoil_Mul = const_vrec
 
 
         angles:RotateAroundAxis(angles:Right(), -visAng.p * Vrecoil_Mul)
         angles:RotateAroundAxis(angles:Up(), visAng.y * Vrecoil_Mul)
-        
+
         if not (self:GetSight() and self:GetSight().zoom and aimdelta > 0.2) then
             ------ViewModel Recoil
             local fireInterval = (60 / self.Primary.RPM) * 0.5
-            local timeToNextFire = self:GetNextRecoil() - CurTime()
+            local timeToNextFire = self:GetNextRecoil() - UnPredictedCurTime()
             local t = math.Clamp(timeToNextFire / fireInterval, 0, 1)
             local Recoildelta = math.min((t > 0.5 and 1 - t or t) * 2, 1) -- 开火时 = 1，然后衰减到 0
 
@@ -387,7 +410,7 @@ function SWEP:AdjustMouseSensitivity(defaultSensitivity, localFOV, _)
 
     local scope = self.sight and self.sight.zoom or false
     local aim = self:GetAimDelta()
-    if scope and not self:GetTacSight() then
+    if scope and self:ShouldZoom() then
         localFOV = Lerp(aim, defaultFOV, self:GetScopeZoomFov())
     else
         localFOV = Lerp(aim, defaultFOV, defaultFOV / self.Aim.Scale)
@@ -402,13 +425,18 @@ local Mytan = math.tan
 
 local finalFOV = 75
 local vmFov = 75
+
+function SWEP:ShouldZoom()
+    return not (self:HasFlag("Tacsight") or self:HasFlag("HybridOn"))
+end
+local originFov
 function SWEP:ScaleViewmodelFov()
     local aim = self:GetClientAimDelta()
-    local originFov = self.m_ViewModelFOV or 70
+    originFov = self.m_ViewModelFOV or weapons.Get(self:GetClass()).ViewModelFOV
     local isCheap = GetConVar("trmbase_cl_cheapscope"):GetBool()
 
     local aimFOV = originFov
-    if self.sight and self.sight.zoom and not self:GetTacSight() then
+    if self.sight and self.sight.zoom and self:ShouldZoom() then
         if isCheap then
             -- Cheap Scope：VM 缩放只随开镜进度变化，不随倍率变化
             -- 让 VM 缩到 80% ~ 90% 左右，不怼脸就行
@@ -425,21 +453,21 @@ function SWEP:ScaleViewmodelFov()
     self.ViewModelFOV = vmFov
 end
 
+local reloadFovDelta = 0
 function SWEP:TranslateFOV(fov)
     local aimDelta = self:GetClientAimDelta() or 0
     local normalFOV = GetConVar("fov_desired"):GetInt()
     local aimFOV = normalFOV / self.Aim.Scale -- 建议 55-65 之间
     -- 使用平滑曲线，让过渡更自然
-    if self.sight and self.sight.zoom and (GetConVar("trmbase_cl_cheapscope"):GetBool() or not self:IsFirstPerson()) and not self:GetTacSight() then
+    if self.sight and self.sight.zoom and (GetConVar("trmbase_cl_cheapscope"):GetBool() or not self:IsFirstPerson()) and self:ShouldZoom() then
         aimFOV = self:GetScopeZoomFov()
     end
+    local reload = self:IsReloading()
+    reloadFovDelta = Lerp(RealFrameTime(), reloadFovDelta or 0, reload and 1 or 0)
+    aimFOV = aimFOV + reloadFovDelta * 10
 
-    if self:IsReloading() then
-        aimFOV = aimFOV + 5
-    end
-
-    local easedDelta = aimdelta
+    local easedDelta = aimDelta
     local FOV = Lerp(easedDelta, normalFOV, aimFOV)
-    finalFOV = Lerp(RealFrameTime() * 15, finalFOV, FOV)
+    finalFOV = Lerp(RealFrameTime() * 5, finalFOV, FOV)
     return finalFOV
 end

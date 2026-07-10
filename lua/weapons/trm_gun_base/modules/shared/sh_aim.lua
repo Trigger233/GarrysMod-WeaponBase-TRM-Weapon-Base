@@ -1,6 +1,21 @@
+if SERVER then
+    util.AddNetworkString("TRMBase_SwitchHybrid")
+
+    net.Receive("TRMBase_SwitchHybrid", function(len, ply)
+        local weapon = net.ReadEntity()
+        if weapon.Hybrid then
+            weapon:Hybrid()
+        end
+    end)
+end
+
+function SWEP:Hybrid()
+    self:ToggleFlag("HybridOn")
+end
+
 function SWEP:CanAim()
-    local seq = self.m_CurrentSequence or self:GetPlayingSequence()
-    if self:GetSprintDelta() > 0.8 or (self.IronsightReload == false and self:IsReloading()) or string.find(seq, "Melee") or string.find(seq, "Holster") or string.find(seq, "Draw") then return false end
+    local seq =  self:GetPlayingSequence()
+    if self:GetSprintDelta() > 0.5 or (self.IronsightReload == false and self:IsReloading() ) or string.find(seq, "Melee") or string.find(seq, "Holster") or string.find(seq, "Draw") then return false end
     return true
 end
 
@@ -43,6 +58,7 @@ end
 
 local cvar_toggle = CreateClientConVar("trmbase_toggle_aim", 0, true, true, "", 0, 1)
 function SWEP:AimLogic()
+    if SERVER and not IsFirstTimePredicted() then return end
     if self.DisableIronsight then
         return
     end
@@ -80,11 +96,17 @@ function SWEP:AimThink()
 end
 
 function SWEP:CycleTacSight(bool)
-    self:SetTacSight(bool or not self:GetTacSight())
+    self:ToggleFlag("Tacsight")
+    if self:HasFlag("HybridOn") then
+        self:RemoveFlag("HybridOn")
+    end
 end
 
 concommand.Add("+trmbase_cycle_tacsight", function(ply)
     local weapon = ply:GetActiveWeapon()
+
+
+
     if weapon.CycleTacSight then
         weapon:CycleTacSight()
         return

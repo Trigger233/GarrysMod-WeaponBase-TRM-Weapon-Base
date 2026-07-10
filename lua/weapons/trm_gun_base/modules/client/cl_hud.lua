@@ -406,15 +406,7 @@ local function DrawCenterStatus(ply, wep, scale)
     DrawBar(x + 86, y + 11, w - 106, 5, 1 - hudState.spread, COL.teal)
 end
 
-local function DrawTacticalHUD(ply, wep)
-    DrawScopeStats(ply, wep)
-    DrawFiremodeHint(ply, wep)
-    if cv_hud_enable:GetBool() == false then return end
 
-    local scale = math.Clamp(cv_hud_scale:GetFloat(), 0.75, 1.35)
-    DrawPlayerHUD(ply, wep, scale)
-    DrawWeaponHUD(ply, wep, scale)
-end
 
 local function GetCrosshairScreenPos(ply, wep)
     local aimPos = ply:GetShootPos()
@@ -441,20 +433,20 @@ local function GetCrosshairScreenPos(ply, wep)
 end
 local meterToHu = 52.5
 
-function DebugHUD(ply, wep)
+local function DebugHUD(ply, wep)
     if cv_debug:GetInt() == 0 then return end
 
     local vm = ply:GetViewModel(0)
     local cycle = IsValid(vm) and math.Round(vm:GetCycle(), 2) or 0
-    local sequence = wep.m_CurrentSequence or (wep.GetPlayingSequence and wep:GetPlayingSequence()) or "None"
+    local sequence = vm:GetSequenceName(vm:GetSequence())
     local aimDelta = wep.GetAimDelta and math.Round(wep:GetAimDelta(), 2) or 0
     local canFire = wep.CanPrimaryAttack and wep:CanPrimaryAttack() and "true" or "false"
 
     local tr = ply:GetEyeTraceNoCursor().HitPos
-    local distance = ply:GetPos():Distance(tr)  / meterToHu
-    draw.SimpleText("Task: " .. tostring(wep.GetCurrentTask and wep:GetCurrentTask() or "None"), "Default", ScrW() / 2,
+    local distance = ply:GetPos():Distance(tr) / meterToHu
+    draw.SimpleText(sequence, "Default", ScrW() / 2,
         ScrH() * 0.68, COL.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    draw.SimpleText("Dis: " .. distance , "Default",
+    draw.SimpleText("Dis: " .. distance, "Default",
         ScrW() * 0.75, ScrH() * 0.71, COL.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     draw.SimpleText("Cycle: " .. tostring(cycle), "Default", ScrW() / 2, ScrH() * 0.74, COL.white, TEXT_ALIGN_CENTER,
         TEXT_ALIGN_CENTER)
@@ -465,7 +457,7 @@ local firemodeDisplayAlpha = 0
 local lastFiremode = ""
 
 -- 修改 DrawFiremodeHint 函数
-function DrawFiremodeHint(ply, wep)
+local function DrawFiremodeHint(ply, wep)
     local current = wep:GetFiremodeName()
 
     -- 检测开火模式变化
@@ -474,7 +466,7 @@ function DrawFiremodeHint(ply, wep)
         firemodeDisplayAlpha = 255 -- 触发显示
     end
 
-      -- 淡出效果
+    -- 淡出效果
     if firemodeDisplayAlpha > 0 then
         firemodeDisplayAlpha = firemodeDisplayAlpha - (RealFrameTime() * 200) -- 1秒淡出
         if firemodeDisplayAlpha < 0 then firemodeDisplayAlpha = 0 end
@@ -490,18 +482,18 @@ local scopezoom = 0
 local scopeZero = 100
 local needzero = GetConVar("trmbase_sv_physical_bullet"):GetBool()
 
-function DrawScopeStats(ply, wep)
-    local Current = math.Round(wep:GetScopeZoom(),1)
+local function DrawScopeStats(ply, wep)
+    local Current = math.Round(wep:GetScopeZoom(), 1)
     local zero = wep.ZeroDistance
     if Current ~= scopezoom or scopeZero != zero then
         scopezoom = Current
-        scopealpha = 255 
+        scopealpha = 255
         scopeZero = zero
     end
 
-    local text = "Zoom : "..scopezoom.." x " .. scopeZero .. "M"
+    local text = "Zoom : " .. scopezoom .. " x " .. scopeZero .. "M"
 
-     -- 淡出效果
+    -- 淡出效果
     if scopealpha > 0 then
         scopealpha = scopealpha - (RealFrameTime() * 200) -- 1秒淡出
         if scopealpha < 0 then scopealpha = 0 end
@@ -510,17 +502,26 @@ function DrawScopeStats(ply, wep)
         draw.SimpleTextOutlined(text, "TRM_HUD_AmmoReserve", x, y, color, TEXT_ALIGN_CENTER,
             TEXT_ALIGN_CENTER, 2, Color(0, 0, 0, scopealpha))
     end
-end 
+end
+local function DrawTacticalHUD(ply, wep)
+    DrawScopeStats(ply, wep)
+    DrawFiremodeHint(ply, wep)
+    if cv_hud_enable:GetBool() == false then return end
 
-function DrawCustomCrosshair(ply, wep)
+    local scale = math.Clamp(cv_hud_scale:GetFloat(), 0.75, 1.35)
+    DrawPlayerHUD(ply, wep, scale)
+    DrawWeaponHUD(ply, wep, scale)
+end
+local function DrawCustomCrosshair(ply, wep)
     if cv_crosshair_enable:GetInt() == 0 then return end
 
     local alpha = cv_crosshair_alpha:GetInt()
     local sequence = wep.m_CurrentSequence or (wep.GetPlayingSequence and wep:GetPlayingSequence()) or ""
 
-    if not ply:ShouldDrawLocalPlayer() and wep.DrawCrossHairIS ~= true and wep.GetAimDelta and wep:GetAimDelta() > 0.5 and not wep:GetTacSight() then
+    if not ply:ShouldDrawLocalPlayer() and wep.DrawCrossHairIS ~= true and wep.GetAimDelta and wep:GetAimDelta() > 0.5 then
         alpha = 0
     end
+
 
     if (wep.GetSprintDelta and wep:GetSprintDelta() > 0.5 and wep.CanSprint and wep:CanSprint()) or IsSequenceHidden(sequence) then
         alpha = 0
@@ -581,8 +582,8 @@ function DrawCustomCrosshair(ply, wep)
     end
 end
 
-function DrawDebugHUD(ply, wep)
-end
+
+
 
 hook.Add("HUDShouldDraw", "TRMBase_HideDefaultHUD", function(name)
     if cv_hud_enable:GetBool() == false or cv_hud_hide_default:GetBool() == false then return end
@@ -601,7 +602,6 @@ hook.Add("HUDPaint", "TRMBase_HUD", function()
     DrawTacticalHUD(ply, wep)
     DrawCustomCrosshair(ply, wep)
     DebugHUD(ply, wep)
-    DrawDebugHUD(ply, wep)
 end)
 
 concommand.Add("trmbase_wep_updateIcon", function(ply)

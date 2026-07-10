@@ -62,6 +62,9 @@ function SWEP:TrySetTask(taskName , forceSet)
     if task.CanBeSet and task:CanBeSet(self) == false and not forceSet then
         return false
     end
+
+
+
     --print(Index)
     self:SetCurrentTask(Index)
 

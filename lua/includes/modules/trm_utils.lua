@@ -45,7 +45,7 @@ local function requireAttachment(ent, attName)
             end
 
             local attData = ent:GetAttachment(attId)
-
+            if not attData then return end
             local computeMatrix = Matrix()
             computeMatrix:SetTranslation(attData.Pos)
             computeMatrix:SetAngles(attData.Ang)

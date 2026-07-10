@@ -55,21 +55,9 @@ function task_fire:CanBeSet(weapon)
 end
 
 function task_fire:OnSet(weapon)
-    if not IsFirstTimePredicted() then return end
     local aim = weapon:GetAimDelta() > 0.5 and true or false
-    if weapon:Clip1() == 1 and weapon.Animations.Fire_Last then
-        if aim and weapon.Animations.Iron_Fire_Last then
-            weapon:PlayAnimation("Iron_Fire_Last")
-        else
-            weapon:PlayAnimation("Fire_Last")
-        end
-    elseif weapon.Animations.Fire then
-        if aim and weapon.Animations.Iron_Fire then
-            weapon:PlayAnimation("Iron_Fire", false)
-        else
-            weapon:PlayAnimation("Fire", false)
-        end
-    end
+    weapon:SetNextAnimationTime(0)
+    weapon:PlayAnimation(weapon:ChooseAnim("Fire"), true)
 
     if weapon.Primary.SpecialAmmo == -1 or not weapon.Primary.SpecialAmmo then
         weapon:FirePrimaryBullet()

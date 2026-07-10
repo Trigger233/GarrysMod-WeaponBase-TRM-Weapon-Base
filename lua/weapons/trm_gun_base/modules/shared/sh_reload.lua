@@ -1,4 +1,3 @@
-local cvar_firebreakreload = CreateConVar("trmbase_fire_interupt_reload", 0, FCVAR_ARCHIVE)
 
 function SWEP:MagzineReload()
 	self:SetNextAnimationTime(0)
@@ -33,7 +32,8 @@ function SWEP:CanReload()
 	local reserveAmmo = self:GetOwner():GetAmmoCount(self:GetPrimaryAmmoType())
 	local seq = self:GetPlayingSequence()
 
-	if self:GetNextPrimaryFire() > CurTime() then return false end
+
+	if self:GetNextPrimaryFire() > CurTime() and not string.find(seq,"Draw") then return false end
 
 	local max = cvar_debug_reload:GetBool() and 2 or (self.Primary.ClipSize +
 		(self.Primary.BoltAction and self:GetChamberAmmo() or self.Primary.Chamber))
@@ -63,6 +63,8 @@ function SWEP:CanReload2()
 	end
 end
 function SWEP:MagzineLoaded()
+	self.m_MagLoad = true
+	
 	local owner = self:GetOwner()
 	if not owner or not owner:IsPlayer() then
 		self:SetClip1(self:GetMaxClip1()) 
@@ -127,7 +129,7 @@ end
 
 function SWEP:IsReloading()
 	local seq = self:GetPlayingSequence()
-	if string.find(seq, "Reload") and self:GetNextPrimaryFire() > CurTime() then
+	if string.find(seq, "Reload")  then
 		return true
 	end
 	return false
