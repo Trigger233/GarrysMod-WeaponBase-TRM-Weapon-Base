@@ -450,6 +450,15 @@ local function DebugHUD(ply, wep)
         ScrW() * 0.75, ScrH() * 0.71, COL.white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     draw.SimpleText("Cycle: " .. tostring(cycle), "Default", ScrW() / 2, ScrH() * 0.74, COL.white, TEXT_ALIGN_CENTER,
         TEXT_ALIGN_CENTER)
+
+    local flagtbl = wep.WeaponFlags
+    local index = 0
+    for name, _ in pairs(flagtbl) do
+        local hasFlag = wep:HasFlag(name) and "true" or "false"
+        draw.SimpleText(name .. ": " .. hasFlag, "Default", ScrW() / 2, ScrH() * 0.6 + index * 14, COL.white,
+            TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        index = index + 1
+    end
 end
 
 -- 在文件开头添加变量

@@ -498,6 +498,7 @@ function SWEP:GenerateCustomizationStats()
 
     self.m_Foregrip = nil
     self.laser = false
+    
 
     for slot, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
@@ -540,10 +541,6 @@ function SWEP:GenerateCustomizationStats()
                     AimAng = align.SightAng or Angle(0, 0, 0),
                 }
             end
-
-            if self.sight.HybridSight == nil and self:HasFlag("HybridOn") then
-                self:SwitchHybrid()
-            end
         end
 
         if AttachmentData.Scope then
@@ -565,6 +562,11 @@ function SWEP:GenerateCustomizationStats()
             self.laser = true
         end
     end
+    
+    if (self.sight.HybridSight != nil or self:HasFlag("HybridOn")) then
+        self:SwitchHybrid()
+    end
+
 end
 
 
@@ -693,20 +695,19 @@ end
 
 ------------------------------------------------------
 function SWEP:BuildCustomizedGun()
+    self:SyncAllAttachments()
     if CLIENT then
         self:CallOnClient("BuildCustomizedGun")
     end
 
-    self:SyncAllAttachments()
 
     local vm = self:GetViewModel()
     local hasVM = IsValid(vm)
     local owner = self:GetOwner()
     local isActive = hasVM and owner and owner:GetActiveWeapon() == self
-
-
-
     self.sight = nil
+
+
     self.underbarrel = nil
 
     self.flashlight = false
@@ -756,6 +757,8 @@ function SWEP:BuildCustomizedGun()
     if not self.underbarrel then
         self:SetUnderbarrel(false)
     end
+
+    
 
     if owner.Flashlight and self.flashlight and owner:FlashlightIsOn() then
         owner:Flashlight(false)

@@ -101,6 +101,6 @@ end
 
 Load() 
  
-
+AddCSLuaFile("includes/modules/trm_input.lua")
 
     

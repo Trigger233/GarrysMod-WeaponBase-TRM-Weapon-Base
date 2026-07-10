@@ -89,3 +89,8 @@ function SWEP:SetupDataTables()
         end
     end
 end
+
+concommand.Add("trm_list_table",function(ply)
+    local wep = ply:GetActiveWeapon()
+    PrintTable(wep:GetTable())
+end)

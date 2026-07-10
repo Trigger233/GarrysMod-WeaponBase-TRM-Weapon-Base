@@ -398,7 +398,6 @@ end
 
 
 function SWEP:DoCameraRecoil()
-	if not SERVER then return end
 	local owner = self:GetOwner()
 	if not IsValid(owner) then return end
 	local eyeAngles = owner:EyeAngles()
@@ -438,7 +437,9 @@ function SWEP:DoCameraRecoil()
 
 	eyeAngles:Add(NextAngle)
 	self.m_LastEyePitch = eyeAngles.pitch
-	owner:SetEyeAngles(eyeAngles)
+	if SERVER then
+		owner:SetEyeAngles(eyeAngles)
+	end
 end
 
 function SWEP:DoSpread()

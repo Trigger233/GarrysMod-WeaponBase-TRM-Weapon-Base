@@ -9,7 +9,8 @@ if SERVER then
     end)
 end
 
-function SWEP:Hybrid()
+function SWEP:Hybrid(bool)
+
     self:ToggleFlag("HybridOn")
 end
 
@@ -95,7 +96,7 @@ function SWEP:AimThink()
     end
 end
 
-function SWEP:CycleTacSight(bool)
+function SWEP:CycleTacSight()
     self:ToggleFlag("Tacsight")
     if self:HasFlag("HybridOn") then
         self:RemoveFlag("HybridOn")

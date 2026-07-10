@@ -71,6 +71,8 @@ function SWEP:SwitchHybrid()
     surface.PlaySound("Weapon_AR2.Empty")
 end
 
+
+
 function SWEP:Scroll(dir)
     if SERVER then return end
     if self:HasFlag("Tacsight") then return end
@@ -83,7 +85,7 @@ function SWEP:Scroll(dir)
 
 
 
-    if self.sight.HybridSight != nil and (SysTime() - self:GetBindState("scroll") > 0.25) then
+    if (self.sight.HybridSight != nil or self:HasFlag("HybridOn")) and (SysTime() - self:GetBindState("scroll") > 0.25) then
         self:SwitchHybrid()
         self:SetBindState("scroll", SysTime())
         return
@@ -135,7 +137,7 @@ function SWEP:RenderScopeSight(model, att)
 
     local ply = LocalPlayer()
 
-    if self:GetClientAimDelta() > 0.4 and IsValid(ply) then
+    if self:GetClientAimDelta() > 0.4 and IsValid(ply) and self:ShouldZoom() then
         self:ApplyActiveScopeMaterial(model, att)
     else
         self:ApplyInActiveScopeMaterial(model, att)
