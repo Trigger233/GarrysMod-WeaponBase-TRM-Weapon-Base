@@ -36,7 +36,7 @@ function SWEP:BuildViewmodelAttachmentsData(vm)
             end
             local attName =element.attachment
 
-            local ent, attId = self:FindAttachment(vm,attName )
+            local ent, attId = self:FindAttachment(self:IsFirstPerson() and vm or self, attName)
             if not IsValid(ent) or not attId or attId == -1 then
                 -- 可选：用默认值或跳过
                 self.m_Attachment[element.attachment] = false
@@ -61,13 +61,24 @@ end
 
 function SWEP:PostDrawViewModel(vm, weappon, ply, flag)
     if self.m_OverDraw then return end
-
+    cam.End3D()
 
 
 end
 
+local cvar_blur = CreateClientConVar("trmbase_cl_blur", 1, true, true, "helptext", 0, 1)
+local BlurMul = 0
 function SWEP:PreDrawViewModel(vm)
     if self.m_OverDraw then return end
+    
+    BlurMul = Lerp(RealFrameTime() * 10 , BlurMul, (self:IsReloading() and self:GetAimDelta() < 0.2  or self:IsCustomizing()) and 1 or 0)
+    if BlurMul > 0.1 and cvar_blur:GetBool() then
+        DrawBokehDOF(BlurMul * 5, 1, 12)
+    end
+
+    cam.Start3D(EyePos(), EyeAngles(), self:GetViewmodelFov(), 0, 0, ScrW(), ScrH(), 1, 1024)
+    render.DepthRange(0.0, 0.0)
+
     if GetConVar("trmbase_cl_cheapscope"):GetBool() then
         self:RenderScopeView()
     end

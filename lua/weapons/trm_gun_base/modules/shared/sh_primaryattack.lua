@@ -141,6 +141,9 @@ function SWEP:FirePrimaryBullet()
 		amount = math.max(amount - 1, 0)
 		self:SetChamberAmmo(amount)
 	end
+
+
+
 	self:TrySetTask("Idle")
 end
 
@@ -190,7 +193,7 @@ function SWEP:FireProjectile()
 	AimDirNew = AimDirNew:Forward()
 	if SERVER and self.Primary.SpecialAmmo != -1 then
 		local proj = ents.Create(self.Primary.SpecialAmmo)
-		proj:SetPos(owner:GetShootPos()) -- 从枪口前方一点的位置发射，避免穿模
+		proj:SetPos(owner:GetShootPos()) 
 		proj:SetAngles(AimDirNew:Angle())
 		proj:Spawn()
 		proj:SetOwner(self)
@@ -426,7 +429,7 @@ function SWEP:DoCameraRecoil()
 	else
 		-- 停火后：回正剩余的后坐力
 		if self.m_RecoilDelta * (current.pitch > 0 and 1 or -1) > 1 then
-			NextAngle.pitch = -self.m_RecoilDelta * stat.Recover
+			NextAngle.pitch = -self.m_RecoilDelta * stat.Recover 
 			self.m_RecoilDelta = self.m_RecoilDelta + NextAngle.pitch
 		else
 			self.m_RecoilDelta = 0
@@ -473,13 +476,13 @@ function SWEP:GetCurrentSpread()
 		if self.Aim.SpreadFollowPrimary then
 			baseSpread = baseSpread * Lerp(aimDelta, 1, self.Aim.Spread / self.Spread.Base)
 		else
-			baseSpread = Lerp(aimDelta, baseSpread, self.Aim.Spread)
+			baseSpread = Lerp(aimDelta, baseSpread, self.Aim.Spread )
 		end
 	else
 		baseSpread = Lerp(aimDelta, baseSpread, self.Spread.Base * 0.5)
 	end
 
-	baseSpread = math.Clamp(baseSpread, self.Spread.Base, self.Spread.Max)
+	baseSpread = math.Clamp(baseSpread, 0, self.Spread.Max)
 	return baseSpread
 end
 

@@ -58,6 +58,7 @@ function SWEP:SendAttachmentToServer(slotKey, attID)
     net.WriteString(slotKey)
     net.WriteString(attID)
     net.SendToServer()
+    self:SaveAttachmentPreset()
 end
 
 local function Phrase(text, fallback)
@@ -2170,7 +2171,7 @@ hook.Add("HUDShouldDraw", "HideWhileCustomizing", function()
 
     local wep = ply:GetActiveWeapon()
     if util.IsTRMBase(wep) and IsValid(wep) then
-        if wep:IsInspecting() and cvar_hide:GetBool() then
+        if wep.IsInspecting and wep:IsInspecting() and cvar_hide:GetBool() then
             return false
         end
     end

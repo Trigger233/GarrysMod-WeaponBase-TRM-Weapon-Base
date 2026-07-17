@@ -5,7 +5,7 @@ end
 ENT.Type = "anim"
 ENT.Base = "base_anim"
 
-ENT.Model = Model("models/trm_attachments/projectile/a_projectile_m203.mdl")
+ENT.Model = Model("models/weapons/ar2_grenade.mdl")
 ENT.ModelScale = 1
 -- 爆炸参数
 ENT.Range = 150  -- 无衰减范围（单位内满伤）

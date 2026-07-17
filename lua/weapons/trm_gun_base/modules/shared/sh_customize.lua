@@ -563,9 +563,9 @@ function SWEP:GenerateCustomizationStats()
         end
     end
     
-    if (self.sight.HybridSight != nil or self:HasFlag("HybridOn")) then
-        self:SwitchHybrid()
-    end
+    -- if (self.sight and self.sight.HybridSight != nil or self:HasFlag("HybridOn")) then
+    --     self:SwitchHybrid()
+    -- end
 
 end
 
@@ -638,7 +638,7 @@ function SWEP:CreateAttachmentModel(entry, slot)
         model:SetNotSolid(true)
         model:SetNoDraw(true)
         model:AddEffects(EF_PARENT_ANIMATES)
-
+        model.TRMAttachmentModel = true
         model:InvalidateBoneCache()
         model:SetupBones()
 
@@ -695,6 +695,7 @@ end
 
 ------------------------------------------------------
 function SWEP:BuildCustomizedGun()
+    if self:GetNoDraw() then return end
     self:SyncAllAttachments()
     if CLIENT then
         self:CallOnClient("BuildCustomizedGun")
@@ -764,6 +765,11 @@ function SWEP:BuildCustomizedGun()
         owner:Flashlight(false)
     end
 
+    if IsValid(TRM_AttachMenu_Instance) then
+        TRM_AttachMenu_Instance:RefreshAll()
+    end
+    
+
     self.m_Customized = true
     --self:SetupViewmodel()
     self:TrySetTask("Idle", true)
@@ -797,11 +803,11 @@ function SWEP:SetupViewmodel()
     local vm = self:GetViewModel()
     if not (vm and IsValid(vm)) then return end
 
-    vm.RenderOverride = function(v)
+    vm.RenderOverride = function(v,flag)
         if not self or not util.IsTRMBase(self) then
             v.RenderOverride = nil
         end
-        local wep = self:GetOwner():GetActiveWeapon()
+        local wep = self:GetOwner().GetActiveWeapon and self:GetOwner():GetActiveWeapon()
         if not wep or not util.IsTRMBase(wep) then
             v.RenderOverride = nil
         end
@@ -811,14 +817,14 @@ function SWEP:SetupViewmodel()
         --self:BuildViewmodelAttachmentsData(v)
 
         self.m_OverDraw = true
-        v:DestroyShadow()
-        v:DrawModel()
+        v:DrawModel(flag)
 
         for _, att in pairs(self:GetAllAttachmentsInUse()) do
             local tbl = BASE_TRM_ATTS[att.Class]
-            if att.m_Model and tbl.Render then
-                att.m_Model:DestroyShadow()
+            if IsValid(att.m_Model) and tbl.Render then
                 tbl:Render(self, att.m_Model)
+            elseif tbl.Model then
+                self:BuildCustomizedGun()
             end
         end
         self.m_OverDraw = false

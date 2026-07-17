@@ -566,8 +566,6 @@ function SWEP:Initialize()
     self:BuildCustomizedGun()
     self:SetClip1(self.Primary.ClipSize)
     self:SetClip2(self.Secondary.ClipSize)
-
-    self:MakeIcon()
 end
 
 SWEP.Attachments = {}
@@ -585,7 +583,7 @@ function SWEP:Equip()
     if cvar_attachment:GetBool() then
         self:LoadAttachmentPreset()
     end
-    self:BuildCustomizedGun()
+    self:BuildCustomizedGun() 
 end
 
 function SWEP:Deploy()
@@ -608,7 +606,7 @@ function SWEP:OnDrop(owner)
 end
 
 function SWEP:OnReloaded()
-    self:OnAttachmentChanged()
+    self:OnAttachmentChanged(true)
 end
 
 function SWEP:OnRestore()
@@ -619,7 +617,7 @@ function SWEP:OnRestore()
             self:LoadAttachmentPreset()
         end
         self:BuildCustomizedGun()
-        self:SetNextRecoil(0)
+        self:SetNextRecoil(0) 
     end)
 end
 
@@ -777,4 +775,28 @@ function SWEP:OnRemove()
     if CLIENT then
         self:CleanupFlashLights()
     end
+end
+
+local Path = "autorun/trm_loader.lua"
+
+if (SERVER) then
+    util.AddNetworkString("TRMBase_UpdateAttachments")
+else
+    net.Receive("TRMBase_UpdateAttachments", function(len, ply)
+        include(Path)
+    end)
+end
+
+
+concommand.Add("trmbase_reload_atts", function()
+    TRMWeaponBase:UpdateAllAttachment()
+end)
+
+TRMWeaponBase = TRMWeaponBase or {}
+
+function TRMWeaponBase:UpdateAllAttachment()
+    AddCSLuaFile(Path)
+    include(Path)
+    net.Start("TRMBase_UpdateAttachments")
+    net.Broadcast()
 end

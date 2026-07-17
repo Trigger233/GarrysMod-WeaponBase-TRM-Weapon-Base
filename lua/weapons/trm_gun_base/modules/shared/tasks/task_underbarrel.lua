@@ -8,11 +8,7 @@ end
 function task_in:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
     weapon:SetUnderbarrel(true)
-    if weapon.LHIK then
-        weapon:PlayIKAnimation("In", true)
-    else
         weapon:PlayAnimation(weapon:ChooseAnim("UnderBarrel_In"), true)
-    end
 end
 
 function task_in:Think(cycle, weapon)
@@ -32,11 +28,7 @@ end
 function task_out:OnSet(weapon)
     weapon:SetUnderbarrel(false)
     weapon:SetNextAnimationTime(0)
-    if weapon.LHIK then
-        weapon:PlayIKAnimation("Out", true)
-    else
         weapon:PlayAnimation(weapon:ChooseAnim("UnderBarrel_Out"), true)
-    end
 end
 
 function task_out:Think(cycle, weapon)
@@ -55,20 +47,12 @@ function task_idle:CanBeSet(wep)
 end
 
 function task_idle:OnSet(wep)
-    if wep.LHIK then
-        wep:PlayIKAnimation("Idle", true)
-    else
         wep:PlayAnimation(wep:ChooseAnim("UnderBarrel"), true)
-    end
 end
 
 function task_idle:Think(cycle, wep)
     if cycle > 0.995 then
-        if wep.LHIK then
-            wep:PlayIKAnimation("Idle", true)
-        else
-            wep:PlayAnimation(wep:ChooseAnim("UnderBarrel"), true)
-        end
+            wep:PlayAnimation(wep:ChooseAnim("UnderBarrel"), false)
     end
 end
 
@@ -83,12 +67,8 @@ function task_reload:CanBeSet(weapon)
 end
 
 function task_reload:OnSet(w)
-    if w.LHIK then
-        w:PlayIKAnimation("Reload", true)
-    else
         w:SetNextAnimationTime(0)
         w:PlayAnimation(w:ChooseAnim("UnderBarrel_Reload"), true)
-    end
 end
 
 function task_reload:Think(c, w)

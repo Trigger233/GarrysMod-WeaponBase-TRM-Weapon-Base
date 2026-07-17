@@ -1,7 +1,7 @@
 if not CLIENT then return end
 require("trm_utils")
 local tracerName = "Tracer"
-local Tracerscale = 5000
+local Tracerscale = 10000
 local tracerStart
 local utilf = util.Effect
 

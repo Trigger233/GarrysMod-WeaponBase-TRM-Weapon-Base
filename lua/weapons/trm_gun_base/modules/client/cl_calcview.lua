@@ -29,7 +29,7 @@ function SWEP:CustomBob()
         bobt = (bobt or 0) * 0.95 -- 停止时归零
     end
     local t = math.sin(bobt or 0) * (speed / 200)
-    local mult = math.min(speed / 200, 1)
+    local mult = math.min(speed / 300, 1)
     -- 位置偏移
     local pos = Vector(
         math.sin(bobt) * -0.9 * mult,          -- 左右
@@ -134,7 +134,6 @@ local cvar_camera = CreateClientConVar("trmbase_camera_animation_scale", 1.0)
 local CamAngDelta = Angle()
 local ZERO_ANGLE  = Angle(0, 0, 0)
 function SWEP:CalcView(ply, pos, angles, fov)
-    self:ScaleViewmodelFov()
 
     local vm = self:GetViewModel(0)
     if not IsValid(vm) then return pos, angles, fov end
@@ -205,6 +204,8 @@ local vmanipMul = 0
 
 local cacheAngle = {}
 
+local SafetyMul = 0
+
 local function dealTacsight(angles, roll)
     -- 缓存 key
     local key = angles.pitch .. "_" .. angles.yaw .. "_" .. angles.roll .. "_" .. roll
@@ -225,6 +226,7 @@ local function dealTacsight(angles, roll)
 
     return result
 end
+
 
 function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     if not CLIENT then return end
@@ -420,37 +422,20 @@ function SWEP:AdjustMouseSensitivity(defaultSensitivity, localFOV, _)
 end
 
 local viewmodelFovMul = CreateClientConVar("trmbase_cl_viewmodelfov_aim", 1, true, true, "", 0, 3)
-local Mytan = math.tan
 
 
 local finalFOV = 75
-local vmFov = 75
 
 function SWEP:ShouldZoom()
     return not (self:HasFlag("Tacsight") or self:HasFlag("HybridOn"))
 end
-local originFov
-function SWEP:ScaleViewmodelFov()
-    local aim = self:GetClientAimDelta()
-    originFov = self.m_ViewModelFOV or weapons.Get(self:GetClass()).ViewModelFOV
-    local isCheap = GetConVar("trmbase_cl_cheapscope"):GetBool()
 
-    local aimFOV = originFov
-    if self.sight and self.sight.zoom and self:ShouldZoom() then
-        if isCheap then
-            -- Cheap Scope：VM 缩放只随开镜进度变化，不随倍率变化
-            -- 让 VM 缩到 80% ~ 90% 左右，不怼脸就行
-            local newFov = originFov * (0.25 + self.sight.zoom ^ 0.2)
-            aimFOV = Lerp(aim, originFov, newFov)
-        end
-    else
-        -- 没有瞄具：正常开镜缩放
-        aimFOV = originFov
-    end
-
-    aimFOV = aimFOV * viewmodelFovMul:GetFloat()
-    vmFov = Lerp(RealFrameTime() * 10, vmFov or 75, math.Clamp(Lerp(aim, originFov, aimFOV), 0, 180))
-    self.ViewModelFOV = vmFov
+local viewmodelFov = 0
+function SWEP:GetViewmodelFov()
+    local delta = self:GetClientAimDelta()
+    local global = GetConVar("fov_desired"):GetInt() / 75
+    viewmodelFov = math.Clamp(self.ViewModelFOV * global *  Lerp(delta, 1 ,  viewmodelFovMul:GetFloat()), 1, 170)
+    return viewmodelFov
 end
 
 local reloadFovDelta = 0

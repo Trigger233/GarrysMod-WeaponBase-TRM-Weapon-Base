@@ -85,7 +85,7 @@ local function finishAttachments()
         if att.Base then
             TRMWeaponBase.Inherit(att)
         end
-    end
+    end 
 end
 local function Load()
     LoadAttachments("trmbase/attachments")

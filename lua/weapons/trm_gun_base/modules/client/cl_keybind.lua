@@ -11,13 +11,13 @@ local cv_inspect = GetConVar("trmbase_cl_keybind_inspect")
 local cv_customize = GetConVar("trmbase_cl_keybind_customize")
 local cv_firemode = GetConVar("trmbase_cl_keybind_firemode")
 local cv_underbarrel = CreateClientConVar("trmbase_cl_keybind_ub", 0, true, false, "Underbarrel keybind")
-
+ 
 SWEP.BindState = {}
 
 hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
-    local weapon = LocalPlayer():GetActiveWeapon()
+    local weapon = ply:GetActiveWeapon()
     if not util.IsTRMBase(weapon) then return end
-
+ 
     -- Melee
     if input.WasKeyPressed(cv_melee:GetInt()) and cv_melee:GetInt() > 0 then
         RunConsoleCommand("+trmbase_melee")

@@ -23,5 +23,5 @@ function SWEP:Holster(weapon)
         self:CleanupFlashLights()
     end
 
-    return self:GetCanSwitch() || ! IsValid(weapon) || weapon == self
+    return self:GetCanSwitch() || ! IsValid(weapon) || weapon == self || weapon:GetSlot() == self:GetSlot()
 end

@@ -35,7 +35,7 @@ local inActiveScopeLenMaterial = CreateMaterial(inActiveScopeLenMatName, "Vertex
     ["$selfillum"] = "1",
     ["$color2"] = "[1 1 1]",
     ["$nocull"] = "1",
-    ["$nodecal"] = "1"
+    ["$nodecal"] = "1",
 })
 local meterToHu = 52.4934383
 local gravity = GetConVar("sv_gravity"):GetInt() or 600 -- Hu/s
@@ -350,17 +350,16 @@ hook.Add("RenderScene", "TRMBASE_ScopeUpdate", function()
     end
 end)
 
-local zoomMulti = 2
+local zoomMulti = 1.5
 function SWEP:GetZoomRecoilFactor()
     return math.Clamp(RecoilFactor * self:GetScopeZoom() * zoomMulti, 0, 1)
 end
 local function DrawCheapScopeMaterial(wep, w, h, size)
-    local zoom = wep:GetScopeZoom()
     local sw = w * zoomMulti
     local sh = h * zoomMulti
     local sx = (w - sw) / 2
     local sy = (h - sh) / 2
-    local a = size * 2
+    local a = size * zoomMulti
     surface.SetDrawColor(255, 255, 255, 255)
     surface.SetMaterial(RTMaterial_Cheap)
     surface.DrawTexturedRect(sx - a * 0.5, sy, sw + a, sh)
@@ -418,6 +417,8 @@ function SWEP:DrawThermal(tx, att)
 
     cam.Start3D(EyePos(), cvar_cheapscope:GetBool() and EyeAngles() or self:GetOwner():EyeAngles())
     -- 1. 用 Stencil 标记 NPC
+    render.DepthRange(0.0, 0.1)
+
     render.SetStencilEnable(true)
     render.ClearStencil()
 

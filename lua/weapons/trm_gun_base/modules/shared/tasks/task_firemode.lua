@@ -3,7 +3,7 @@ task.Name = "Firemode"
 task.Priority = 100
 
 function task:CanBeSet(weapon)
-    return weapon:IsAnimFinished() and weapon.Firemode and true or false
+    return weapon:GetNextPrimaryFire() < CurTime() and weapon.Firemode and true or false
 end
 
 function task:OnSet(weapon)

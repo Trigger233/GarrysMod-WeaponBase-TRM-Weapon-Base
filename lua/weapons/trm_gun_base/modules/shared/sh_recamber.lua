@@ -4,10 +4,10 @@ end
 
 function SWEP:ResetChamberRound(amount)
     if not amount then
-        amount = self.Primary.Chamber
+        amount = self.Primary.Chamber > 0 and self.Primary.Chamber or 1
     end
     
-    self:SetChamberAmmo(amount)
+    self:SetChamberAmmo(amount or 1)
 end
 
 function SWEP:ResetChamberRound2(amount)

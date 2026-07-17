@@ -15,7 +15,7 @@ hook.Add("PlayerSwitchFlashlight", "TRMBASE_FlashLight", function(ply, enabled)
 
 
 
-    if weapon.SwitchFlashLight and weapon.flashlight then
+    if weapon.SwitchFlashLight and weapon.flashlight and not ply:FlashlightIsOn() then
         weapon:SwitchFlashLight()
         return false
     end
@@ -24,6 +24,5 @@ end)
 
 function SWEP:SwitchFlashLight()
     self:EmitSound("weapons/zoom.wav")
-
     self:ToggleFlag("FlashLightOn")
 end

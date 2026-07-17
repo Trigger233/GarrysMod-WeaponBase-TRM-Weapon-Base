@@ -32,7 +32,7 @@ end
 
 
 local function DrawFullText(text, x, y, color, center)
-    if  center == nil then
+    if center == nil then
         center = true
     end
     local w = center and srf.GetTextSize(text) or 0
@@ -44,8 +44,8 @@ local function GetPhrase(text)
     return language.GetPhrase(text)
 end
 
-local cvar_3d2d = CreateClientConVar("trmbase_cl_3d2d", 1,true, true, "helptext", 0, 1)
-local cvar_3d2d_always = CreateClientConVar("trmbase_cl_3d2d_always", 0, true, true, "",0, 1)
+local cvar_3d2d = CreateClientConVar("trmbase_cl_3d2d", 1, true, true, "helptext", 0, 1)
+local cvar_3d2d_always = CreateClientConVar("trmbase_cl_3d2d_always", 0, true, true, "", 0, 1)
 function SWEP:DrawWorldModelName()
     local viewer = LocalPlayer()
     local x, y = 0, 0
@@ -63,11 +63,10 @@ function SWEP:DrawWorldModelName()
     y = y + 20
     text = GetPhrase(game.GetAmmoName(self:GetPrimaryAmmoType()) .. "_ammo") or ""
     DrawFullText(text, x, y, colorTable.common)
-    y= y + 10
+    y = y + 10
     for slot, entry in pairs(self:GetAllAttachmentsInUse()) do
         local class = entry.Class
         if entry and class then
-
             local wepData = self.Attachments[tonumber(slot)]
 
             if wepData and wepData.Default and wepData.Default == class then
@@ -78,7 +77,7 @@ function SWEP:DrawWorldModelName()
 
             text = Data.Name or ""
             y = y + 30
-            DrawFullText(text, x - 100, y, colorTable.common,false)
+            DrawFullText(text, x - 100, y, colorTable.common, false)
         end
     end
 
@@ -89,7 +88,10 @@ end
 function SWEP:RenderOverride(flags)
     local off = self.WorldModelOffsets
     local owner = self:GetOwner()
-    if self:GetNoDraw() then return end
+    if self:GetNoDraw() then
+        self:RemoveAllAttachementModels()
+        return
+    end
 
     self:SetupBones()
     self:DrawModel(flags)
@@ -137,6 +139,8 @@ function SWEP:RenderOverride(flags)
             if IsValid(entry.m_TpModel) and att.Render then
                 entry.m_TpModel:SetupBones()
                 att:Render(self, entry.m_TpModel)
+            elseif att.Model then
+                self:BuildCustomizedGun()
             end
         end
     end
@@ -149,7 +153,7 @@ function SWEP:DrawWorldModel(flags)
         return
     end
     self:DrawModel(flags)
-    if cvar_3d2d:GetBool() and (EyePos() - self:WorldSpaceCenter()):LengthSqr() <= 262144 and (cvar_3d2d_always:GetBool()  or LocalPlayer():GetEyeTrace().Entity == self) then
+    if cvar_3d2d:GetBool() and (EyePos() - self:WorldSpaceCenter()):LengthSqr() <= 262144 and (cvar_3d2d_always:GetBool() or LocalPlayer():GetEyeTrace().Entity == self) then
         self:DrawWorldModelName()
     end
 end
@@ -158,68 +162,59 @@ function SWEP:DrawWorldModelTranslucent(flags)
     self:DrawWorldModel(flags)
 end
 
-local LHIK = {
-    "ValveBiped.Bip01_L_Wrist",
-    "ValveBiped.Bip01_L_Ulna",
-    "ValveBiped.Bip01_L_Hand",
-    "ValveBiped.Bip01_L_Finger4",
-    "ValveBiped.Bip01_L_Finger41",
-    "ValveBiped.Bip01_L_Finger42",
-    "ValveBiped.Bip01_L_Finger3",
-    "ValveBiped.Bip01_L_Finger31",
-    "ValveBiped.Bip01_L_Finger32",
-    "ValveBiped.Bip01_L_Finger2",
-    "ValveBiped.Bip01_L_Finger21",
-    "ValveBiped.Bip01_L_Finger22",
-    "ValveBiped.Bip01_L_Finger1",
-    "ValveBiped.Bip01_L_Finger11",
-    "ValveBiped.Bip01_L_Finger12",
-    "ValveBiped.Bip01_L_Finger0",
-    "ValveBiped.Bip01_L_Finger01",
-    "ValveBiped.Bip01_L_Finger02"
-
-}
-
-local newMatrix = Matrix()
-local delta = 0
-function SWEP:DoTPIK()
-    local ik = self:GetForegrip()
-    if ik == nil then return end
-
-    local owner = self:GetOwner()
-    if not owner or not owner:IsPlayer() then return end
-    local ikmodel = ik.Worldmodel
-
-    if ikmodel != nil then
-        delta = math.Approach(delta, self:GetGrip1() and 1 or 0, engine.TickInterval())
-        owner:SetupBones()
-        ikmodel:SetupBones()
-        for _, boneName in pairs(LHIK) do
-            local wmBone = owner:LookupBone(boneName)
-            local ikBone = ikmodel:LookupBone(boneName)
-            if not wmBone or not ikBone then continue end
-
-            local wmMatrix = owner:GetBoneMatrix(wmBone)
-            local ikMatrix = ikmodel:GetBoneMatrix(ikBone)
-            if not wmMatrix or not ikMatrix then continue end
-
-
-            --debugoverlay.Axis(ikMatrix:GetTranslation(), ikMatrix:GetAngles(), 5, 0.2, true)
-            newMatrix:SetTranslation(LerpVector(delta, wmMatrix:GetTranslation(), ikMatrix:GetTranslation()))
-            newMatrix:SetAngles(LerpAngle(delta, wmMatrix:GetAngles(), ikMatrix:GetAngles()))
-
-            owner:SetBoneMatrix(wmBone, newMatrix)
-            --owner:SetBonePosition(wmBone, newMatrix:GetTranslation(), newMatrix:GetAngles())
-        end
-    end
+function SWEP:DrawHolsterModel(flag)
+    self:SetRenderOrigin(self:GetShootPos())
+    self:DrawWorldModel()
 end
 
--- hook.Add("PrePlayerDraw", "TRMBase_Tpik", function(player, flags)
---     local weapon = player:GetActiveWeapon()
---     if not IsValid(weapon) or not util.IsTRMBase(weapon) then return end
+local function cheakModelIsVaildInWeapon(ent, wep)
+    if not wep.GetAllAttachmentsInUse then return end
+    for _, entry in pairs(wep:GetAllAttachmentsInUse()) do
+        if (entry.m_Model and entry.m_Model == ent) or (entry.m_TpModel and entry.m_TpModel == ent) then
+            return true
+        end
+    end
+    return false
+end
 
---     -- if weapon.DoTPIK then
---     --     weapon:DoTPIK()
---     -- end
+local LastRenderUpdate = 0
 
--- end)
+hook.Add("PreRender", "TRMBase_CleanupUnUsedAttModels", function()
+    if SysTime() - LastRenderUpdate > 0 and not (VManip != nil and VManip:IsActive()) and not IsValid(TRM_AttachMenu_Instance) then
+        local ply = LocalPlayer()
+        local currentWeapon = ply:GetActiveWeapon()
+
+        local distanceSqr = IsValid(currentWeapon)
+            and currentWeapon:WorldSpaceCenter():DistToSqr(EyePos())
+        for _, ent in ents.Iterator() do
+            if ent:GetClass() == "class C_BaseFlex" and ent.TRMAttachmentModel then
+                local owner = ent:GetOwner()
+                if (not IsValid(owner) or not cheakModelIsVaildInWeapon(ent, owner)) or (EyePos() - owner:WorldSpaceCenter()):LengthSqr() > (distanceSqr or 1048576) then
+                    --print(ent.TRMAttachmentModel)
+                    -- print("Remove :", ent:GetModel())
+                    ent:Remove()
+                    continue
+                end
+            end
+            if ent:GetNoDraw() and ent.RemoveAllAttachementModels then
+                ent:RemoveAllAttachementModels()
+            end
+        end
+        LastRenderUpdate = SysTime() + 1
+    end
+end)
+
+hook.Add("HUDPaint", "debug", function()
+    if ! GetConVar("developer"):GetBool() then return end
+    local w, h = ScrW(), ScrH()
+    local cBaseEntCount = 0
+    local y = 0
+    for _, ent in ents.Iterator() do
+        if ent:GetClass() == "class C_BaseFlex" then
+            cBaseEntCount = cBaseEntCount + 1
+            --draw.SimpleText(ent:GetModel().." | "..tostring(ent:GetOwner()) , "Default", 0, y, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+            y = y + 20
+        end
+    end
+    draw.SimpleText(cBaseEntCount, "Default", 0, h * 0.5, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+end)
