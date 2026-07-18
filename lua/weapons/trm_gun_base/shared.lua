@@ -545,6 +545,7 @@ function SWEP:Initialize()
     self:SetFiremodeIndex(1)
     self:FireModeStat(1)
 
+    self:SetBrustCount(self.Primary.BrustNum)
     self.ZeroDistance = 50
 
     self.m_Attachment = {}
@@ -583,7 +584,7 @@ function SWEP:Equip()
     if cvar_attachment:GetBool() then
         self:LoadAttachmentPreset()
     end
-    self:BuildCustomizedGun() 
+    self:BuildCustomizedGun()
 end
 
 function SWEP:Deploy()
@@ -591,6 +592,7 @@ function SWEP:Deploy()
     self:BuildCustomizedGun()
     self:TrySetTask("Deploy")
     self:SetCanSwitch(false)
+    self:SetAimDelta(0)
     return true
 end
 
@@ -617,7 +619,7 @@ function SWEP:OnRestore()
             self:LoadAttachmentPreset()
         end
         self:BuildCustomizedGun()
-        self:SetNextRecoil(0) 
+        self:SetNextRecoil(0)
     end)
 end
 
@@ -636,10 +638,8 @@ function SWEP:PrimaryAttack()
         end
         self:TrySetTask("UnderbarrelFire")
     else
-        if not self:CanPrimaryFire() then
-            if self:IsEmpty() and cvar:GetInt() == 1 then
-                self:Reload()
-            end
+        if self:IsEmpty() and cvar:GetInt() == 1 then
+            self:Reload()
             return false
         end
         if self.Primary.Trigger then

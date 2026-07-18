@@ -71,7 +71,7 @@ local BlurMul = 0
 function SWEP:PreDrawViewModel(vm)
     if self.m_OverDraw then return end
     
-    BlurMul = Lerp(RealFrameTime() * 10 , BlurMul, (self:IsReloading() and self:GetAimDelta() < 0.2  or self:IsCustomizing()) and 1 or 0)
+    BlurMul = Lerp(RealFrameTime() * 10 , BlurMul, (self:IsReloading() and self:GetAimDelta() < 0.2  or self:IsCustomizing() or self:IsInspecting() ) and 1 or 0)
     if BlurMul > 0.1 and cvar_blur:GetBool() then
         DrawBokehDOF(BlurMul * 5, 1, 12)
     end

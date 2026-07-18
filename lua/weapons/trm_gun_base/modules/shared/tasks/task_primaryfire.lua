@@ -25,7 +25,7 @@ function task_charge:Think(cycle, weapon)
     weapon:PlayAnimation(weapon:ChooseAnim("Charge"), true)
     weapon:SetNextPrimaryFire(weapon.m_NextFireTime)
     weapon:SetNextAnimationTime(weapon.m_NextFireTime)
-    
+
     local owner = weapon:GetOwner()
     if not IsValid(owner) then return end
     if weapon.m_NextFireTime and CurTime() >= weapon.m_NextFireTime then
@@ -51,11 +51,10 @@ task_fire.Name = "PrimaryFire"
 task_fire.Priority = 255
 
 function task_fire:CanBeSet(weapon)
-    return true
+    return weapon:CanPrimaryFire()
 end
 
 function task_fire:OnSet(weapon)
-    local aim = weapon:GetAimDelta() > 0.5 and true or false
     weapon:SetNextAnimationTime(0)
     weapon:PlayAnimation(weapon:ChooseAnim("Fire"), true)
 
@@ -65,10 +64,34 @@ function task_fire:OnSet(weapon)
         weapon:FireProjectile()
     end
 
+
+    if weapon.Primary.BrustEnabled then
+        if weapon:GetBrustCount() > 0 then
+            weapon:SetBrustCount(weapon:GetBrustCount() - 1)
+        end
+
+        if weapon:GetBrustCount() == 0 then
+            weapon:SetBrustCount(weapon.Primary.BrustNum)
+            weapon:TrySetTask("Idle")
+            weapon:SetNextPrimaryFire(CurTime() + weapon.Primary.BrustDelay)
+            return
+        end
+    end
     weapon:SetNextPrimaryFire(CurTime() + 60 / weapon.Primary.RPM)
 end
 
 function task_fire:Think(cycle, weapon)
+    if weapon.Primary.BrustEnabled and weapon:GetBrustCount() > 0 then
+        if weapon:CanPrimaryFire() then
+            weapon:TrySetTask("PrimaryFire")
+        end
+        return false
+    end
+
+
+
+
+    weapon:TrySetTask("Idle")
     return true
 end
 

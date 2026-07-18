@@ -1,7 +1,19 @@
 function SWEP:FireModeStat(index)
     if not index then return end
     if self.Firemode and self.Firemode[index] and self.Firemode[index].OnSet then
-        self.Firemode[index].OnSet(self)
+        local stat = self.Firemode[index].OnSet(self)
+
+        if stat != nil then
+            if stat == -1 then
+                self.Primary.Automatic = false
+                self.Primary.BurstEnabled = false
+            elseif stat == 0 then
+                self.Primary.Automatic = true
+                self.Primary.BurstEnabled = false
+            elseif stat > 0 then
+                self.Primary.BurstEnabled = true
+            end
+        end
     end
 end
 

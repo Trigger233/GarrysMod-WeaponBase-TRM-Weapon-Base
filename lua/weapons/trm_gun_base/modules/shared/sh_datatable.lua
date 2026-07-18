@@ -60,6 +60,7 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Float", "NextAnimationTime")
     self:NetworkVar("Entity", "NextWeapon")
 
+    self:NetworkVar("Int","BrustCount")
     self:NetworkVar("Bool", "Grip1")
     self:NetworkVar("Bool", "Grip2")
     self:NetworkVar("Bool", "FirstDeployed")

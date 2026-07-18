@@ -18,7 +18,11 @@ function SWEP:CanPrimaryFire()
 		return false
 	end
 
-	return (not self:IsEmpty() and (self:GetNextPrimaryFire() <= CurTime()))
+	if self.Primary.BrustEnabled and self:GetBrustCount() <= 0 then
+		return false
+	end
+
+	return (not self:IsEmpty() and (self:GetNextPrimaryFire() <= UnPredictedCurTime()))
 end
 
 local cvar_bullet = CreateConVar("trmbase_sv_physical_bullet", 0, FCVAR_ARCHIVE, "", 0, 1)
@@ -144,7 +148,7 @@ function SWEP:FirePrimaryBullet()
 
 
 
-	self:TrySetTask("Idle")
+	--self:TrySetTask("Idle")
 end
 
 function SWEP:GetPrimaryProjBulletSpeed()
@@ -218,7 +222,7 @@ function SWEP:FireProjectile()
 		amount = math.max(amount - 1, 0)
 		self:SetChamberAmmo(amount)
 	end
-	self:TrySetTask("Idle")
+	--self:TrySetTask("Idle")
 end
 
 function SWEP:DoImpactEffect(tr, dmgType)
@@ -401,6 +405,7 @@ end
 
 
 function SWEP:DoCameraRecoil()
+	if not(IsFirstTimePredicted() || game.SinglePlayer() ) then return end
 	local owner = self:GetOwner()
 	if not IsValid(owner) then return end
 	local eyeAngles = owner:EyeAngles()

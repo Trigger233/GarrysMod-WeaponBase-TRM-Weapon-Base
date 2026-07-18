@@ -20,3 +20,7 @@ end
 function SWEP:CanRechamber()
     return self:GetNextPrimaryFire() <= CurTime() and not self:IsEmpty() and self.Primary.BoltAction
 end
+
+function SWEP:ResetBrustCount()
+    self:SetBrustCount(self.Primary.BrustNum)
+end

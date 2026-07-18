@@ -31,7 +31,10 @@ local cvar_debug_reload = CreateConVar("trmbase_debug_reload", 0, FCVAR_ARCHIVE,
 function SWEP:CanReload()
 	local reserveAmmo = self:GetOwner():GetAmmoCount(self:GetPrimaryAmmoType())
 	local seq = self:GetPlayingSequence()
-
+	local task = self:GetCurrentTaskName()
+	if task == "Holster" then
+		return false
+	end
 
 	if self:GetNextPrimaryFire() > CurTime() and not string.find(seq,"Draw") then return false end
 
@@ -102,6 +105,8 @@ function SWEP:MagzineLoaded()
 	end
 
 	self:SetClip1(math.Clamp(FinalClip1, 0, max))
+
+	self:ResetBrustCount()
 end
 
 function SWEP:SingleLoaded(number)
