@@ -22,9 +22,10 @@ function task_reload:OnSet(weapon)
                 weapon:PlayAnimation(weapon:ChooseAnim( "Reload_Start"), true)
             end
 
-
-
+            weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes["BoltAction"].Reload)
         else
+            weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes[weapon:GetCurrentHoldType()].Reload)
+
             weapon:PlayAnimation(weapon:ChooseAnim("Reload"), true)
             if cvar_firebreakreload:GetBool( ) then
                 weapon:SetNextPrimaryFire( 60 / weapon.Primary.RPM )
@@ -59,6 +60,10 @@ end
 function task_loop:Think(cycle, weapon)
     local max = weapon:GetMaxClip1() + weapon:GetChamberAmmo()
     local reserve = weapon:GetOwner():GetAmmoCount(weapon:GetPrimaryAmmoType())
+    if weapon:GetNextPrimaryFire() < UnPredictedCurTime() then
+        weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes["BoltAction"].Reload)
+    end
+
     if weapon:Clip1() < max and reserve > 0 then
         weapon:PlayAnimation("Reload", true)
         if cvar_firebreakreload:GetBool() then

@@ -82,7 +82,6 @@ function SWEP:FirePrimaryBullet()
 				Callback = function(attacker, tr, dmginfo)
 					self:BulletCallback(attacker, tr, dmginfo)
 					-- 生成曳光弹
-					if not self.Slienced then
 						if CLIENT and IsFirstTimePredicted() then
 							-- 客户端预测（给自己看）
 							self:DoTracer(owner:GetShootPos(), tr.HitPos)
@@ -93,7 +92,6 @@ function SWEP:FirePrimaryBullet()
 							net.WriteVector(owner:GetShootPos())
 							net.WriteVector(tr.HitPos)
 							net.Broadcast()
-						end
 					end
 				end,
 
@@ -132,7 +130,6 @@ function SWEP:FirePrimaryBullet()
 		end
 	end
 
-	self:DoFireSound()
 
 	self:DoVisualRecoil()
 	self:DoRecoil()

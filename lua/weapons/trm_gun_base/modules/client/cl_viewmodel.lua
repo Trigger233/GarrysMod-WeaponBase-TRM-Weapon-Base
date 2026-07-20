@@ -63,7 +63,6 @@ function SWEP:PostDrawViewModel(vm, weappon, ply, flag)
     if self.m_OverDraw then return end
     cam.End3D()
 
-
 end
 
 local cvar_blur = CreateClientConVar("trmbase_cl_blur", 1, true, true, "helptext", 0, 1)
@@ -83,6 +82,7 @@ function SWEP:PreDrawViewModel(vm)
         self:RenderScopeView()
     end
    self:DoLHIK()
+
 
 end
 

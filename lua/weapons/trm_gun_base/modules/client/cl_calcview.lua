@@ -8,6 +8,12 @@ local rft = RealFrameTime()
 
 local bobt = 0
 local airDelta = 0
+local hasJumped = false
+
+local function getJumpPoseDelta(c)
+    local t = (c > 0.5 and 1 - c or c) * 2
+    return t
+end
 
 function SWEP:CustomBob()
     if not CLIENT then
@@ -43,11 +49,13 @@ function SWEP:CustomBob()
         math.sin(bobt) * 1 * mult,       -- Yaw
         math.sin(bobt * 1.5) * 2 * mult  -- Roll
     )
-        airDelta = Lerp(RealFrameTime()  * 10 , airDelta, not owner:OnGround() and 1 or 0)
-    
-        ang.p = ang.p + 5 * airDelta
-        pos.z = pos.z + 1 * airDelta
-
+    local ground = owner:IsOnGround()
+    airDelta = Lerp(RealFrameTime() * 2, airDelta, ground and 0 or 1)
+    local t = getJumpPoseDelta(airDelta)
+    if not ground then
+        ang.p = ang.p - 10 * t
+        pos.z = pos.z - 1 * t
+    end
     return pos, ang
 end
 
@@ -82,7 +90,7 @@ function SWEP:Sway()
     swayAng.pitch = Lerp(ft * smooth, swayAng.pitch, 0)
     -- ===== 侧向移动滚动 =====
     local sideSpeed = velo:Dot(owner:GetRight())
-    local targetRoll = math.Clamp(sideSpeed * 0.05, -15, 15)
+    local targetRoll = math.Clamp(sideSpeed * 0.09, -15, 15)
     swayAng.roll = Lerp(ft * 10, swayAng.roll, targetRoll)
     -- ========================
 
@@ -102,7 +110,7 @@ function SWEP:GetClientAimDelta()
 
     self.ClientState["aim"] = self.ClientState["aim"] or 0
     local target            = self:GetAimDelta() or 0
-    local smoothSpeed = 20 -- 平滑速度，越大越快
+    local smoothSpeed       = 20 -- 平滑速度，越大越快
 
     self.ClientState["aim"] = Lerp(RealFrameTime() * smoothSpeed, self.ClientState["aim"], target) or 0
     return self.ClientState["aim"] or 0
@@ -134,7 +142,6 @@ local cvar_camera = CreateClientConVar("trmbase_camera_animation_scale", 1.0)
 local CamAngDelta = Angle()
 local ZERO_ANGLE  = Angle(0, 0, 0)
 function SWEP:CalcView(ply, pos, angles, fov)
-
     local vm = self:GetViewModel(0)
     if not IsValid(vm) then return pos, angles, fov end
 
@@ -177,7 +184,7 @@ function SWEP:CalcView(ply, pos, angles, fov)
     end
     angles:Add(CamAngDelta)
 
-    return pos, angles, fov
+    return pos, angles, self:CoolFov()
 end
 
 local CachePos = Vector(0, 0, 0)
@@ -434,12 +441,14 @@ local viewmodelFov = 0
 function SWEP:GetViewmodelFov()
     local delta = self:GetClientAimDelta()
     local global = GetConVar("fov_desired"):GetInt() / 75
-    viewmodelFov = math.Clamp(self.ViewModelFOV * global *  Lerp(delta, 1 ,  viewmodelFovMul:GetFloat()), 1, 170)
+    viewmodelFov = math.Clamp(
+    self.ViewModelFOV * global * Lerp(delta, 1, viewmodelFovMul:GetFloat() / self.Aim.Scale), 1, 170)
     return viewmodelFov
 end
 
 local reloadFovDelta = 0
-function SWEP:TranslateFOV(fov)
+
+function SWEP:CoolFov()
     local aimDelta = self:GetClientAimDelta() or 0
     local normalFOV = GetConVar("fov_desired"):GetInt()
     local aimFOV = normalFOV / self.Aim.Scale -- 建议 55-65 之间
@@ -448,11 +457,19 @@ function SWEP:TranslateFOV(fov)
         aimFOV = self:GetScopeZoomFov()
     end
     local reload = self:IsReloading()
-    reloadFovDelta = Lerp(RealFrameTime(), reloadFovDelta or 0, reload and 1 or 0)
+    reloadFovDelta = Lerp(RealFrameTime() * 5, reloadFovDelta or 0, reload and 1 or 0)
     aimFOV = aimFOV + reloadFovDelta * 10
 
     local easedDelta = aimDelta
     local FOV = Lerp(easedDelta, normalFOV, aimFOV)
-    finalFOV = Lerp(RealFrameTime() * 5, finalFOV, FOV)
+    finalFOV = Lerp(RealFrameTime() * 15, finalFOV, FOV)
+
+
+    local fireInterval = (60 / self.Primary.RPM)
+    local timeToNextFire = self:GetNextRecoil() - UnPredictedCurTime()
+    local t = math.Clamp(timeToNextFire / fireInterval, 0, 1)
+    local Recoildelta = math.min((t > 0.5 and 1 - t or t) * 2, 1) -- 开火时 = 1，然后衰减到 0
+    finalFOV = finalFOV + Recoildelta * self.Recoil.Shake * 2
+    -- finalFOV = finalFOV * (1 + Recoildelta * self.Recoil.Shake * 0.08)
     return finalFOV
 end

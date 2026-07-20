@@ -8,6 +8,8 @@ end
 
 function task:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
+    weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes[weapon:GetCurrentHoldType()].Melee)
+
     if weapon:IsEmpty() and weapon.Animations.Melee_Empty then
         weapon:PlayAnimation("Melee_Empty", true)
     elseif weapon.Animations.Melee then

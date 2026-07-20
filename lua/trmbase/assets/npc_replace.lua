@@ -1,6 +1,6 @@
 -- =============================================
 -- TRMBase NPC/武器替换系统
--- 仅在玩家拾取前替换 HL2/HL1 Source 武器
+-- 仅在玩家拾取前替换 HL2/HL1 Source 武器 + 弹药盒
 -- =============================================
 
 CreateConVar("trmbase_replace_npc", "0", FCVAR_ARCHIVE)
@@ -28,7 +28,6 @@ local ReplaceableWeapons = {
     "weapon_bugbait",
     "weapon_physcannon",
     "weapon_crowbar",
-
     -- HL1 Source 武器
     "weapon_mp5_hl1",
     "weapon_glock_hl1",
@@ -63,7 +62,9 @@ local WeaponMap = {
     ["weapon_shotgun_hl1"] = "buckshot",
 }
 
+-- ========== 弹药箱映射表 ==========
 local AmmoBoxMap = {
+    -- 原版点实体
     ['ammo_357'] = "item_ammo_357",
     ['ammo_9mmbox'] = { "item_ammo_smg1_large", "item_ammo_ar2_large" },
     ['ammo_pistol'] = "item_ammo_pistol",
@@ -75,12 +76,11 @@ local AmmoBoxMap = {
     ['ammo_crossbow'] = "ent_trm_sniper_ammo",
 }
 
--- ========== 判断是否应该替换 ==========
+-- ========== 判断是否应该替换武器 ==========
 local function ShouldReplaceWeapon(ent)
     if not IsValid(ent) then return false end
     if not ent:IsWeapon() then return false end
     if ent.Base == "trm_gun_base" then return false end
-  --  if IsValid(ent:GetOwner()) then return false end -- 已有主人
 
     local class = ent:GetClass()
     for _, replaceClass in ipairs(ReplaceableWeapons) do
@@ -89,6 +89,12 @@ local function ShouldReplaceWeapon(ent)
         end
     end
     return false
+end
+
+-- ========== 判断是否应该替换弹药盒 ==========
+local function ShouldReplaceAmmoBox(ent)
+    if not IsValid(ent) then return false end
+    return AmmoBoxMap[ent:GetClass()] ~= nil
 end
 
 -- ========== 查找 TRM 替换武器 ==========
@@ -124,6 +130,47 @@ local function FindTRMReplacement(weapon)
     end
 
     return #results > 0 and results[math.random(#results)] or nil
+end
+
+-- ========== 替换弹药盒 ==========
+local function ReplaceAmmoBox(ent)
+    local class = ent:GetClass()
+    local targetClass
+
+    if istable(AmmoBoxMap[class]) then
+        targetClass = AmmoBoxMap[class][math.random(#AmmoBoxMap[class])]
+    else
+        targetClass = AmmoBoxMap[class]
+    end
+
+    local pos = ent:GetPos()
+    local ang = ent:GetAngles()
+    local model = ent:GetModel()
+    local skin = ent:GetSkin()
+
+    print("[TRMBase] Replacing ammo box:", class, "→", targetClass)
+
+    ent:Remove()
+
+    local newEnt = ents.Create(targetClass)
+    if IsValid(newEnt) then
+        newEnt:SetPos(pos)
+        newEnt:SetAngles(ang)
+        newEnt:Spawn()
+
+        if model and model ~= "" and newEnt.SetModel then
+            newEnt:SetModel(model)
+        end
+        if newEnt.SetSkin and skin then
+            newEnt:SetSkin(skin)
+        end
+
+        print("[TRMBase] Ammo box replaced successfully")
+        return true
+    end
+
+    print("[TRMBase] Failed to replace ammo box")
+    return false
 end
 
 -- ========== 随机配件 ==========
@@ -169,8 +216,6 @@ local function RandomizeAttachments(ent)
 end
 
 -- ========== 替换逻辑 ==========
-local cv_replace = GetConVar("trmbase_replace_weapon")
-
 local function ReplaceWeaponIfNeeded(ent)
     if not ShouldReplaceWeapon(ent) then return end
 
@@ -187,7 +232,7 @@ local function ReplaceWeaponIfNeeded(ent)
     local ang = ent:GetAngles()
     local velocity = ent:GetVelocity()
 
-    print("[TRMBase] Replacing:", ent:GetClass(), "→", newClass)
+    print("[TRMBase] Replacing weapon:", ent:GetClass(), "→", newClass)
 
     ent:Remove()
 
@@ -206,12 +251,27 @@ local function ReplaceWeaponIfNeeded(ent)
     end
 end
 
+-- ========== 主替换函数 ==========
+local function TryReplace(ent)
+    if not IsValid(ent) then return end
+
+    if ShouldReplaceAmmoBox(ent) then
+        ReplaceAmmoBox(ent)
+        return
+    end
+
+    if ShouldReplaceWeapon(ent) then
+        ReplaceWeaponIfNeeded(ent)
+    end
+end
+
 -- ========== 钩子 ==========
-hook.Add("PlayerCanPickupWeapon", "TRMBase_Replace", function(ply,ent)
+-- 1. 玩家拾取前检测
+hook.Add("PlayerCanPickupWeapon", "TRMBase_Replace", function(ply, ent)
     if not IsValid(ent) then return end
     timer.Simple(refresh, function()
         if IsValid(ent) then
-            ReplaceWeaponIfNeeded(ent)
+            TryReplace(ent)
         end
     end)
 end)
@@ -220,20 +280,30 @@ end)
 hook.Add("PlayerDroppedWeapon", "TRMBASE_ReplaceDrop", function(owner, ent)
     timer.Simple(refresh, function()
         if IsValid(ent) then
-            ReplaceWeaponIfNeeded(ent)
+            TryReplace(ent)
         end
     end)
 end)
 
--- 3. 读档后扫描
+-- 3. 实体创建时检测（弹药盒通常在地图上预置，靠这个触发）
+hook.Add("OnEntityCreated", "TRMBASE_ReplaceOnCreate", function(ent)
+    if not IsValid(ent) then return end
+    timer.Simple(refresh, function()
+        if IsValid(ent) then
+            TryReplace(ent)
+        end
+    end)
+end)
+
+-- 4. 读档后扫描
 hook.Add("Restored", "TRMBASE_ReplaceRestored", function()
     timer.Simple(refresh, function()
         for _, ent in ents.Iterator() do
-            if IsValid(ent) and ShouldReplaceWeapon(ent) then
-                ReplaceWeaponIfNeeded(ent)
+            if IsValid(ent) then
+                TryReplace(ent)
             end
         end
     end)
 end)
 
-print("[TRMBase] Weapon replacement system loaded (HL2/HL1 only)")
+print("[TRMBase] Weapon + Ammo replacement system loaded")

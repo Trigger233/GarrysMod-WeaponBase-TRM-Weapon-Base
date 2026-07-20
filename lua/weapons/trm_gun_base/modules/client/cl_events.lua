@@ -48,10 +48,14 @@ function SWEP:DoShell()
     utilf(stats.effect, effect)
 end
 
+ 
 function SWEP:IsFirstPerson()
     local owner = self:GetOwner()
     local localPly = LocalPlayer()
-    return (owner == localPly and not localPly:ShouldDrawLocalPlayer())
+    local last = (owner == localPly and not localPly:ShouldDrawLocalPlayer())
+
+
+    return last
 end
 
 function SWEP:DoMuzzleFlash(ent)
@@ -71,14 +75,15 @@ end
 
 function SWEP:DoTracer(startpos, endpos)
     if self:IsFirstPerson() then
+        
         local att = self:GetAttachmentData(self.Effects.Muzzle.attachment)
         startpos = att and att.Pos or startpos 
     end
-
+    
     local stats = self.Effects.Muzzle.Tracer
     
     if stats.IsParticle then
-        util.ParticleTracerEx(stats.Name, startpos, endpos, true ,self:EntIndex() , -1 )
+        util.ParticleTracerEx(self.Slienced and "trm_tracer_mini" or  stats.Name, startpos, endpos, true ,self:EntIndex() , -1 )
     else
         local tracer = EffectData()
         tracer:SetScale(Tracerscale)

@@ -9,6 +9,7 @@ function task:CanBeSet(weapon)
 end
 
 function task:OnSet(weapon)
+    weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes[weapon:GetCurrentHoldType()].Draw)
     weapon:SetNextAnimationTime(0)
     if weapon:GetFirstDeployed() and weapon.Animations.Draw_First then
         weapon:PlayAnimation("Draw_First", true)

@@ -222,8 +222,8 @@ SWEP.Effects = {
         ParticleSuppressed = "trm_suppressor",
         attachment = "muzzle",
         Tracer = {
-            Name = "Tracer",
-            IsParticle = false,
+            IsParticle = true,
+            Name = "trm_tracer"
         }
     },
     Shell = {

@@ -134,7 +134,7 @@ end
 
 function SWEP:IsReloading()
 	local seq = self:GetPlayingSequence()
-	if string.find(seq, "Reload") and self:GetNextPrimaryFire() > CurTime()  then
+	if string.find(seq, "Reload") and self:GetNextAnimationTime() > CurTime()  then
 		return true
 	end
 	return false

@@ -280,7 +280,7 @@ local function AngleToPixel(num)
     return math.tan(math.rad(num))
 end
 
-local RecoilFactor = 0.2
+local RecoilFactor = 0.25
 
 
 
@@ -350,7 +350,7 @@ hook.Add("RenderScene", "TRMBASE_ScopeUpdate", function()
     end
 end)
 
-local zoomMulti = 1.5
+local zoomMulti = 6
 function SWEP:GetZoomRecoilFactor()
     return math.Clamp(RecoilFactor * self:GetScopeZoom() * zoomMulti, 0, 1)
 end

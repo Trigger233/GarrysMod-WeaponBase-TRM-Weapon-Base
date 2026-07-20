@@ -58,11 +58,17 @@ function task_fire:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
     weapon:PlayAnimation(weapon:ChooseAnim("Fire"), true)
 
+        weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes[weapon:GetCurrentHoldType()].Attack)
+
+
     if weapon.Primary.SpecialAmmo == -1 or not weapon.Primary.SpecialAmmo then
         weapon:FirePrimaryBullet()
     else
         weapon:FireProjectile()
     end
+
+    weapon:HandleReverb()
+    weapon:DoFireSound()
 
 
     if weapon.Primary.BrustEnabled then
@@ -74,7 +80,7 @@ function task_fire:OnSet(weapon)
             weapon:SetBrustCount(weapon.Primary.BrustNum)
             weapon:TrySetTask("Idle")
             weapon:SetNextPrimaryFire(CurTime() + weapon.Primary.BrustDelay)
-            return
+            return true
         end
     end
     weapon:SetNextPrimaryFire(CurTime() + 60 / weapon.Primary.RPM)

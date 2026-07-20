@@ -16,7 +16,7 @@ function SWEP:CanSprint()
     if not animFinished then
         -- 换弹动画未完成时，根据 cvar 决定
         if string.find(seq, "Reload") or string.find(task, "Reload") then
-            return cvar_sprint_reload:GetBool()
+            return not cvar_sprint_reload:GetBool()
         end
 
         -- 这些动画未完成时绝对不能冲刺

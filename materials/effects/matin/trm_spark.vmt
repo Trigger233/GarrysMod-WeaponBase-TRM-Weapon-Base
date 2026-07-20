@@ -1,6 +1,6 @@
 "UnlitGeneric"
 {
-	"$basetexture" "effects/matin/mwb_spark"
+	"$basetexture" "effects/matin/trm_spark"
 	"$vertexcolor" "1"
 	"$vertexalpha" "1"
 	"$translucent" "1"	

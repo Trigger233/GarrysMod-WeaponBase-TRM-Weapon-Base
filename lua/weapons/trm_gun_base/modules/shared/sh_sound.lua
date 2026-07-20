@@ -28,8 +28,7 @@ function SWEP:DoFireSound()
     elseif self.Primary.Sound then
         self:EmitSound(self.Primary.Sound)
     end
-
-    if self:Clip1() == 1 then
+    if self:Clip1() == 0 then
         self:EmitSound("weapons/pistol/pistol_empty.wav", 66, 100, 1, CHAN_ITEM)
     end
 end
@@ -139,9 +138,9 @@ function SWEP:HandleReverb(tbl)
     local reflection = isSup and sounds.ReflectionSup or sounds.Reflection
 
     if layer and layer ~= "" then
-        self:GetOwner():EmitSound(layer)
+        self:GetOwner():EmitSound(layer,nil,nil,nil,CHAN_ATMO)
     end
     if reflection and reflection ~= "" then
-        self:GetOwner():EmitSound(reflection)
+        self:GetOwner():EmitSound(reflection, nil, nil, nil, CHAN_REFLECTION)
     end
 end

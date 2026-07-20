@@ -33,13 +33,11 @@ function SWEP:GetAnimation(Class)
     return self.Animations[Class] or false
 end
 
-function SWEP:PlayAnimation(sequenceClass, useInternalDuration,forceoverride)
+function SWEP:PlayAnimation(sequenceClass, useInternalDuration, forceoverride)
     if not (IsFirstTimePredicted() and SERVER) then return end
-    if self:GetNextAnimationTime() > CurTime()  then return end
+    if self:GetNextAnimationTime() > CurTime() then return end
     local vm = self:GetViewModel()
 
-    self:PlayWorldAnimation(sequenceClass)
-    --print("Playing animation: Customize")
     if not vm or not IsValid(vm) or not sequenceClass then
         return
     end
@@ -98,58 +96,6 @@ function SWEP:DoAnimationEvents()
     applyEvents(self, sequenceClass, progress)
 end
 
-function SWEP:PlayWorldAnimation(sequenceClass)
-    if not SERVER then return end -- 只在服务端执行，让所有玩家看到
-    local owner = self:GetOwner()
-    if not IsValid(owner) then return end
-
-    -- 映射表：第一人称动画 → 第三人称动画（ACT）
-    local animationTable = {
-        -- 攻击类
-        ["Fire"] = PLAYER_ATTACK1,
-        ["Fire_Last"] = PLAYER_ATTACK1,
-        ["Iron_Fire"] = PLAYER_ATTACK1,
-        ["Iron_Fire_Last"] = PLAYER_ATTACK1,
-
-        ["Rechamber"] = PLAYER_ATTACK1,
-        ["Iron_Rechamber"] = PLAYER_ATTACK1,
-        -- 换弹类
-        ["Reload"] = PLAYER_RELOAD,
-        ["Reload_Empty"] = PLAYER_RELOAD,
-        ["Reload_Start"] = PLAYER_RELOAD,
-        ["Reload_End"] = PLAYER_ATTACK1,
-
-        -- 武器操作
-        ["Draw"] = PLAYER_DEPLOY,
-        ["Holster"] = PLAYER_HOLSTER,
-
-        -- 待机
-        ["Idle"] = PLAYER_IDLE,
-        ["Idle_Empty"] = PLAYER_IDLE,
-        ["Iron_Idle"] = PLAYER_IDLE,
-        ["Iron_Idle_Empty"] = PLAYER_IDLE,
-
-        -- 冲刺
-        ["Sprint"] = PLAYER_RUN,
-        ["Sprint_Empty"] = PLAYER_RUN,
-        ["Sprint_In"] = PLAYER_RUN,
-        ["Sprint_Out"] = PLAYER_RUN,
-
-        -- 检视
-        ["Inspect"] = PLAYER_IDLE,
-        ["Inspect_Empty"] = PLAYER_IDLE,
-        ["Melee"] = PLAYER_ATTACK1,
-        ["Melee_Empty"] = PLAYER_ATTACK1,
-
-    }
-
-
-    local act = animationTable[sequenceClass]
-    if act then
-        owner:SetAnimation(act)
-    end
-end
-
 function SWEP:ApplySpecialAnimationStat(vm, sequenceClass, duration, animData)
     if string.find(sequenceClass, "Ads") then
         local AdsSpeed = (animData.RealLength or duration) / self:GetAimTime()
@@ -185,14 +131,38 @@ function SWEP:IsAnimFinished()
     return self:GetNextAnimationTime() < CurTime()
 end
 
-if (SERVER) then
-    util.AddNetworkString("TRMBase_LHIKAnimation")
+if SERVER then
+    util.AddNetworkString("trmbase_tpanim")
+end
 
-    function SWEP:PlayIKAnimation(seq, duration)
-        net.Start("TRMBase_LHIKAnimation")
-        net.WriteString(seq)
-        net.WriteBool(duration or false)
-        net.WriteEntity(self)
-        net.Broadcast()
+function SWEP:PlayerGesture(slot, anim)
+    if (CLIENT && IsFirstTimePredicted()) then
+        self:GetOwner():AnimRestartGesture(slot, anim, true)
     end
+
+    if SERVER then
+        net.Start("trmbase_tpanim", true)
+        net.WriteUInt(slot, 2)
+        net.WriteInt(anim, 12)
+        net.WriteEntity(self:GetOwner())
+        if (game.SinglePlayer()) then
+            net.Send(self:GetOwner())
+        else
+            net.SendOmit(self:GetOwner())
+        end
+    end
+end
+
+if CLIENT then
+    net.Receive("trmbase_tpanim", function()
+        local slot = net.ReadUInt(2)
+        local anim = net.ReadInt(12)
+        local ply = net.ReadEntity()
+
+        if (ply == NULL) then
+            return
+        end
+
+        ply:AnimRestartGesture(slot, anim, true)
+    end)
 end

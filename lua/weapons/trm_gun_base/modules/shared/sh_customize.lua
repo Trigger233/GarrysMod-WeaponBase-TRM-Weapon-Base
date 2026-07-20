@@ -392,6 +392,13 @@ end
 function SWEP:ApplyCustomizationModels()
     if SERVER then return end
     local vm = self:GetViewModel()
+    
+    self:SetupBones()
+
+
+
+
+
     for slot, entry in pairs(self:GetAllAttachmentsInUse()) do
         if not entry or not entry.Class then continue end
         local AttachmentData = BASE_TRM_ATTS[entry.Class]
@@ -607,9 +614,12 @@ function SWEP:GetAllAttachmentsInUse()
 end
 
 local function buildSingleModelBone(ent)
+    if not CLIENT then return end
     if not ent or not IsValid(ent) then
         return
     end
+    
+    ent:SetupBones()
     local boneCount = ent:GetBoneCount()
     local bones = {}
     for i = 0, boneCount - 1 do
@@ -759,7 +769,7 @@ function SWEP:BuildCustomizedGun()
         self:SetUnderbarrel(false)
     end
 
-    
+    --self:RemoveFlag("HybridOn")
 
     if owner.Flashlight and self.flashlight and owner:FlashlightIsOn() then
         owner:Flashlight(false)
@@ -827,6 +837,7 @@ function SWEP:SetupViewmodel()
                 self:BuildCustomizedGun()
             end
         end
+        --render.UpdateFullScreenDepthTexture()
         self.m_OverDraw = false
     end
 end

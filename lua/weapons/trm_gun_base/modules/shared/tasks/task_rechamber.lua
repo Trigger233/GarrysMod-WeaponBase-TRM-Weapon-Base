@@ -10,6 +10,8 @@ end
 function task:OnSet(weapon)
     if weapon.Animations.Rechamber and not weapon:IsEmpty() then
         weapon:PlayAnimation("Rechamber",true)
+        weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes["BoltAction"].Attack)
+
         --local delay = 60/ weapon.Primary.RPM
     end
 end

@@ -6,11 +6,11 @@ function SWEP:TaskTick()
 
     local task = self.Tasks[self:GetCurrentTask()]
 
-    if not self.m_NextTaskThink then
-        self.m_NextTaskThink = CurTime()
-    end
+    -- if not self.m_NextTaskThink then
+    --     self.m_NextTaskThink = CurTime()
+    -- end
 
-    if CurTime() < self.m_NextTaskThink then return end
+    -- if CurTime() < self.m_NextTaskThink then return end
 
     if (task.Think != nil) then
         task:Think(vm:GetCycle(), self)
@@ -22,7 +22,7 @@ function SWEP:TaskTick()
         return
     end
 
-    self.m_NextTaskThink = CurTime() + FrameTime() * 4
+    -- self.m_NextTaskThink = CurTime() + FrameTime() * 4
 end
 
 function SWEP:RegisterTask(task)

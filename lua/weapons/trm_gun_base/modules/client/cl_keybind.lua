@@ -51,7 +51,7 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
         end
     end
 
-    if weapon:GetAimDelta() > 0.2 and pressed then
+    if weapon:GetAimDelta() > 0.5 and pressed then
         if bind == "invnext" and pressed then
             weapon:Scroll(1)
             return true

@@ -5,7 +5,7 @@ ATTACHMENT.Selectable = true
 
 ATTACHMENT.Laser = {
     Attach = "Laser",
-    Color = Color(255, 0, 0, 197),
+    Color = Color(255, 0, 0, 80),
     Width = 1,
     DotSize = 4,
 }
@@ -55,6 +55,7 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
         self._lastTrace = util.TraceLine({
             start = att.Pos + att.Ang:Forward() * -10,
             endpos =LerpVector(weapon:HasFlag("Tacsight") and not weapon:IsReloading() and weapon:GetAimDelta() or 0 , att.Pos + att.Ang:Forward() * 1000 , weapon:GetShootPos() + weapon:GetAimVector()* 1000  ),
+            --endpos = att.Pos + att.Ang:Forward() * 1000 ,
             filter = { weapon, weapon:GetOwner() },
             mask = MASK_SHOT
         })
@@ -66,7 +67,7 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
     if not tr then return end
     local distance = tr.HitPos:Distance(tr.StartPos)
     if distance < 10 then return end
-    local scale =   1
+    local scale =  math.random(0.5, 1)
     render.SetMaterial(self:GetLineMat())
     render.DrawBeam(att.Pos, tr.HitPos or tr.endpos, data.Width * scale, 0, 1, data.Color)
     if tr.Hit then
