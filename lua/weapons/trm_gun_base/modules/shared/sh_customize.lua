@@ -392,7 +392,7 @@ end
 function SWEP:ApplyCustomizationModels()
     if SERVER then return end
     local vm = self:GetViewModel()
-    
+
     self:SetupBones()
 
 
@@ -505,7 +505,7 @@ function SWEP:GenerateCustomizationStats()
 
     self.m_Foregrip = nil
     self.laser = false
-    
+
 
     for slot, entry in pairs(self.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
@@ -569,11 +569,14 @@ function SWEP:GenerateCustomizationStats()
             self.laser = true
         end
     end
-    
+
+    if (! self.sight or ! self.sight.HybridSight)  then
+        self:SwitchHybrid(false)
+    end
+
     -- if (self.sight and self.sight.HybridSight != nil or self:HasFlag("HybridOn")) then
     --     self:SwitchHybrid()
     -- end
-
 end
 
 
@@ -610,7 +613,7 @@ end)
 
 
 function SWEP:GetAllAttachmentsInUse()
-    return self.CurrentAttachments
+    return self.CurrentAttachments or {}
 end
 
 local function buildSingleModelBone(ent)
@@ -618,7 +621,7 @@ local function buildSingleModelBone(ent)
     if not ent or not IsValid(ent) then
         return
     end
-    
+
     ent:SetupBones()
     local boneCount = ent:GetBoneCount()
     local bones = {}
@@ -642,8 +645,10 @@ function SWEP:CreateAttachmentModel(entry, slot)
     if not Att or not Att.Model then return end
 
     local function CreateModel(att)
+
         local model = ClientsideModel(att.Model, RENDERGROUP_OPAQUE)
         if not IsValid(model) then return end
+        model:SetRenderMode(self.RenderMode)
         model:SetOwner(self)
         model:SetNotSolid(true)
         model:SetNoDraw(true)
@@ -651,13 +656,13 @@ function SWEP:CreateAttachmentModel(entry, slot)
         model.TRMAttachmentModel = true
         model:InvalidateBoneCache()
         model:SetupBones()
-
+    
         model._IsAttachment = true
 
         if att.Init then
             att.Init(self, model)
         end
-
+        trm_weapon_base_util.DealWithFullUpdate(model)
         -- 立即缓存骨骼并返回
         local bones = buildSingleModelBone(model)
 
@@ -707,9 +712,6 @@ end
 function SWEP:BuildCustomizedGun()
     if self:GetNoDraw() then return end
     self:SyncAllAttachments()
-    if CLIENT then
-        self:CallOnClient("BuildCustomizedGun")
-    end
 
 
     local vm = self:GetViewModel()
@@ -778,11 +780,13 @@ function SWEP:BuildCustomizedGun()
     if IsValid(TRM_AttachMenu_Instance) then
         TRM_AttachMenu_Instance:RefreshAll()
     end
-    
+
 
     self.m_Customized = true
     --self:SetupViewmodel()
-    self:TrySetTask("Idle", true)
+    if isActive then
+        self:TrySetTask("Idle", true)
+    end
 end
 
 function SWEP:FindBone(name)
@@ -813,11 +817,14 @@ function SWEP:SetupViewmodel()
     local vm = self:GetViewModel()
     if not (vm and IsValid(vm)) then return end
 
-    vm.RenderOverride = function(v,flag)
+    vm.RenderOverride = function(v, flag)
         if not self or not util.IsTRMBase(self) then
             v.RenderOverride = nil
         end
-        local wep = self:GetOwner().GetActiveWeapon and self:GetOwner():GetActiveWeapon()
+
+
+        local wep = IsValid(self) and IsValid(self:GetOwner()) and self:GetOwner().GetActiveWeapon and
+        self:GetOwner():GetActiveWeapon()
         if not wep or not util.IsTRMBase(wep) then
             v.RenderOverride = nil
         end
@@ -827,14 +834,16 @@ function SWEP:SetupViewmodel()
         --self:BuildViewmodelAttachmentsData(v)
 
         self.m_OverDraw = true
+        --v:SetupBones()
         v:DrawModel(flag)
-
-        for _, att in pairs(self:GetAllAttachmentsInUse()) do
-            local tbl = BASE_TRM_ATTS[att.Class]
-            if IsValid(att.m_Model) and tbl.Render then
-                tbl:Render(self, att.m_Model)
-            elseif tbl.Model then
-                self:BuildCustomizedGun()
+        if self.GetAllAttachmentsInUse then
+            for _, att in pairs(self:GetAllAttachmentsInUse()) do
+                local tbl = BASE_TRM_ATTS[att.Class]
+                if IsValid(att.m_Model) and tbl.Render then
+                    tbl:Render(self, att.m_Model)
+                elseif tbl.Model then
+                    self:BuildCustomizedGun()
+                end
             end
         end
         --render.UpdateFullScreenDepthTexture()

@@ -39,12 +39,12 @@ function SWEP:DoLHIK()
 
     local lhik = self:GetForegrip()
     local lhik_model = lhik and lhik.Viewmodel or nil 
-    delta = math.Approach(delta, self:GetGrip1()  and 1 or 0, engine.TickInterval() )
+    delta = math.Approach(delta, self:GetGrip1()  and 1 or 0, RealFrameTime() * 10 )
 
  
 
     if (lhik_model != nil) then
-        vm:SetupBones()
+    vm:SetupBones()
         lhik_model:SetupBones()
 
         for _, bone in pairs(LHIKBones) do
@@ -109,4 +109,18 @@ net.Receive("TRMBase_LHIKAnimation", function(len)
     local useInternal = net.ReadBool()
     local ent = net.ReadEntity()
     ent:PlayIKAnimation(seqClass,useInternal)
+end)
+
+
+hook.Add("VManipPrePlayAnim", "TRM_VManipStopActions", function()
+    local ply = LocalPlayer()
+    local w = ply:GetActiveWeapon()
+
+    if !util.IsTRMBase(w) then return  end
+
+    local seqClass = w:GetPlayingSequence() 
+    if string.find(seqClass,"Reload") then
+        return true
+    end
+    
 end)

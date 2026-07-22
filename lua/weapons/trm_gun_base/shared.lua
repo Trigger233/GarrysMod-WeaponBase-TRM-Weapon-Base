@@ -554,6 +554,8 @@ function SWEP:Initialize()
 
     self.CurrentAttachments = self.CurrentAttachments or {}
     self.Attachments = self.Attachments or {}
+    self:SetClip1(self.Primary.ClipSize)
+    self:SetClip2(self.Secondary.ClipSize)
 
     -- 迁移旧格式：CurrentAttachments 存字符串 → 改存 {Class=...}
     for k, v in pairs(self.CurrentAttachments) do
@@ -563,10 +565,10 @@ function SWEP:Initialize()
     end
 
     self:EquipDefaultAttachments()
+    timer.Simple(0.5,function()
+        self:BuildCustomizedGun()
+    end)    
 
-    self:BuildCustomizedGun()
-    self:SetClip1(self.Primary.ClipSize)
-    self:SetClip2(self.Secondary.ClipSize)
 end
 
 SWEP.Attachments = {}
@@ -719,7 +721,6 @@ if SERVER then
         end
     end
 
-    -- 武器更新倍率（在武器的 Think 或 ApplyMoveSpeed 里调用）
     function SWEP:SetPlayerMoveMult(ply, runMult, walkMult)
         if not IsValid(ply) then return end
         InitMoveData(ply)

@@ -32,6 +32,8 @@ function ATTACHMENT:GetDotMat()
             ['$additive'] = 1,
             ['$vertexalpha'] = 1,
             ['$vertexcolor'] = 1,
+            ["$alphatest"] = 1,
+            ["$halflamberet"] = 1,
         })
     end
     return dotMat
@@ -45,34 +47,37 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
     if attID <= 0 then return end
 
     --model:InvalidateBoneCache()
-    --model:SetupBones()
+    model:SetupBones()
     local att = trm_utils.GetFastAttachment(model, data.Attach)
     if not att then return end
 
 
     -- 缓存射线结果
-    if not self._nextTrace or SysTime() > self._nextTrace then
-        self._lastTrace = util.TraceLine({
+    if not model._nextTrace or SysTime() > model._nextTrace then
+        model._lastTrace = util.TraceLine({
             start = att.Pos + att.Ang:Forward() * -10,
-            endpos =LerpVector(weapon:HasFlag("Tacsight") and not weapon:IsReloading() and weapon:GetAimDelta() or 0 , att.Pos + att.Ang:Forward() * 1000 , weapon:GetShootPos() + weapon:GetAimVector()* 1000  ),
+            endpos = LerpVector(weapon:HasFlag("Tacsight") and not weapon:IsReloading() and weapon:GetAimDelta() or 0,
+                att.Pos, weapon:GetShootPos()) + att.Ang:Forward() * 1000,
             --endpos = att.Pos + att.Ang:Forward() * 1000 ,
             filter = { weapon, weapon:GetOwner() },
             mask = MASK_SHOT
         })
-        local updateFps = 30
-        self._nextTrace = SysTime() + math.min(1 / updateFps, RealFrameTime())
+        local updateFps = 60
+        model._nextTrace = SysTime() + math.min(1 / updateFps, RealFrameTime())
     end
 
-    local tr = self._lastTrace
+    local tr = model._lastTrace
     if not tr then return end
     local distance = tr.HitPos:Distance(tr.StartPos)
+    local color = data.Color
+
     if distance < 10 then return end
-    local scale =  math.random(0.5, 1)
+    local scale = math.random(0.5, 1)
     render.SetMaterial(self:GetLineMat())
-    render.DrawBeam(att.Pos, tr.HitPos or tr.endpos, data.Width * scale, 0, 1, data.Color)
+    render.DrawBeam(att.Pos, tr.HitPos or tr.endpos, data.Width * scale, 0, 1, color)
     if tr.Hit then
         render.SetMaterial(self:GetDotMat())
-        render.DrawSprite(tr.HitPos, data.DotSize, data.DotSize, data.Color)
+        render.DrawSprite(tr.HitPos, data.DotSize, data.DotSize, color)
     end
 end
 

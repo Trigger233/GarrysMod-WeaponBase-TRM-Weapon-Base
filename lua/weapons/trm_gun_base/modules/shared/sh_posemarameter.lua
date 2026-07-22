@@ -35,7 +35,7 @@ function SWEP:UpdatePoseParameters()
     local speed = IsValid(owner) and owner:GetVelocity():Length2D() or 0
     local runSpeed = IsValid(owner) and owner:GetRunSpeed() or 1
     local walkSpeed = IsValid(owner) and owner:GetWalkSpeed() or 1
-    local dt = game.SinglePlayer() and engine.TickInterval() * 0.5 or RealFrameTime() * 5
+    local dt =  RealFrameTime() * 2
 
     -- Aim Pose
     if self.Sight and self.Sight.PoseParameter then
@@ -74,7 +74,7 @@ function SWEP:UpdatePoseParameters()
 
 
     -- ======== 配件 Pose 参数（Grip1） ========
-    grip1Pose = Lerp(dt * 10, grip1Pose or 0, (self:GetGrip1() and 1 or 0))
+    grip1Pose = Lerp(dt * 5, grip1Pose or 0, (self:GetGrip1() and 1 or 0))
 
 
     -- 再设置当前配件的 pose
@@ -86,7 +86,7 @@ function SWEP:UpdatePoseParameters()
     end
 
     -- ======== 配件 Pose 参数（Grip2） ========
-    grip2Pose = Lerp(dt * 10, grip2Pose or 0, (self:GetGrip2() and 1 or 0))
+    grip2Pose = Lerp(dt * 5, grip2Pose or 0, (self:GetGrip2() and 1 or 0))
 
 
     if self.m_PoseParameter2 then

@@ -84,6 +84,9 @@ function task_fire:OnSet(weapon)
         end
     end
     weapon:SetNextPrimaryFire(CurTime() + 60 / weapon.Primary.RPM)
+
+    hook.Run("TRM_PostPrimaryFire",weapon)
+
 end
 
 function task_fire:Think(cycle, weapon)

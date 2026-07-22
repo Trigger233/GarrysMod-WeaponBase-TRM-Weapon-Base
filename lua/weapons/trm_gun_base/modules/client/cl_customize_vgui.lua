@@ -1919,7 +1919,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
     btn:Dock(TOP)
     btn:SetTall(64)
     btn:DockMargin(0, 0, 0, 6)
-
+    local DataTbl = BASE_TRM_ATTS[attClass]
     local BaseColor = BASE_TRM_ATTS[attClass] and BASE_TRM_ATTS[attClass].UIColor or Color(8, 15, 16, 226)
     local weapon = self.m_Weapon
 
@@ -1971,7 +1971,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
         draw.SimpleText(title, "TRM_Mod_Subtitle", textX, 20, blocked and Color(190, 112, 112) or TEXT_MAIN,
             TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
-        local sub = attClass or "None"
+        local sub = DataTbl and DataTbl.Category or attClass or "None"
         if isDefault then sub = sub .. " / default" end
         draw.SimpleText(TrimText("TRM_Mod_Small", sub, w - textX - statusReserve), "TRM_Mod_Small", textX, 45,
             blocked and WARNING or TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
@@ -2057,7 +2057,7 @@ end)
 
 net.Receive("TRMBase_SyncAllAttachments", function()
     local wep = net.ReadEntity()
-    if not IsValid(wep) then return end 
+    if not IsValid(wep) then return end
 
     local count = net.ReadUInt(8)
     wep.CurrentAttachments = wep.CurrentAttachments or {}
@@ -2067,12 +2067,12 @@ net.Receive("TRMBase_SyncAllAttachments", function()
         local attClass = net.ReadString()
         wep.CurrentAttachments[slot] = { Class = attClass }
     end
-    if wep.BuildCustomizedGun then
-        wep:BuildCustomizedGun()
-    end
-    if IsValid(TRM_AttachMenu_Instance) then
-        TRM_AttachMenu_Instance:RefreshAll()
-    end
+        if wep.BuildCustomizedGun then
+            wep:BuildCustomizedGun()
+        end
+        if IsValid(TRM_AttachMenu_Instance) then
+            TRM_AttachMenu_Instance:RefreshAll()
+        end
 end)
 
 concommand.Add("trmbase_test_attach", function(ply, cmd, args)

@@ -100,7 +100,7 @@ function SWEP:FirePrimaryBullet()
 				bullet.Spread = bullet.Spread * self.Aim.Spread
 				bullet.Damage = bullet.Damage / bullet.Num
 			end
-
+			hook.Run("TRM_PreFireBullet",bullet)
 			owner:FireBullets(bullet)
 		else
 			for i = 1, self.Primary.NumBullets do
@@ -116,7 +116,7 @@ function SWEP:FirePrimaryBullet()
 				AimDirNew = AimDirNew:Forward()
 				local bullet = ents.Create("trm_bullet")
 				bullet:SetOwner(self)
-
+				hook.Run("TRM_PreFIrePhysicalBullet",bullet)
 				local start = self:GetShootPos()
 				local angle = owner:IsPlayer() and
 					(owner:GetEyeTraceNoCursor().HitPos - start):Angle() - owner:GetAimVector():Angle() or Angle(0, 0, 0)

@@ -3,20 +3,28 @@ if SERVER then
 
     net.Receive("TRMBase_SwitchHybrid", function(len, ply)
         local weapon = net.ReadEntity()
+        local bool = net.ReadBool()
         if weapon.Hybrid then
-            weapon:Hybrid()
+            weapon:Hybrid(bool)
         end
     end)
 end
 
 function SWEP:Hybrid(bool)
-
+    if bool != nil then
+        if !bool then
+            self:RemoveFlag("HybridOn")
+        else
+            self:AddFlag("HybridOn")
+        end
+        return
+    end
     self:ToggleFlag("HybridOn")
 end
 
 function SWEP:CanAim()
-    local seq =  self:GetPlayingSequence()
-    if self:GetSprintDelta() > 0.5 or (self.IronsightReload == false and self:IsReloading() ) or string.find(seq, "Melee") or string.find(seq, "Holster") or string.find(seq, "Draw") then return false end
+    local seq = self:GetPlayingSequence()
+    if self:GetSprintDelta() > 0.5 or (self.IronsightReload == false and self:IsReloading()) or string.find(seq, "Melee") or string.find(seq, "Holster") or string.find(seq, "Draw") then return false end
     return true
 end
 
@@ -40,6 +48,7 @@ function SWEP:AimIn()
             self:TrySetTask("AdsIn")
         end
         self.m_Aiming = true
+        self:AddFlag("Aiming")
     end
 end
 
@@ -54,6 +63,7 @@ function SWEP:AimOut()
             self:TrySetTask("AdsOut")
         end
         self.m_Aiming = false
+        self:RemoveFlag("Aiming")
     end
 end
 

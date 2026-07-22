@@ -18,10 +18,6 @@ function ATTACHMENT:Render(weapon, model)
         model._ammo = weapon:Ammo1()
         self:SetMagFollowerPoseParam(weapon, model, weapon:GetMaxClip1() - weapon:Clip1())
     end
-
-    if weapon.DynamicMagazineModel then
-        weapon:DynamicMagazineModel(self, model)
-    end
 end
 
 function ATTACHMENT:SetMagFollowerPoseParam(weapon, model, val)
@@ -34,7 +30,7 @@ function ATTACHMENT:SetMagFollowerPoseParam(weapon, model, val)
     model:SetPoseParameter(ppid, math.Clamp(val, min, max))
 end
 
-function ATTACHMENT:ResetBullets(weapon,model)
+function ATTACHMENT:ResetBullets(weapon, model)
     model._requestedReset = true
-    self:SetMagFollowerPoseParam(weapon, model,weapon:GetMaxClip1() - (weapon:Clip1() + weapon:Ammo1()))
+    self:SetMagFollowerPoseParam(weapon, model, weapon:GetMaxClip1() - (weapon:Clip1() + weapon:Ammo1()))
 end

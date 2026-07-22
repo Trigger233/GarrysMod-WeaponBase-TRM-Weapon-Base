@@ -41,7 +41,7 @@ function SWEP:CanReload()
 	local max = cvar_debug_reload:GetBool() and 2 or (self.Primary.ClipSize +
 		(self.Primary.BoltAction and self:GetChamberAmmo() or self.Primary.Chamber))
 	if string.find(seq, "Reload") then return false end
-	if not GetConVar("trmbase_allow_sprintreload"):GetBool() and string.find(seq, "Sprint") and not string.find(seq, "SprintOut") then return false end
+	if not GetConVar("trmbase_allow_sprintreload"):GetBool() and string.find(seq, "Sprint") and not string.find(seq, "Sprint") then return false end
 	if (cvar_infinite_reserve:GetBool()) then
 		return self:Clip1() < max
 	else

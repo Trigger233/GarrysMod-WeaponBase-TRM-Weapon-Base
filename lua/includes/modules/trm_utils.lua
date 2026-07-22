@@ -39,11 +39,7 @@ local function requireAttachment(ent, attName)
     if (ent.m_AttachmentRequests[attId] == nil) then
         ent.m_AttachmentRequests[attId] = Matrix()
 
-        timer.Simple(0, function()
-            if (! IsValid(ent)) then
-                return
-            end
-
+        if (IsValid(ent)) then
             local attData = ent:GetAttachment(attId)
             if not attData then return end
             local computeMatrix = Matrix()
@@ -54,8 +50,25 @@ local function requireAttachment(ent, attName)
 
             computeMatrix = worldMatrix:GetInverse() * computeMatrix
             ent.m_AttachmentRequests[attId] = computeMatrix
-        end)
+        end
 
+
+        -- timer.Simple(0, function()
+        --     if (! IsValid(ent)) then
+        --         return
+        --     end
+
+        --     local attData = ent:GetAttachment(attId)
+        --     if not attData then return end
+        --     local computeMatrix = Matrix()
+        --     computeMatrix:SetTranslation(attData.Pos)
+        --     computeMatrix:SetAngles(attData.Ang)
+
+        --     local worldMatrix = ent:GetBoneMatrix(0)
+
+        --     computeMatrix = worldMatrix:GetInverse() * computeMatrix
+        --     ent.m_AttachmentRequests[attId] = computeMatrix
+        -- end)
         ent.m_AttachmentDeliveries[attId] = { Pos = Vector(), Ang = Angle() }
     end
 

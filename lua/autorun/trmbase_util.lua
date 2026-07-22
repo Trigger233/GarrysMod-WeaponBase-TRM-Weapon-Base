@@ -28,4 +28,21 @@ if (CLIENT) then
     function trm_weapon_base_util.DealWithFullUpdate(ent)
         FullUpdateEntities[ent] = true
     end
+
+
+    hook.Add("PreRender", "mw_utilsFullUpdatePreRender", function()
+        for ent, _ in pairs(FullUpdateEntities) do
+            if (! IsValid(ent)) then
+                FullUpdateEntities[ent] = nil
+                continue
+            end
+
+            local fullUpdateParent = ent:GetInternalVariable("m_hNetworkMoveParent")
+
+            if (! IsValid(ent:GetParent()) && IsValid(fullUpdateParent)) then
+                ent:SetParent(fullUpdateParent)
+            end
+        end
+    end)
+    
 end

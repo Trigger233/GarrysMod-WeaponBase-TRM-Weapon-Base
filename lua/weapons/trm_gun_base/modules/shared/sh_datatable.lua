@@ -46,7 +46,8 @@ SWEP.WeaponFlags = {
     ["OnLadder"] = 1,
     ["Tacsight"] = 2 ,
     ["HybridOn"] = 4 ,
-    ["FlashLightOn"] =  8
+    ["FlashLightOn"] =  8,
+    ['Aiming'] = 16 ,
 }
 function SWEP:SetupDataTables()
 

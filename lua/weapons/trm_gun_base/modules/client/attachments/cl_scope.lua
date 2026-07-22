@@ -1,4 +1,9 @@
 if not CLIENT then return end
+local RecoilFactor = 0.25
+local Basefov = GetConVar("fov_desired"):GetInt()
+local zoomscale = 1.5
+local globalzoom = 1
+local zoomMulti = 3
 
 local oldRenderResolutionCache = 0
 local rtsize = 1024
@@ -64,14 +69,19 @@ end
 
 local NextTime = 0
 
-function SWEP:SwitchHybrid()
+function SWEP:SwitchHybrid(bool)
+    if self:GetOwner() ~= LocalPlayer() then
+        return
+    end
     net.Start("TRMBase_SwitchHybrid")
     net.WriteEntity(self)
+    if bool then
+        net.WriteBool(bool)
+    end
     net.SendToServer()
-    surface.PlaySound("Weapon_AR2.Empty")
+
+    --surface.PlaySound("Weapon_AR2.Empty")
 end
-
-
 
 function SWEP:Scroll(dir)
     if SERVER then return end
@@ -116,12 +126,8 @@ end
 function SWEP:GetScopeParam()
     if not self.sight or not self.sight.zoom then return end
 
-    return Lerp((self.sight.zoom - self.sight.MinZoom)/(self.sight.MaxZoom - self.sight.MinZoom)  , 0, 1)
+    return Lerp((self.sight.zoom - self.sight.MinZoom) / (self.sight.MaxZoom - self.sight.MinZoom), 0, 1)
 end
-
-local Basefov = GetConVar("fov_desired"):GetInt()
-local zoomscale = 1
-local globalzoom = 1.7
 
 function SWEP:GetScopeZoom()
     zoomscale = Lerp(RealFrameTime() * 10, zoomscale, self.sight and self.sight.zoom or zoomscale)
@@ -280,7 +286,6 @@ local function AngleToPixel(num)
     return math.tan(math.rad(num))
 end
 
-local RecoilFactor = 0.25
 
 
 
@@ -350,10 +355,10 @@ hook.Add("RenderScene", "TRMBASE_ScopeUpdate", function()
     end
 end)
 
-local zoomMulti = 6
 function SWEP:GetZoomRecoilFactor()
     return math.Clamp(RecoilFactor * self:GetScopeZoom() * zoomMulti, 0, 1)
 end
+
 local function DrawCheapScopeMaterial(wep, w, h, size)
     local sw = w * zoomMulti
     local sh = h * zoomMulti
@@ -436,7 +441,7 @@ function SWEP:DrawThermal(tx, att)
     render.SetStencilCompareFunction(STENCIL_ALWAYS)
     render.SetStencilPassOperation(STENCIL_REPLACE)
     render.SetStencilFailOperation(STENCIL_KEEP)
-            render.SetBlend(0) -- 透明绘制，只写 Stencil
+    render.SetBlend(0) -- 透明绘制，只写 Stencil
 
     -- 画 NPC 到 Stencil（只标记，不画颜色）
     for _, v in ents.Iterator() do

@@ -53,8 +53,8 @@ function SWEP:CustomBob()
     airDelta = Lerp(RealFrameTime() * 2, airDelta, ground and 0 or 1)
     local t = getJumpPoseDelta(airDelta)
     if not ground then
-        ang.p = ang.p - 10 * t
-        pos.z = pos.z - 1 * t
+        ang.p = ang.p + 10 * t
+        pos.z = pos.z + 1 * t
     end
     return pos, ang
 end
@@ -184,7 +184,7 @@ function SWEP:CalcView(ply, pos, angles, fov)
     end
     angles:Add(CamAngDelta)
 
-    return pos, angles, self:CoolFov()
+    return pos, angles, fov
 end
 
 local CachePos = Vector(0, 0, 0)
@@ -263,14 +263,14 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     CacheAngle, CachePos = self:Sway()
     local Pos            = -Vector(angles:Right() * CachePos.x + angles:Forward() * CachePos.y + angles:Up() * CachePos
             .z) *
-        Lerp(aimdelta, 1, 0.2)
+        Lerp(aimdelta, 1, 0.1)
     pos:Add(Pos)
-    angles:Add(CacheAngle * Lerp(aimdelta, 1, 0.5))
+    angles:Add(CacheAngle * Lerp(aimdelta, 1, 0.1))
     --Bob
     local BobPos, BobAngle = self:CustomBob()
     local ApplyBobPos = Vector(angles:Right() * BobPos.x + angles:Forward() * BobPos.y + angles:Up() * BobPos.z) *
         (1 - aimdelta)
-    BobAngle:Mul(1 - aimdelta * 0.8)
+    BobAngle:Mul(1 - aimdelta * 0.9)
     pos:Add(ApplyBobPos)
     angles:Add(BobAngle)
     --Duck Pose
@@ -469,7 +469,11 @@ function SWEP:CoolFov()
     local timeToNextFire = self:GetNextRecoil() - UnPredictedCurTime()
     local t = math.Clamp(timeToNextFire / fireInterval, 0, 1)
     local Recoildelta = math.min((t > 0.5 and 1 - t or t) * 2, 1) -- 开火时 = 1，然后衰减到 0
-    finalFOV = finalFOV + Recoildelta * self.Recoil.Shake * 2
+    finalFOV = finalFOV + Recoildelta * self.Recoil.Shake * 1
     -- finalFOV = finalFOV * (1 + Recoildelta * self.Recoil.Shake * 0.08)
     return finalFOV
+end
+
+function SWEP:TranslateFOV(fov)
+    return self:CoolFov()
 end

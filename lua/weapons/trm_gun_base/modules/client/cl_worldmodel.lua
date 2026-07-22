@@ -200,7 +200,7 @@ hook.Add("PreRender", "TRMBase_CleanupUnUsedAttModels", function()
                 ent:RemoveAllAttachementModels()
             end
         end
-        LastRenderUpdate = SysTime() + 1
+        LastRenderUpdate = SysTime() + 5
     end
 end)
 
