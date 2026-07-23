@@ -3,20 +3,16 @@ if SERVER then
 
     net.Receive("TRMBase_SwitchHybrid", function(len, ply)
         local weapon = net.ReadEntity()
-        local bool = net.ReadBool()
+        local forceDown =net.ReadBool()
         if weapon.Hybrid then
-            weapon:Hybrid(bool)
+            weapon:Hybrid(forceDown)
         end
     end)
 end
 
-function SWEP:Hybrid(bool)
-    if bool != nil then
-        if !bool then
-            self:RemoveFlag("HybridOn")
-        else
-            self:AddFlag("HybridOn")
-        end
+function SWEP:Hybrid(ForceOff)
+    if ForceOff then
+        self:RemoveFlag("HybridOn")
         return
     end
     self:ToggleFlag("HybridOn")
@@ -112,6 +108,8 @@ function SWEP:CycleTacSight()
         self:RemoveFlag("HybridOn")
     end
 end
+
+
 
 concommand.Add("+trmbase_cycle_tacsight", function(ply)
     local weapon = ply:GetActiveWeapon()

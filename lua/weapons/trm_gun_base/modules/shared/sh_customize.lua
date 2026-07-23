@@ -571,7 +571,7 @@ function SWEP:GenerateCustomizationStats()
     end
 
     if (! self.sight or ! self.sight.HybridSight)  then
-        self:SwitchHybrid(false)
+        self:SwitchHybrid(true)
     end
 
     -- if (self.sight and self.sight.HybridSight != nil or self:HasFlag("HybridOn")) then

@@ -69,15 +69,13 @@ end
 
 local NextTime = 0
 
-function SWEP:SwitchHybrid(bool)
+function SWEP:SwitchHybrid(ForceTurnOff)
     if self:GetOwner() ~= LocalPlayer() then
         return
     end
     net.Start("TRMBase_SwitchHybrid")
     net.WriteEntity(self)
-    if bool then
-        net.WriteBool(bool)
-    end
+    net.WriteBool(ForceTurnOff)
     net.SendToServer()
 
     --surface.PlaySound("Weapon_AR2.Empty")

@@ -8,6 +8,7 @@ local rft = RealFrameTime()
 
 local bobt = 0
 local airDelta = 0
+local airTargetDelta = 0
 local hasJumped = false
 
 local function getJumpPoseDelta(c)
@@ -34,7 +35,6 @@ function SWEP:CustomBob()
     elseif speed < 10 then
         bobt = (bobt or 0) * 0.95 -- 停止时归零
     end
-    local t = math.sin(bobt or 0) * (speed / 200)
     local mult = math.min(speed / 300, 1)
     -- 位置偏移
     local pos = Vector(
@@ -50,12 +50,16 @@ function SWEP:CustomBob()
         math.sin(bobt * 1.5) * 2 * mult  -- Roll
     )
     local ground = owner:IsOnGround()
-    airDelta = Lerp(RealFrameTime() * 2, airDelta, ground and 0 or 1)
-    local t = getJumpPoseDelta(airDelta)
-    if not ground then
-        ang.p = ang.p + 10 * t
-        pos.z = pos.z + 1 * t
+    if ground then
+        hasJumped = false
+    elseif not hasJumped then
+        airTargetDelta = 1
+        hasJumped = true
     end
+    airTargetDelta = Lerp(RealFrameTime() * 2 , airTargetDelta, 0)
+    airDelta = Lerp(RealFrameTime() * 10, airDelta, airTargetDelta)
+    ang.p = ang.p + 15 * airDelta
+    pos.z = pos.z + 2 * airDelta
     return pos, ang
 end
 
