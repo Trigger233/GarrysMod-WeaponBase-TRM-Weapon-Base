@@ -430,7 +430,7 @@ function SWEP:DoCameraRecoil()
 		self.m_RecoilDelta = self.m_RecoilDelta - math.min(playerPitchDelta, 0)
 	else
 		-- 停火后：回正剩余的后坐力
-		if self.m_RecoilDelta * (current.pitch > 0 and 1 or -1) > 1 then
+		if self.m_RecoilDelta * (current.pitch > 0 and 1 or -1) > 0 then
 			NextAngle.pitch = -self.m_RecoilDelta * stat.Recover 
 			self.m_RecoilDelta = self.m_RecoilDelta + NextAngle.pitch
 		else
@@ -442,9 +442,7 @@ function SWEP:DoCameraRecoil()
 
 	eyeAngles:Add(NextAngle)
 	self.m_LastEyePitch = eyeAngles.pitch
-	if SERVER then
 		owner:SetEyeAngles(eyeAngles)
-	end
 end
 
 function SWEP:DoSpread()

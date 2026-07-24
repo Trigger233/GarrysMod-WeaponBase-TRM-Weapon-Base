@@ -3,7 +3,7 @@ local RecoilFactor = 0.25
 local Basefov = GetConVar("fov_desired"):GetInt()
 local zoomscale = 1.5
 local globalzoom = 1
-local zoomMulti = 3
+local CheapzoomMulti = 2
 
 local oldRenderResolutionCache = 0
 local rtsize = 1024
@@ -316,8 +316,9 @@ function SWEP:RenderScopeReticle(model, att, stat, rtSize, zoomScale)
     )
 end
 
-local parallaxMat = Material("models/weapons/tfa_ins2/optics/parallax_mask", "smooth")
+local parallaxMat = Material("trmbase/common/parallax_mask", "smooth")
 function SWEP:DrawParallax(model, rtSize, att)
+    if att.Scope.DisableParallax then return end
     local centerX = rtSize / 2
     local centerY = rtSize / 2
 
@@ -331,10 +332,9 @@ function SWEP:DrawParallax(model, rtSize, att)
     centerX = centerX - AngleToPixel(additive.yaw) * ScrW()
 
     centerY = centerY + AngleToPixel(additive.p) * ScrH()
-
-    local _size = (att.Scope.ParallaxSize or rtSize * 1.05)
+    local _size = rtSize * 1.5
     surface.SetMaterial(att.Scope.Parallax or parallaxMat)
-    surface.SetDrawColor(Color(255, 255, 255))
+    surface.SetDrawColor(Color(255, 255, 255, 255))
 
     surface.DrawTexturedRect(
         centerX - _size / 2,
@@ -354,15 +354,15 @@ hook.Add("RenderScene", "TRMBASE_ScopeUpdate", function()
 end)
 
 function SWEP:GetZoomRecoilFactor()
-    return math.Clamp(RecoilFactor * self:GetScopeZoom() * zoomMulti, 0, 1)
+    return math.Clamp(RecoilFactor * self:GetScopeZoom() * CheapzoomMulti, 0, 1)
 end
 
 local function DrawCheapScopeMaterial(wep, w, h, size)
-    local sw = w * zoomMulti
-    local sh = h * zoomMulti
+    local sw = w * CheapzoomMulti
+    local sh = h * CheapzoomMulti
     local sx = (w - sw) / 2
     local sy = (h - sh) / 2
-    local a = size * zoomMulti
+    local a = size * CheapzoomMulti
     surface.SetDrawColor(255, 255, 255, 255)
     surface.SetMaterial(RTMaterial_Cheap)
     surface.DrawTexturedRect(sx - a * 0.5, sy, sw + a, sh)

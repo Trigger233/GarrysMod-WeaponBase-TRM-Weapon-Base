@@ -1,6 +1,5 @@
 local cvar_damage = CreateConVar("trmbase_sv_mod_damage", 1, FCVAR_ARCHIVE, "", 0, 10)
-
-
+local cvar_penetration = CreateConVar("trmbase_sv_penetration",1,FCVAR_ARCHIVE, "", 0, 1)
 function SWEP:BulletCallback(attacker, tr, dmginfo)
     local ent = tr.Entity
 
@@ -41,7 +40,7 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
 end
 
 function SWEP:BulletInterval(attacker, tr, dmginfo)
-    if tr.HitNoDraw or tr.HitSky then
+    if tr.HitNoDraw or tr.HitSky or not cvar_penetration:GetBool() then
         return
     end
 

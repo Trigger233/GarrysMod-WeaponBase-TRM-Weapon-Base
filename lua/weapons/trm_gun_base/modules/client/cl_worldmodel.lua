@@ -60,9 +60,6 @@ function SWEP:DrawWorldModelName()
     srf.SetFont("TRM_Mod_Title")
     local text = self.PrintName or "Unknown"
     DrawFullText(text, x, y, colorTable.common)
-    y = y + 20
-    text = GetPhrase(game.GetAmmoName(self:GetPrimaryAmmoType()) .. "_ammo") or ""
-    DrawFullText(text, x, y, colorTable.common)
     y = y + 10
     for slot, entry in pairs(self:GetAllAttachmentsInUse()) do
         local class = entry.Class

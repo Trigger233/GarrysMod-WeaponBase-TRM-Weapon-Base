@@ -48,6 +48,7 @@ SWEP.WeaponFlags = {
     ["HybridOn"] = 4 ,
     ["FlashLightOn"] =  8,
     ['Aiming'] = 16 ,
+    ['MeleeTriggered'] = 32 ,
 }
 function SWEP:SetupDataTables()
 
@@ -55,27 +56,27 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Int", "WeaponFlag")
 
     self:NetworkVar("Float", "AimDelta")
-    self:NetworkVar("Int", "ChamberAmmo")
-    self:NetworkVar("Int", "SecondaryChamberAmmo")
     self:NetworkVar("Float", "SprintDelta")
     self:NetworkVar("Float", "NextAnimationTime")
-    self:NetworkVar("Entity", "NextWeapon")
-
-    self:NetworkVar("Int","BrustCount")
-    self:NetworkVar("Bool", "Grip1")
-    self:NetworkVar("Bool", "Grip2")
-    self:NetworkVar("Bool", "FirstDeployed")
-    self:NetworkVar("Bool", "Underbarrel")
-    self:NetworkVar("Int", "CurrentTask")
-    self:NetworkVar("String", "PlayingSequence")
-    self:NetworkVar("Bool", "CanSwitch")
     self:NetworkVar("Float", "LastFireTime")
     self:NetworkVar("Float", "Spread")
     self:NetworkVar("Float", "SpreadVertical")
     self:NetworkVar("Float", "SpreadHorizonal")
-    self:NetworkVar("Angle", "Recoil")
     self:NetworkVar("Float", "RecoilProgress") -- for custom recoil
     self:NetworkVar("Float", "NextRecoil")
+    self:NetworkVar("Entity", "NextWeapon")
+    self:NetworkVar("Int", "ChamberAmmo")
+    self:NetworkVar("Int", "SecondaryChamberAmmo")
+
+    self:NetworkVar("Int","BrustCount")
+    self:NetworkVar("Int", "CurrentTask")
+    self:NetworkVar("Bool", "Grip1")
+    self:NetworkVar("Bool", "Grip2")
+    self:NetworkVar("Bool", "FirstDeployed")
+    self:NetworkVar("Bool", "Underbarrel")
+    self:NetworkVar("String", "PlayingSequence")
+    self:NetworkVar("Bool", "CanSwitch")
+    self:NetworkVar("Angle", "Recoil")
     self:NetworkVar("Angle", "VisualRecoil")
     self:NetworkVar("Float", "VisualRecoilProgress") -- for custom recoil
     self:NetworkVar("Float", "VisualRecoilBackward")

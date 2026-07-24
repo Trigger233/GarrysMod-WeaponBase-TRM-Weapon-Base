@@ -8,7 +8,7 @@ end
 
 function task:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
-    weapon:PlayAnimation("Holster", true)
+    weapon:PlayAnimation(weapon:ChooseAnim("Holster"), true)
 end
 
 function task:Think(cycle, weapon)

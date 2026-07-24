@@ -36,7 +36,7 @@ function SWEP:CanReload()
 		return false
 	end
 
-	if self:GetNextPrimaryFire() > CurTime() and not string.find(seq,"Draw") then return false end
+	if self:GetNextPrimaryFire() > CurTime() and not (string.find(seq,"Draw") or string.find(seq,"Sprint")) then return false end
 
 	local max = cvar_debug_reload:GetBool() and 2 or (self.Primary.ClipSize +
 		(self.Primary.BoltAction and self:GetChamberAmmo() or self.Primary.Chamber))

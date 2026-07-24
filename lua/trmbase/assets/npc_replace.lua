@@ -18,6 +18,9 @@ local ReplaceableWeapons = {
     "weapon_357_hl1", "weapon_glock_hl1", "weapon_mp5_hl1",
     "weapon_shotgun_hl1", "weapon_crossbow_hl1"
 }
+local ReplaceableWeaponsMelee = {
+    "weapon_crowbar","weapon_stunstick"
+}
 
 -- 弹药映射
 local WeaponMap = {
@@ -55,6 +58,11 @@ local function ShouldReplaceWeapon(ent)
     for _, name in ipairs(ReplaceableWeapons) do
         if class == name then return true end
     end
+
+    if table.HasValue(ReplaceableWeaponsMelee, class) then
+        return true
+    end
+
     return false
 end
 
@@ -67,6 +75,19 @@ end
 local function FindTRMReplacement(weapon)
     local class = weapon:GetClass()
     local ammoType = game.GetAmmoName(weapon:GetPrimaryAmmoType())
+    local AllWeapons = weapons.GetList()
+    local results = {}
+
+    if table.HasValue(ReplaceableWeaponsMelee, class) then
+        for _, wep in ipairs(AllWeapons) do
+            if type(wep) ~= "table" then continue end
+            if wep.Base ~= "trm_melee_base" then continue end
+            table.insert(results, wep.ClassName)
+        end
+
+        return #results > 0 and results[math.random(#results)] or nil
+    end
+
 
     if WeaponMap[class] then
         if istable(WeaponMap[class]) then
@@ -80,9 +101,8 @@ local function FindTRMReplacement(weapon)
     ammoType = SpecialAmmoMap[ammoType] or ammoType
 
     local lower = string.lower(ammoType)
-    local results = {}
 
-    for _, wep in pairs(weapons.GetList()) do
+    for _, wep in pairs(AllWeapons) do
         if type(wep) ~= "table" then continue end
         if wep.Base ~= "trm_gun_base" then continue end
         if wep.Primary and string.lower(wep.Primary.Ammo or "") == lower then
@@ -103,7 +123,7 @@ local function ReplaceWeapon(ent)
 
     local pos, ang, vel = ent:GetPos(), ent:GetAngles(), ent:GetVelocity()
 
-    print("[TRMBase] Replace weapon:", ent:GetClass(), "→", newClass)
+    --print("[TRMBase] Replace weapon:", ent:GetClass(), "→", newClass)
 
     ent:Remove()
 

@@ -781,6 +781,9 @@ function SWEP:BuildCustomizedGun()
         TRM_AttachMenu_Instance:RefreshAll()
     end
 
+    if CLIENT then 
+        -- self:GenerateIcon()
+    end
 
     self.m_Customized = true
     --self:SetupViewmodel()

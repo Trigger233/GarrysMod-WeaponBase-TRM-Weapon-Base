@@ -1971,7 +1971,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
         draw.SimpleText(title, "TRM_Mod_Subtitle", textX, 20, blocked and Color(190, 112, 112) or TEXT_MAIN,
             TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
-        local sub = DataTbl and DataTbl.Category or attClass or "None"
+        local sub = DataTbl and DataTbl.ClassName or attClass or "None"
         if isDefault then sub = sub .. " / default" end
         draw.SimpleText(TrimText("TRM_Mod_Small", sub, w - textX - statusReserve), "TRM_Mod_Small", textX, 45,
             blocked and WARNING or TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)

@@ -75,7 +75,7 @@ function SWEP:PreDrawViewModel(vm)
         DrawBokehDOF(BlurMul * 5, 1, 12)
     end
 
-    cam.Start3D(EyePos(), EyeAngles(), self:GetViewmodelFov(), 0, 0, ScrW(), ScrH(), 1, 1024)
+    cam.Start3D(EyePos() , EyeAngles() , self:GetViewmodelFov(), 0, 0, ScrW(), ScrH(), 1, 1024)
     render.DepthRange(0.0, 0.0)
 
     if GetConVar("trmbase_cl_cheapscope"):GetBool() then

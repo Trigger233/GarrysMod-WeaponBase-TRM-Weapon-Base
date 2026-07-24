@@ -98,7 +98,6 @@ SWEP.Purpose = "A base weapon for TRM weapons."
 
 SWEP.AutoSwitchTo = true
 SWEP.DrawCrosshair = false
-
 SWEP.DrawCrossHairIS = false
 
 SWEP.ViewModel = nil
