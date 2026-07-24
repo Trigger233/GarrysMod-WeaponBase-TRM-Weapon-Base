@@ -1433,7 +1433,7 @@ function PANEL:PaintSlotCard(card, w, h)
     local attClass = IsValid(self.m_Weapon) and CurrentAttachmentClass(self.m_Weapon, card.m_Index) or nil
     local excluded = IsValid(self.m_Weapon) and not self.m_Weapon:CanEquip(card.m_Index, attClass or slot.Default)
     local attName = AttachmentName(attClass or slot.Default)
-    local slotName = language.GetPhrase(slot.Name)
+    local slotName = language.GetPhrase(slot.Name or "Misc")
     local iconMat = SlotIconMaterial(SlotIconName(slot))
     local hovered = card:IsHovered()
     local targetPop = hovered and 1 or (selected and 0.35 or 0)
@@ -1956,16 +1956,13 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
         end
 
         local markerW = isActive and 0 or 28
-        local textX = markerW > 0 and 44 or 12
-        if not isActive then
-            surface.SetDrawColor(blocked and Color(160, 70, 70, 54) or Color(151, 222, 213, 35))
-            surface.DrawRect(12, 16, 24, 24)
-            surface.SetDrawColor(blocked and WARNING or ACCENT)
-            surface.DrawOutlinedRect(12, 16, 24, 24, 1)
-            draw.SimpleText("+", "TRM_Mod_Subtitle", 24, 28, blocked and WARNING or ACCENT, TEXT_ALIGN_CENTER,
-                TEXT_ALIGN_CENTER)
-        end
-
+        local textX = h
+        ---ICON
+        surface.SetMaterial(DataTbl and DataTbl.Icon or SlotIconMaterial(SlotIconName(slotKey)))
+        surface.SetDrawColor(255, 255, 255, 255)
+        local iconPadding = 10
+        surface.DrawTexturedRect(iconPadding + 5, iconPadding, h - 2 * iconPadding, h - 2 * iconPadding)
+        ------------------
         local statusReserve = (isActive or blocked) and 110 or 18
         local title = TrimText("TRM_Mod_Subtitle", name, w - textX - statusReserve)
         draw.SimpleText(title, "TRM_Mod_Subtitle", textX, 20, blocked and Color(190, 112, 112) or TEXT_MAIN,
@@ -2067,12 +2064,12 @@ net.Receive("TRMBase_SyncAllAttachments", function()
         local attClass = net.ReadString()
         wep.CurrentAttachments[slot] = { Class = attClass }
     end
-        if wep.BuildCustomizedGun then
-            wep:BuildCustomizedGun()
-        end
-        if IsValid(TRM_AttachMenu_Instance) then
-            TRM_AttachMenu_Instance:RefreshAll()
-        end
+    if wep.BuildCustomizedGun then
+        wep:BuildCustomizedGun()
+    end
+    if IsValid(TRM_AttachMenu_Instance) then
+        TRM_AttachMenu_Instance:RefreshAll()
+    end
 end)
 
 concommand.Add("trmbase_test_attach", function(ply, cmd, args)

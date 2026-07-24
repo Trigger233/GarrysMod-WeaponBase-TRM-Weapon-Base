@@ -3,7 +3,7 @@ local RecoilFactor = 0.25
 local Basefov = GetConVar("fov_desired"):GetInt()
 local zoomscale = 1.5
 local globalzoom = 1
-local CheapzoomMulti = 2
+local CheapzoomMulti = 5
 
 local oldRenderResolutionCache = 0
 local rtsize = 1024

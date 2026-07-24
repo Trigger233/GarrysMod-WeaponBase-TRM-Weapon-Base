@@ -564,10 +564,11 @@ function SWEP:Initialize()
     end
 
     self:EquipDefaultAttachments()
-    timer.Simple(0.5,function()
-        self:BuildCustomizedGun()
-    end)    
-
+    timer.Simple(0.5, function()
+        if IsValid(self) then
+            self:BuildCustomizedGun()
+        end
+    end)
 end
 
 SWEP.Attachments = {}

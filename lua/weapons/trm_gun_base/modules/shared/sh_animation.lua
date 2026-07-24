@@ -133,6 +133,21 @@ end
 
 if SERVER then
     util.AddNetworkString("trmbase_tpanim")
+    util.AddNetworkString("TRMBase_LHIKAnimation")
+    function SWEP:PlayIKAnimation(seqClass, useInternal)
+        net.Start("TRMBase_LHIKAnimation")
+        net.WriteString(seqClass)
+        net.WriteBool(useInternal)
+        net.WriteEntity(self)
+        net.Broadcast()
+    end
+
+    net.Receive("TRMBase_LHIKAnimation", function(len, ply)
+        local ent = net.ReadEntity()
+        local time = net.ReadFloat()
+        ent:SetNextAnimationTime(time)
+        ent:SetNextPrimaryFire(time)        
+    end)
 end
 
 function SWEP:PlayerGesture(slot, anim)
@@ -166,3 +181,4 @@ if CLIENT then
         ply:AnimRestartGesture(slot, anim, true)
     end)
 end
+

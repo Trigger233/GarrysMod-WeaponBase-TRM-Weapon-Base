@@ -5,7 +5,7 @@ end
 ENT.Type = "anim"
 ENT.Base = "base_anim"
 
-ENT.Model = Model("models/weapons/ar2_grenade.mdl")
+ENT.Model = Model("models/Items/grenadeAmmo.mdl")
 ENT.ModelScale = 1
 -- 爆炸参数
 ENT.Range = 150  -- 无衰减范围（单位内满伤）
@@ -26,7 +26,9 @@ function ENT:Initialize()
     self.m_NextWarn = 0
     if SERVER then
         util.SpriteTrail(self, 0, self.TrailColor, false, 20, 15, 0.2, 16, "trails/laser")
+    self:GetPhysicsObject():Wake()
     end
+
 end
 
 local function getOwner(ent)

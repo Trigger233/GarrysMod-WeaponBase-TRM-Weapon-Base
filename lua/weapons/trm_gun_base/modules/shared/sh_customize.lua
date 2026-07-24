@@ -24,8 +24,12 @@ function SWEP:CanEquip(slotIndex, attClass)
     if slot.Default and attClass == slot.Default then return true end
     if not attClass then return true end
 
+    
+
     local attData = BASE_TRM_ATTS[attClass]
     if not attData then return true end
+
+    if !attData.Selectable then return false end
 
     -- 没有 Category 的配件不参与排斥
     local attCats = attData.Category
@@ -33,7 +37,7 @@ function SWEP:CanEquip(slotIndex, attClass)
     if not istable(attCats) then attCats = { attCats } end
 
     -- 方向 A：其他已装备配件排斥本配件
-    for _, entry in pairs(self.CurrentAttachments or {}) do
+    for _, entry in pairs(self:GetAllAttachmentsInUse()) do
         if not entry or not entry.Class or entry.Class == attClass then continue end
         local otherData = BASE_TRM_ATTS[entry.Class]
         if otherData and otherData.Excluded then
@@ -523,7 +527,7 @@ function SWEP:GenerateCustomizationStats()
             if align.SightPos then
                 localPos:Add(align.SightPos)
             end
-            local AimPos = Vector(localPos.x, localPos.y, localPos.z)
+            local AimPos = Vector(localPos.x, localPos.y + 2, localPos.z)
             local AimAng = align.SightAng or Angle(0, 0, 0)
 
             self.sight = {
@@ -536,7 +540,7 @@ function SWEP:GenerateCustomizationStats()
                 self.sight = self.sight or {}
 
                 local stats = AttachmentData.HybridSight
-                local localPos2 = Vector(0, 0, 0)
+                local localPos2 = Vector(0, 2, 0)
                 if stats.Pos then
                     localPos2:Add(stats.Pos)
                 end
@@ -561,7 +565,6 @@ function SWEP:GenerateCustomizationStats()
             self.m_Foregrip = {
                 Viewmodel = entry.m_Model,
                 Data = AttachmentData,
-                Worldmodel = entry.m_TpModel
             }
         end
 
@@ -781,9 +784,7 @@ function SWEP:BuildCustomizedGun()
         TRM_AttachMenu_Instance:RefreshAll()
     end
 
-    if CLIENT then 
-        -- self:GenerateIcon()
-    end
+
 
     self.m_Customized = true
     --self:SetupViewmodel()

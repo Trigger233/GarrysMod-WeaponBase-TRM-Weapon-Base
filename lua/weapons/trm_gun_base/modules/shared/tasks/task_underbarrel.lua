@@ -8,9 +8,8 @@ end
 function task_in:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
     weapon:SetUnderbarrel(true)
-        weapon:PlayAnimation(weapon:ChooseAnim("UnderBarrel_In"), true)
+    weapon:PlayIKAnimation("In", true)
 end
-
 function task_in:Think(cycle, weapon)
     weapon:TrySetTask("UnderBarrel")
 end
@@ -28,9 +27,8 @@ end
 function task_out:OnSet(weapon)
     weapon:SetUnderbarrel(false)
     weapon:SetNextAnimationTime(0)
-        weapon:PlayAnimation(weapon:ChooseAnim("UnderBarrel_Out"), true)
+    weapon:PlayIKAnimation("Out", true)
 end
-
 function task_out:Think(cycle, weapon)
     weapon:TrySetTask("Idle")
 end
@@ -47,12 +45,13 @@ function task_idle:CanBeSet(wep)
 end
 
 function task_idle:OnSet(wep)
-        wep:PlayAnimation(wep:ChooseAnim("UnderBarrel"), true)
+    if wep:GetNextPrimaryFire() < UnPredictedCurTime() then
+        wep:PlayIKAnimation("Idle", false)
+    end
 end
-
 function task_idle:Think(cycle, wep)
-    if cycle > 0.995 then
-            wep:PlayAnimation(wep:ChooseAnim("UnderBarrel"), false)
+    if wep:GetNextPrimaryFire() < UnPredictedCurTime() then
+        wep:PlayIKAnimation("Idle", false)
     end
 end
 
@@ -67,12 +66,14 @@ function task_reload:CanBeSet(weapon)
 end
 
 function task_reload:OnSet(w)
-        w:SetNextAnimationTime(0)
-        w:PlayAnimation(w:ChooseAnim("UnderBarrel_Reload"), true)
+    w:SetNextAnimationTime(0)
+    w:PlayIKAnimation("Reload", true)
 end
-
 function task_reload:Think(c, w)
-    w:TrySetTask("UnderBarrel")
+    if w:GetNextPrimaryFire() < UnPredictedCurTime() then
+        w:SingleLoaded2()
+        w:TrySetTask("UnderBarrel")
+    end
 end
 
 SWEP:RegisterTask(task_reload)

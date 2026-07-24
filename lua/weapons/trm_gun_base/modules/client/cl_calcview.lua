@@ -58,8 +58,8 @@ function SWEP:CustomBob()
     end
     airTargetDelta = Lerp(RealFrameTime() * 2 , airTargetDelta, 0)
     airDelta = Lerp(RealFrameTime() * 10, airDelta, airTargetDelta)
-    ang.p = ang.p + 15 * airDelta
-    pos.z = pos.z + 2 * airDelta
+    ang.p = ang.p - 15 * airDelta
+    pos.z = pos.z - 2 * airDelta
     return pos, ang
 end
 
