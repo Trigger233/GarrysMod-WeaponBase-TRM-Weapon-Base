@@ -31,6 +31,73 @@ function ATTACHMENT:SetMagFollowerPoseParam(weapon, model, val)
 end
 
 function ATTACHMENT:ResetBullets(weapon, model)
-    model._requestedReset = true
+    model._MagazineRequestedReset = true
     self:SetMagFollowerPoseParam(weapon, model, weapon:GetMaxClip1() - (weapon:Clip1() + weapon:Ammo1()))
+end
+
+local small = Vector()
+local normal = Vector(1, 1, 1)
+
+local function cacheBones(model, bones)
+    for _, name in pairs(bones) do
+        model.cachedBones[name] = { id = model:LookupBone(name), remove = false }
+    end
+end
+
+local function scaleBones(ent, bones, bRemove)
+    for i, bone in pairs(bones) do
+        ent.cachedBones[bone].remove = bRemove
+    end
+end
+
+function ATTACHMENT:Init(weapon, model)
+    if (table.IsEmpty(self.BulletList) && table.IsEmpty(self.ReserveBulletList)) then
+        return
+    end
+
+    model._clip = -1
+    model._lastclip = -1
+    model.BulletList = table.Copy(self.BulletList)
+
+    model:SetupBones()
+    model.cachedBones = {}
+
+    for _, bones in pairs(model.BulletList) do
+        cacheBones(model, bones)
+    end
+
+    model:AddCallback("BuildBonePositions", function(ent, numbones)
+        if (ent._lastClip != ent._clip) then
+            for i, bones in pairs(ent.BulletList) do
+                scaleBones(ent, bones, ent._clip <= i)
+            end
+
+            ent._lastClip = ent._clip
+        end
+
+
+
+        if (weapon._MagazineRequestedReset) then
+            for i, bones in pairs(ent.BulletList) do
+                scaleBones(ent, bones, weapon:Clip1() + weapon:Ammo1() < i)
+            end
+
+            weapon._MagazineRequestedReset = false
+        end
+
+        for name, boneStuff in pairs(ent.cachedBones) do
+            if (! boneStuff.remove) then
+                continue
+            end
+
+            local mat = ent:GetBoneMatrix(boneStuff.id)
+
+            if (mat == nil) then
+                continue
+            end
+
+            mat:SetScale(small)
+            ent:SetBoneMatrix(boneStuff.id, mat)
+        end
+    end)
 end

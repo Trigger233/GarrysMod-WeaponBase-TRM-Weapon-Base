@@ -1,7 +1,7 @@
 SWEP.Base = "trm_melee_base"
 
 SWEP.Spawnable = true
-SWEP.AdminOnly = true
+SWEP.AdminOnly = false
 SWEP.WorldModel = "models/weapons/w_crowbar.mdl"
 SWEP.ViewModel = "models/weapons/c_crowbar.mdl"
 SWEP.PrintName = "Crowbar"

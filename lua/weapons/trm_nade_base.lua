@@ -1,5 +1,6 @@
 SWEP.Base = "trm_melee_base"
 SWEP.IsNade = true
+SWEP.IsMeleeWeapon = false
 SWEP.Primary.Automatic = false
 SWEP.Primary.Ammo = "grenade"
 SWEP.WorldModel = "models/weapons/w_grenade.mdl"
@@ -23,6 +24,15 @@ function SWEP:CanPrimaryAttack()
 
     return BaseClass.CanPrimaryAttack(self)
 end
+
+function SWEP:IsMelee()
+    return false
+end
+
+function SWEP:IsNade()
+    return true
+end
+
 
 function SWEP:CanSprint()
     return not string.find(self.Tasks[self:GetCurrentTask()].Name,"Throw")

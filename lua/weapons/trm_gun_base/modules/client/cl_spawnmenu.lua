@@ -34,13 +34,10 @@ hook.Add("PopulateToolMenu", "TRM_weapon_base_q_menu", function()
     end)
     spawnmenu.AddToolMenuOption("TriggerMiku_Work", "WeaponBase", "trmbase_client", "Client", "", "", function(panel)
         panel:ClearControls()
-        panel:CheckBox(GetPhrase("TRMBase_HUD"), "trmbase_hud_enable")
-        panel:CheckBox(GetPhrase("TRMBase_HideHUD"), "trmbase_hud_hide_default")
-        panel:NumSlider(GetPhrase("TRMBase_HUD_Scale"), "trmbase_hud_scale", 0.75, 1.35, 2)
-        panel:KeyBinder(GetPhrase("TRMBase_MeleeKey"), "trmbase_cl_keybind_melee")
-        panel:KeyBinder(GetPhrase("TRMBase_InspectKey"), "trmbase_cl_keybind_inspect")
-        panel:KeyBinder(GetPhrase("TRMBase_CustomizeKey"), "trmbase_cl_keybind_customize")
-        panel:KeyBinder(GetPhrase("TRMBase_UnderBarrelKey"), "trmbase_cl_keybind_ub")
+        panel:KeyBinder(GetPhrase("TRMBase_MeleeKey"), "trmbase_cl_keybind_melee", GetPhrase("TRMBase_CustomizeKey"),
+            "trmbase_cl_keybind_customize")
+        panel:KeyBinder(GetPhrase("TRMBase_InspectKey"), "trmbase_cl_keybind_inspect",
+            GetPhrase("TRMBase_UnderBarrelKey"), "trmbase_cl_keybind_ub")
         panel:CheckBox(GetPhrase("TRMBase_Crosshair"), "trmbase_crosshair_enable")
         panel:ColorPicker(GetPhrase("TRMBase_CrosshairColor"), "trmbase_crosshair_color_r",
             "trmbase_crosshair_color_g", "trmbase_crosshair_color_b", "trmbase_crosshair_alpha")

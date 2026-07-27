@@ -1,5 +1,6 @@
 if SERVER then return end
 SWEP.ClientState = {}
+require("trm_utils")
 
 local offsetX = CreateClientConVar("trmbase_vm_offsetX", 0, true, true, "ViewModel X Offset", -10, 10)
 local offsetY = CreateClientConVar("trmbase_vm_offsetY", 0, true, true, "ViewModel Y Offset", -10, 10)
@@ -56,7 +57,7 @@ function SWEP:CustomBob()
         airTargetDelta = 1
         hasJumped = true
     end
-    airTargetDelta = Lerp(RealFrameTime() * 2 , airTargetDelta, 0)
+    airTargetDelta = Lerp(RealFrameTime() * 2, airTargetDelta, 0)
     airDelta = Lerp(RealFrameTime() * 10, airDelta, airTargetDelta)
     ang.p = ang.p - 15 * airDelta
     pos.z = pos.z - 2 * airDelta
@@ -145,6 +146,10 @@ local cvar_camera = CreateClientConVar("trmbase_camera_animation_scale", 1.0)
 
 local CamAngDelta = Angle()
 local ZERO_ANGLE  = Angle(0, 0, 0)
+
+
+
+
 function SWEP:CalcView(ply, pos, angles, fov)
     local vm = self:GetViewModel(0)
     if not IsValid(vm) then return pos, angles, fov end
@@ -187,6 +192,7 @@ function SWEP:CalcView(ply, pos, angles, fov)
         CamAngDelta = targetAng
     end
     angles:Add(CamAngDelta)
+
 
     return pos, angles, fov
 end
@@ -251,7 +257,7 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
         self.m_VMFreezeAng = nil
         self.m_VMFreezePos = nil
     end
-
+    local dt = RealFrameTime()
 
     local aimdelta = self:GetClientAimDelta()
     --Idle Offset
@@ -333,40 +339,34 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
 
 
 
-    --Visual Recoil（只有玩家持有时才应用）
-    if IsValid(self:GetOwner()) and self:GetOwner():IsPlayer() then
-        -- 后坐力后退（position）
-        back = Lerp(RealFrameTime() * 20, back or 0,
-            self:GetVisualRecoilBackward() or back)
-        pos:Add(Vector(-back * angles:Forward()))
-        -- 后坐力角度偏移（pitch/yaw 让 viewmodel 上跳）
-        visAng = self:GetClientVisualRecoil()
+    back = Lerp( dt * 20 , back , self:GetVisualRecoilBackward())
+    pos:Add(Vector(-back * angles:Forward()))
+    -- 后坐力角度偏移（pitch/yaw 让 viewmodel 上跳）
+    visAng = self:GetClientVisualRecoil()
 
-        local rad = math.rad(self:HasFlag("Tacsight") and self.TacSight.Ang.r or 0)
+    local rad = math.rad(self:HasFlag("Tacsight") and self.TacSight.Ang.r or 0)
 
-        visAng = dealTacsight(visAng, rad)
+    visAng = dealTacsight(visAng, rad)
 
-        Vrecoil_Mul = const_vrec
+    Vrecoil_Mul = const_vrec
 
 
-        angles:RotateAroundAxis(angles:Right(), -visAng.p * Vrecoil_Mul)
-        angles:RotateAroundAxis(angles:Up(), visAng.y * Vrecoil_Mul)
+    angles:RotateAroundAxis(angles:Right(), -visAng.p * Vrecoil_Mul)
+    angles:RotateAroundAxis(angles:Up(), visAng.y * Vrecoil_Mul)
 
-        if not (self:GetSight() and self:GetSight().zoom and aimdelta > 0.2) then
-            ------ViewModel Recoil
-            local fireInterval = (60 / self.Primary.RPM) * 0.5
-            local timeToNextFire = self:GetNextRecoil() - UnPredictedCurTime()
-            local t = math.Clamp(timeToNextFire / fireInterval, 0, 1)
-            local Recoildelta = math.min((t > 0.5 and 1 - t or t) * 2, 1) -- 开火时 = 1，然后衰减到 0
+    ------ViewModel Recoil
+    local fireInterval = (60 / self.Primary.RPM) * 0.5
+    local timeToNextFire = self:GetNextRecoil() - UnPredictedCurTime()
+    local t = math.Clamp(timeToNextFire / fireInterval, 0, 1)
+    local Recoildelta = math.min((t > 0.5 and 1 - t or t) * 2, 1) *
+        Lerp(aimdelta, 1, self.ViewmodelRecoil.AdsMultiplier) -- 开火时 = 1，然后衰减到 0
 
-            local recoiloffsetpos = self.ViewmodelRecoil.Pos
-            local recoiloffsetang = self.ViewmodelRecoil.Ang
-            pos:Add(Vector(recoiloffsetpos[1] * angles:Right() + recoiloffsetpos[2] * angles:Forward() +
-                recoiloffsetpos[3] * angles:Up()) * Recoildelta)
+    local recoiloffsetpos = self.ViewmodelRecoil.Pos
+    local recoiloffsetang = self.ViewmodelRecoil.Ang
+    pos:Add(Vector(recoiloffsetpos[1] * angles:Right() + recoiloffsetpos[2] * angles:Forward() +
+        recoiloffsetpos[3] * angles:Up()) * Recoildelta)
 
-            angles:Add(recoiloffsetang * Recoildelta)
-        end
-    end
+    angles:Add(recoiloffsetang * Recoildelta)
 
     if VManip then
         if self.VMOffset.VManip then
@@ -446,7 +446,7 @@ function SWEP:GetViewmodelFov()
     local delta = self:GetClientAimDelta()
     local global = GetConVar("fov_desired"):GetInt() / 75
     viewmodelFov = math.Clamp(
-    self.ViewModelFOV * global * Lerp(delta, 1, viewmodelFovMul:GetFloat() / self.Aim.Scale), 1, 170)
+        self.ViewModelFOV * global * Lerp(delta, 1, viewmodelFovMul:GetFloat() / self.Aim.Scale), 1, 170)
     return viewmodelFov
 end
 
@@ -462,7 +462,7 @@ function SWEP:CoolFov()
     end
     local reload = self:IsReloading()
     reloadFovDelta = Lerp(RealFrameTime() * 5, reloadFovDelta or 0, reload and 1 or 0)
-    aimFOV = aimFOV + reloadFovDelta * 10
+    aimFOV = aimFOV * (1 + reloadFovDelta * 0.2)
 
     local easedDelta = aimDelta
     local FOV = Lerp(easedDelta, normalFOV, aimFOV)

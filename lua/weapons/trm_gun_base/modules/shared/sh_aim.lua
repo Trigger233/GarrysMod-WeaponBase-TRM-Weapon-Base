@@ -19,6 +19,10 @@ function SWEP:Hybrid(ForceOff)
 end
 
 function SWEP:CanAim()
+    if self:GetUnderbarrel() then
+        return false
+    end
+
     local seq = self:GetPlayingSequence()
     if self:GetSprintDelta() > 0.5 or (self.IronsightReload == false and self:IsReloading()) or string.find(seq, "Melee") or string.find(seq, "Holster") or string.find(seq, "Draw") then return false end
     return true

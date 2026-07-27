@@ -19,7 +19,11 @@ local ReplaceableWeapons = {
     "weapon_shotgun_hl1", "weapon_crossbow_hl1"
 }
 local ReplaceableWeaponsMelee = {
-    "weapon_crowbar","weapon_stunstick"
+    "weapon_crowbar", "weapon_stunstick"
+}
+
+local BlackList = {
+    "trm_gun_base", "trm_melee_base", "trm_nade_base"
 }
 
 -- 弹药映射
@@ -51,8 +55,8 @@ local AmmoBoxMap = {
 -- ========== 判断是否需要替换武器 ==========
 local function ShouldReplaceWeapon(ent)
     if not IsValid(ent) or not ent:IsWeapon() then return false end
-    if ent.Base == "trm_gun_base" then return false end
-    if IsValid(ent:GetOwner()) then return false end -- 有主人的不替换
+    if weapons.IsBasedOn(ent:GetClass(), "trm_gun_base") then return false end
+    --if IsValid(ent:GetOwner()) then return false end -- 有主人的不替换
 
     local class = ent:GetClass()
     for _, name in ipairs(ReplaceableWeapons) do
@@ -71,7 +75,9 @@ local function ShouldReplaceAmmoBox(ent)
     return AmmoBoxMap[ent:GetClass()] ~= nil
 end
 
--- ========== 查找 TRM 替换武器 ==========
+-- ========== 查找 TRM 替换武器 ==========-
+
+--PrintTable(weapons.Get("trm_base_melee_crowbar"))
 local function FindTRMReplacement(weapon)
     local class = weapon:GetClass()
     local ammoType = game.GetAmmoName(weapon:GetPrimaryAmmoType())
@@ -81,10 +87,19 @@ local function FindTRMReplacement(weapon)
     if table.HasValue(ReplaceableWeaponsMelee, class) then
         for _, wep in ipairs(AllWeapons) do
             if type(wep) ~= "table" then continue end
-            if wep.Base ~= "trm_melee_base" then continue end
-            table.insert(results, wep.ClassName)
-        end
 
+            local className = wep.ClassName
+
+
+
+            if table.HasValue(BlackList, className) then
+                continue
+            end
+
+            if weapons.IsBasedOn(className, "trm_melee_base") and ! weapons.IsBasedOn(className, "trm_nade_base") then
+                table.insert(results, className)
+            end
+        end
         return #results > 0 and results[math.random(#results)] or nil
     end
 
@@ -111,6 +126,20 @@ local function FindTRMReplacement(weapon)
     end
 
     return #results > 0 and results[math.random(#results)] or nil
+end
+
+local function IsMelee(ClassName)
+    return weapons.IsBasedOn(ClassName, "trm_melee_base") and not weapons.IsBasedOn(ClassName, "trm_nade_base")
+end
+
+local function HasMelee(ply)
+    for _, weapon in ipairs(ply:GetWeapons()) do
+        if IsMelee(weapon:GetClass()) then
+            return true
+        end
+    end
+
+    return false
 end
 
 -- ========== 替换武器 ==========
@@ -177,6 +206,7 @@ local function TryReplace(ent)
 end
 
 local function ReplaceWeaponOnPickup(ply, ent)
+    if ! IsFirstTimePredicted() then return end
     if not IsValid(ent) or not ShouldReplaceWeapon(ent) then return end
     if not GetConVar("trmbase_replace_weapon"):GetBool() then return end
 
@@ -186,7 +216,6 @@ local function ReplaceWeaponOnPickup(ply, ent)
     local pos = ent:GetPos()
     local ang = ent:GetAngles()
 
-    print("[TRMBase] Pre-pickup replace:", ent:GetClass(), "→", newClass)
 
     ent:Remove()
 
@@ -196,11 +225,17 @@ local function ReplaceWeaponOnPickup(ply, ent)
         newEnt:SetAngles(ang)
         newEnt:Spawn()
     end
-    return false
+    return true
 end
 
 hook.Add("PlayerCanPickupWeapon", "TRMBase_ReplaceWeapon", function(ply, ent)
-    return ReplaceWeaponOnPickup(ply, ent)
+     if ReplaceWeaponOnPickup(ply, ent) then
+        return false
+     end
+
+    if HasMelee(ply) and IsMelee(ent:GetClass()) then
+        return false
+    end
 end)
 -- ========== 钩子：只替换弹药箱 ==========
 hook.Add("OnEntityCreated", "TRMBase_ReplaceAmmo", function(entity)
@@ -233,4 +268,3 @@ hook.Add("Restored", "TRMBASE_ReplaceRestored", function()
         end
     end)
 end)
-

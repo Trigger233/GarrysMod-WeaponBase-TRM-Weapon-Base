@@ -2,7 +2,7 @@ local task_in = {}
 
 task_in.Name = "UnderBarrel_In"
 function task_in:CanBeSet(weapon)
-    return (weapon:IsAnimFinished() and weapon.underbarrel)
+    return (weapon:GetNextPrimaryFire() < UnPredictedCurTime()  and weapon.underbarrel)
 end
 
 function task_in:OnSet(weapon)
@@ -10,6 +10,7 @@ function task_in:OnSet(weapon)
     weapon:SetUnderbarrel(true)
     weapon:PlayIKAnimation("In", true)
 end
+
 function task_in:Think(cycle, weapon)
     weapon:TrySetTask("UnderBarrel")
 end
@@ -29,6 +30,7 @@ function task_out:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
     weapon:PlayIKAnimation("Out", true)
 end
+
 function task_out:Think(cycle, weapon)
     weapon:TrySetTask("Idle")
 end
@@ -49,10 +51,8 @@ function task_idle:OnSet(wep)
         wep:PlayIKAnimation("Idle", false)
     end
 end
+
 function task_idle:Think(cycle, wep)
-    if wep:GetNextPrimaryFire() < UnPredictedCurTime() then
-        wep:PlayIKAnimation("Idle", false)
-    end
 end
 
 SWEP:RegisterTask(task_idle)
@@ -69,9 +69,9 @@ function task_reload:OnSet(w)
     w:SetNextAnimationTime(0)
     w:PlayIKAnimation("Reload", true)
 end
+
 function task_reload:Think(c, w)
-    if w:GetNextPrimaryFire() < UnPredictedCurTime() then
-        w:SingleLoaded2()
+    if w:GetNextPrimaryFire() < CurTime()  then
         w:TrySetTask("UnderBarrel")
     end
 end

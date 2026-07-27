@@ -1,8 +1,3 @@
-
-
-
-
-
 function SWEP:HasFlag(name)
     local flag = self.WeaponFlags[name]
 
@@ -42,17 +37,16 @@ function SWEP:ToggleFlag(name)
         self:AddFlag(name)
     end
 end
+
 SWEP.WeaponFlags = {
     ["OnLadder"] = 1,
-    ["Tacsight"] = 2 ,
-    ["HybridOn"] = 4 ,
-    ["FlashLightOn"] =  8,
-    ['Aiming'] = 16 ,
-    ['MeleeTriggered'] = 32 ,
+    ["Tacsight"] = 2,
+    ["HybridOn"] = 4,
+    ["FlashLightOn"] = 8,
+    ['Aiming'] = 16,
+    ['MeleeTriggered'] = 32,
 }
 function SWEP:SetupDataTables()
-
-
     self:NetworkVar("Int", "WeaponFlag")
 
     self:NetworkVar("Float", "AimDelta")
@@ -68,7 +62,7 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Int", "ChamberAmmo")
     self:NetworkVar("Int", "SecondaryChamberAmmo")
 
-    self:NetworkVar("Int","BrustCount")
+    self:NetworkVar("Int", "BrustCount")
     self:NetworkVar("Int", "CurrentTask")
     self:NetworkVar("Bool", "Grip1")
     self:NetworkVar("Bool", "Grip2")
@@ -84,7 +78,7 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Int", "PenetrationCount")
     self:NetworkVar("Int", "FiremodeIndex")
 
-    self:NetworkVar("Float","ReloadProgress")
+    self:NetworkVar("Float", "ReloadProgress")
 
     for _, task in pairs(self.Tasks) do
         if task.SetupDataTables then
@@ -93,7 +87,7 @@ function SWEP:SetupDataTables()
     end
 end
 
-concommand.Add("trm_list_table",function(ply)
+concommand.Add("trm_list_table", function(ply)
     local wep = ply:GetActiveWeapon()
     PrintTable(wep:GetTable())
 end)

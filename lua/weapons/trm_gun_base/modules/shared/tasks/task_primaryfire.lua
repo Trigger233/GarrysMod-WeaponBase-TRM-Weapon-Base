@@ -69,7 +69,7 @@ function task_fire:OnSet(weapon)
 
     weapon:HandleReverb()
     weapon:DoFireSound()
-
+    weapon:DoVisualRecoil()
 
     if weapon.Primary.BrustEnabled then
         if weapon:GetBrustCount() > 0 then

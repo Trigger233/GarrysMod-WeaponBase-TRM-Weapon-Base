@@ -1,9 +1,9 @@
 if not CLIENT then return end
-local RecoilFactor = 0.25
+local RecoilFactor = 0.1
 local Basefov = GetConVar("fov_desired"):GetInt()
 local zoomscale = 1.5
 local globalzoom = 1
-local CheapzoomMulti = 5
+local CheapzoomMulti = 3
 
 local oldRenderResolutionCache = 0
 local rtsize = 1024
@@ -25,6 +25,7 @@ local RTMaterial_Cheap = CreateMaterial(matName .. "_cheap", "UnlitGeneric", {
     ["$basetexture"] = rtmat_cheap:GetName(),
     ["$vertexcolor"] = "1",
     ["$vertexalpha"] = "1",
+    ["$smooth"] = "1" ,
 })
 local LenseMaterial = CreateMaterial(matName, "VertexLitGeneric", {
     ["$basetexture"] = rtmat_spare:GetName(),
@@ -77,8 +78,6 @@ function SWEP:SwitchHybrid(ForceTurnOff)
     net.WriteEntity(self)
     net.WriteBool(ForceTurnOff)
     net.SendToServer()
-
-    --surface.PlaySound("Weapon_AR2.Empty")
 end
 
 function SWEP:Scroll(dir)
@@ -86,6 +85,7 @@ function SWEP:Scroll(dir)
     if self:HasFlag("Tacsight") then return end
 
     local stat = self.sight
+    if not stat then return end
     local zoom = stat.zoom or false
     if not zoom then return end
     local owner = self:GetOwner()
@@ -95,6 +95,8 @@ function SWEP:Scroll(dir)
 
     if (self.sight.HybridSight != nil or self:HasFlag("HybridOn")) and (SysTime() - self:GetBindState("scroll") > 0.25) then
         self:SwitchHybrid()
+        surface.PlaySound("Weapon_AR2.Empty")
+
         self:SetBindState("scroll", SysTime())
         return
     end
@@ -325,9 +327,7 @@ function SWEP:DrawParallax(model, rtSize, att)
     local sway, _ = self:Sway()
 
     local additive = sway
-    local function AngleToPixel(num)
-        return math.tan(math.rad(num))
-    end
+
 
     centerX = centerX - AngleToPixel(additive.yaw) * ScrW()
 
@@ -357,12 +357,14 @@ function SWEP:GetZoomRecoilFactor()
     return math.Clamp(RecoilFactor * self:GetScopeZoom() * CheapzoomMulti, 0, 1)
 end
 
-local function DrawCheapScopeMaterial(wep, w, h, size)
+local function DrawCheapScopeMaterial(wep, w, h, size, Zoom)
+    local offset = wep:GetClientVisualRecoil()
+    local factor = (1 - wep:GetZoomRecoilFactor()) * Zoom
     local sw = w * CheapzoomMulti
     local sh = h * CheapzoomMulti
-    local sx = (w - sw) / 2
-    local sy = (h - sh) / 2
-    local a = size * CheapzoomMulti
+    local sx = (w - sw) / 2 + AngleToPixel(offset.yaw) * ScrW() * CheapzoomMulti * factor
+    local sy = (h - sh) / 2 - AngleToPixel(offset.pitch) * ScrH() * CheapzoomMulti * factor
+    local a = (size) * CheapzoomMulti
     surface.SetDrawColor(255, 255, 255, 255)
     surface.SetMaterial(RTMaterial_Cheap)
     surface.DrawTexturedRect(sx - a * 0.5, sy, sw + a, sh)
@@ -397,11 +399,10 @@ function SWEP:DoCheapScope(model, att)
 
     cam.Start2D()
     local w, h = ScrW(), ScrH()
-    DrawCheapScopeMaterial(self, w, h, size)
+    DrawCheapScopeMaterial(self, w, h, size, self:GetScopeZoom())
 
     self:RenderScopeReticle(model, att, reticleStats, size, self:GetScopeZoom())
     self:DrawParallax(model, size, att)
-
     cam.End2D()
     render.PopRenderTarget()
 end

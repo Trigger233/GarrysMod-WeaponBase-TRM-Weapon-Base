@@ -6,8 +6,8 @@ concommand.Add("+trmbase_switch_underbarrel", function(ply)
 end)
 
 function SWEP:CycleUnderBarrel()
-    if not self.underbarrel then return end
     local status = self:GetUnderbarrel()
+    if not self.underbarrel or (self:Ammo2() == 0 and self:Clip2() == 0 ) and !status then return end
     if not status then
         self:TrySetTask("UnderBarrel_In")
     else
@@ -102,7 +102,7 @@ function SWEP:FireSecondaryBullet()
     end
     self:EmitSound(self.Secondary.Sound)
 
-    self:DoVisualRecoil()
+
     self:DoRecoil()
     self:DoSpread()
     self:SetLastFireTime(CurTime())
@@ -163,7 +163,7 @@ function SWEP:FireSecondaryProjectile()
 
     self:EmitSound(self.Secondary.Sound)
 
-    self:DoVisualRecoil()
+
     self:DoRecoil()
     self:DoSpread()
     self:SetLastFireTime(CurTime())

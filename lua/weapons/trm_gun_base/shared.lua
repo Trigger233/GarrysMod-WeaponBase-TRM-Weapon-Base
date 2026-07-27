@@ -82,6 +82,13 @@ local function IncludeClientAttachmentsFiles()
     end
 end
 
+
+if CLIENT then
+    CreateClientConVar("trmbase_cl_keybind_melee", 0, true, false, "Melee keybind")
+    CreateClientConVar("trmbase_cl_keybind_inspect", 0, true, false, "Inspect keybind")
+    CreateClientConVar("trmbase_cl_keybind_customize", 0, true, false, "Customize keybind")
+    CreateClientConVar("trmbase_cl_keybind_firemode", 0, true, false, "Firemode keybind")
+end
 IncludeClientAttachmentsFiles()
 IncludeSharedFiles()
 IncludeTaskFiles()
@@ -326,7 +333,7 @@ SWEP.Recoil = {
 SWEP.VisualRecoil = {
     Vertical = { 3, 3 },
     Horizonal = { -0, 0 },
-    Backward = { 5, 5, 10 }, --random 1 and 2 , max 3
+    Backward = { 5, 5 }, --random 1 and 2 , max 3
     RecoverSpeed = 0.6,
     AdsMultiplier = 0.7,
     -- Functional = {
@@ -348,6 +355,7 @@ SWEP.VisualRecoil = {
 SWEP.ViewmodelRecoil = {
     Pos = Vector(0, -0, -0),
     Ang = Angle(-0.0, 0, 0),
+    AdsMultiplier = 0.25,
 }
 
 SWEP.CameraShake = {
@@ -630,7 +638,11 @@ function SWEP:CanPrimaryAttack()
 end
 
 local cvar = CreateConVar("trmbase_autoreload", 1, FCVAR_ARCHIVE)
+
+
 function SWEP:PrimaryAttack()
+    if not IsFirstTimePredicted() then return end
+
     if self:GetUnderbarrel() then
         if not self:CanSecondaryFire() then
             if self:Clip2() == 0 and cvar:GetInt() == 1 then
@@ -642,6 +654,7 @@ function SWEP:PrimaryAttack()
     else
         if self:IsEmpty() and cvar:GetInt() == 1 then
             self:Reload()
+
             return false
         end
         if self.Primary.Trigger then
@@ -702,12 +715,7 @@ SWEP.Attachments = {
 }
 
 
-function SWEP:FireAnimationEvent(pos, ang, event, option, source)
-    if event > 5000 and event < 6000 then
-        return false --use lua custom event
-    end
-    return true
-end
+
 
 -- 放在 shared.lua 的 SERVER 块中
 if SERVER then
@@ -784,6 +792,8 @@ if (SERVER) then
     util.AddNetworkString("TRMBase_UpdateAttachments")
 else
     net.Receive("TRMBase_UpdateAttachments", function(len, ply)
+        BASE_TRM_ATTS = {}
+
         include(Path)
     end)
 end
@@ -796,6 +806,7 @@ end)
 TRMWeaponBase = TRMWeaponBase or {}
 
 function TRMWeaponBase:UpdateAllAttachment()
+    BASE_TRM_ATTS = {}
     AddCSLuaFile(Path)
     include(Path)
     net.Start("TRMBase_UpdateAttachments")

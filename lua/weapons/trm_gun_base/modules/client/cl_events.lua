@@ -119,3 +119,4 @@ end
 function SWEP:FindAttachment(owner, attName)
     return findAttachmentInChildren(owner, attName, self)
 end
+

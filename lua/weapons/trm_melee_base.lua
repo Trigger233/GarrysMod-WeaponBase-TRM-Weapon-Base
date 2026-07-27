@@ -1,6 +1,6 @@
 SWEP.Base = "trm_gun_base"
 --WIP
-SWEP.IsMeleeWeapon = true
+SWEP.IsMeleeWeapon = 1
 SWEP.Slot = 0
 SWEP.Primary.Automatic = false
 SWEP.Primary.Chamber = 1
@@ -22,12 +22,15 @@ function SWEP:SetupDataTables()
     BaseClass.SetupDataTables(self)
 end
 
+function SWEP:GetFiremodeName()
+    return "Melee"
+end
+
 function SWEP:Recover()
     local Index = self:GetBrustCount()
     if Index ~= 1 and CurTime() > self:GetNextPrimaryFire() + self.Primary.Delay then
         self:ResetCombo()
     end
-
 end
 
 function SWEP:Initialize()
@@ -64,7 +67,7 @@ function SWEP:DoMeleeAttackDamage(tbl)
         start = startPos,
         endpos = endPos,
         filter = owner,
-        mins = Vector(-hullSize* 2, -hullSize, -0),
+        mins = Vector(-hullSize * 2, -hullSize, -0),
         maxs = Vector(hullSize * 2, hullSize, hullSize),
         mask = MASK_SHOT_HULL,
     })
@@ -80,10 +83,15 @@ function SWEP:DoMeleeAttackDamage(tbl)
     if not tr.Hit then return end
     self:MeleeImpactEffects(tr)
     self:MeleeDoor(tr)
+
+
+
     local ent = tr.Entity
     if not (game.SinglePlayer() and CLIENT) then
         self:EmitSound(self.Melee.Sound)
     end
+
+
     if CLIENT then return end
 
     if IsValid(ent) then
@@ -113,9 +121,13 @@ end
 function SWEP:CycleComboIndex()
     local Max = #self.Primary.Attack
     local current = self:GetBrustCount()
-    self:SetBrustCount(current>=Max and 1 or current + 1)
+    self:SetBrustCount(current >= Max and 1 or current + 1)
 end
 
 function SWEP:ResetCombo()
     self:SetBrustCount(1)
+end
+
+function SWEP:CanInspect()
+    return not self:IsInspecting() and (self:GetNextPrimaryFire() < CurTime())
 end

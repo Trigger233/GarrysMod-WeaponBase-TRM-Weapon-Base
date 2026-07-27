@@ -23,6 +23,8 @@ function SWEP:Think()
             self:RemoveFlag("OnLadder")
         end
     end
+
+    self:TrySetTask("Rechamber")
 end
 
 local SprintDelta = 0

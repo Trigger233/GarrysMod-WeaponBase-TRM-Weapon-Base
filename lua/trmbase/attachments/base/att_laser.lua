@@ -43,6 +43,9 @@ require("trm_utils")
 function ATTACHMENT:DoLaserRender(weapon, model, data)
     if not self.Laser then return end
     -- if weapon:GetAimDelta() > 0.2 and weapon.sight.zoom then return end
+    if data.IR and !weapon:GetOwner():GetNW2Bool( "TRMCity_FlashlightOn")then return end
+
+
     local attID = model:LookupAttachment(data.Attach)
     if attID <= 0 then return end
 

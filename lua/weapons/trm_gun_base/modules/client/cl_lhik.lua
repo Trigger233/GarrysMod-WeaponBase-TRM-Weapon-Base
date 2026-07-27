@@ -31,6 +31,8 @@ end
 
 local delta = 0
 local VMMatrix = Matrix()
+require("trm_utils")
+
 function SWEP:DoLHIK()
     local vm = self:GetViewModel()
     if vm == nil then return end
@@ -46,6 +48,7 @@ function SWEP:DoLHIK()
     if (lhik_model != nil) then
         vm:SetupBones()
         lhik_model:SetupBones()
+
 
         for _, bone in pairs(LHIKBones) do
             local vmbone = vm:LookupBone(bone)
@@ -87,11 +90,12 @@ end
 
 
 function SWEP:PlayIKAnimation(seqClass, useInternal)
+    if CurTime() < self:GetNextAnimationTime() then return end
     local ik = self:GetForegrip()
     if ik == nil then return end
     local model, attData = ik.Viewmodel, ik.Data
     if not IsValid(model) then return end
-    local animation = attData.Animations or nil
+    local animation = model.Animations or nil
     if animation == nil then return end
     local animData = animation[seqClass]
     if (animData == nil) then
@@ -99,17 +103,22 @@ function SWEP:PlayIKAnimation(seqClass, useInternal)
     end
     local sequence = GetAnimation(animData.sequence)
 
+    model:ResetSequence(sequence)
     model:SetCycle(0)
     model:SetPlaybackRate(animData.Speed or 1)
-    model:ResetSequence(sequence)
-
     local SequenceDuration = model:SequenceDuration(model:GetSequence())
+    self.m_IKSeqClass = seqClass
 
+    if model.Animations[seqClass].events then
+        for _, event in ipairs(model.Animations[seqClass].events) do
+            event.Triggered = false
+        end
+    end
     if useInternal then
-    net.Start("TRMBase_LHIKAnimation")
-    net.WriteEntity(self)
-    net.WriteFloat(CurTime() +( SequenceDuration / (animData.Speed or 1) ))
-    net.SendToServer()
+        net.Start("TRMBase_LHIKAnimation")
+        net.WriteEntity(self)
+        net.WriteFloat(CurTime() + (SequenceDuration / (animData.Speed or 1)))
+        net.SendToServer()
     end
 end
 
@@ -123,8 +132,26 @@ function SWEP:CycleLHIKAnimation()
     local cycle = model:GetCycle()
     local SequenceDuration = model:SequenceDuration(model:GetSequence())
     local Speed = model:GetPlaybackRate()
-    model:SetCycle(cycle + FrameTime() / (SequenceDuration / Speed))
+    local seqClass = self.m_IKSeqClass
+    if model.Animations and model.Animations[seqClass] and model.Animations[seqClass].events then
+        for Index, event in ipairs(model.Animations[seqClass].events) do
+            if event.Triggered then
+                continue
+            end
+            if cycle >= event.time and not event.Triggered and event.callback then
+                net.Start("TRMBase_LHIKEvents")
+                net.WriteEntity(self)
+                net.WriteString(tbl.Data.ClassName)
+                net.WriteString(seqClass)
+                net.WriteInt(Index, 8)
+                net.SendToServer()
+                event.Triggered = true
+            end
+        end
+    end
 
+
+    model:SetCycle(cycle + FrameTime() / (SequenceDuration / Speed))
 end
 
 net.Receive("TRMBase_LHIKAnimation", function(len)

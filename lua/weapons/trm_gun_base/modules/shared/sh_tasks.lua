@@ -15,7 +15,6 @@ function SWEP:TaskTick()
     if (task.Think != nil) then
         task:Think(vm:GetCycle(), self)
     end
-    self:TrySetTask("Rechamber")
 
     if not task then
         self:TrySetTask("Idle")

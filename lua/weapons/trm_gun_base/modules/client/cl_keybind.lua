@@ -1,15 +1,10 @@
 if not CLIENT then return end
 require("trm_input")
-CreateClientConVar("trmbase_cl_keybind_melee", 0, true, false, "Melee keybind")
-CreateClientConVar("trmbase_cl_keybind_inspect", 0, true, false, "Inspect keybind")
-CreateClientConVar("trmbase_cl_keybind_customize", 0, true, false, "Customize keybind")
-CreateClientConVar("trmbase_cl_keybind_firemode", 0, true, false, "Firemode keybind")
 
 -- 使用 ConVar 引用而非一次性读出，确保实时生效
 local cv_melee = GetConVar("trmbase_cl_keybind_melee")
 local cv_inspect = GetConVar("trmbase_cl_keybind_inspect")
 local cv_customize = GetConVar("trmbase_cl_keybind_customize")
-local cv_firemode = GetConVar("trmbase_cl_keybind_firemode")
 local cv_underbarrel = CreateClientConVar("trmbase_cl_keybind_ub", 0, true, false, "Underbarrel keybind")
 
 SWEP.BindState = {}

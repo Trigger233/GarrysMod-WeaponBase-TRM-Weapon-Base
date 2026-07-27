@@ -106,8 +106,15 @@ TRMBase.Language.cn = {
 
     -- Firemode
     ["TRMBase_Firemode"]           = "开火模式",
+    --Hud Hint
+    ["TRMBase_Hint_Firemode"]           = "切换开火模式",
+    ["TRMBase_Hint_Inspect"]      = "监视武器",
+    ["TRMBase_Hint_Melee"]       = "肘击",
+    ["TRMBase_Hint_UBarrel"]         = "切换下挂武器",
+    ["TRMBase_Hint_Tacsight"]       = "切换战术侧瞄",
+    ["TRMBase_Hint_Hybrid"]        = "切换混合瞄具",
+    ["TRMBase_Hint_ScrollScope"]   = "切换瞄具倍率",
 }
-
 -- 英文
 TRMBase.Language.en = {
     ["SniperPenetratedRound_ammo"] = "Sniper Ammo",
@@ -211,9 +218,16 @@ TRMBase.Language.en = {
     ["TRMBase_DebugReload"]        = "Debug Reload",
 
     -- Firemode
-    ["TRMBase_Firemode"]           = "Firemode",
+    ["TRMBase_Firemode"]           = "Switch Firemode",
+    --Hud Hint
+    ["TRMBase_Hint_Firemode"]      = "Switch Firemode",
+    ["TRMBase_Hint_Inspect"]       = "Inspect",
+    ["TRMBase_Hint_Melee"]         = "Bash",
+    ["TRMBase_Hint_UBarrel"]       = "Switch Underbarrel",
+    ["TRMBase_Hint_Tacsight"]      = "Switch TacSight",
+    ["TRMBase_Hint_Hybrid"]        = "Switch HybridScope",
+    ["TRMBase_Hint_ScrollScope"]   = "Scroll Scope", 
 }
-
 -- 获取当前语言
 function TRMBase.GetLanguage()
     local lang = GetConVar("gmod_language"):GetString()
@@ -231,12 +245,11 @@ local function refreshLang()
 end
 refreshLang()
 
+
+
 function LanguageChanged(lang)
-end
-
-hook.Add("LanguageChanged", "TRMBASE_ImmediatelyUpdateLang", function()
+    print("New language: " .. lang)
     refreshLang()
-end)
-
+end
 
  

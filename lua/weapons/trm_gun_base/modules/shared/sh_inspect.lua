@@ -1,6 +1,6 @@
 concommand.Add("trmbase_weaponinspect", function(ply)
     local wep = ply:GetActiveWeapon()
-    if IsValid(wep) and (wep.Base == "trm_gun_base" or wep:GetClass() == "trm_gun_base") then
+    if IsValid(wep) and wep.IsTRMWeapon then
         if wep:CanInspect() then
             wep:TrySetTask("Inspect")
         end

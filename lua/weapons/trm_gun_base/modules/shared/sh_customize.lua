@@ -24,12 +24,12 @@ function SWEP:CanEquip(slotIndex, attClass)
     if slot.Default and attClass == slot.Default then return true end
     if not attClass then return true end
 
-    
+
 
     local attData = BASE_TRM_ATTS[attClass]
     if not attData then return true end
 
-    if !attData.Selectable then return false end
+    if ! attData.Selectable then return false end
 
     -- 没有 Category 的配件不参与排斥
     local attCats = attData.Category
@@ -573,7 +573,7 @@ function SWEP:GenerateCustomizationStats()
         end
     end
 
-    if (! self.sight or ! self.sight.HybridSight)  then
+    if (! self.sight or ! self.sight.HybridSight) then
         self:SwitchHybrid(true)
     end
 
@@ -648,10 +648,9 @@ function SWEP:CreateAttachmentModel(entry, slot)
     if not Att or not Att.Model then return end
 
     local function CreateModel(att)
-
-        local model = ClientsideModel(att.Model, RENDERGROUP_OPAQUE)
+        local model = ClientsideModel(att.Model, RENDERGROUP_VIEWMODEL)
         if not IsValid(model) then return end
-        model:SetRenderMode(self.RenderMode)
+        model:SetRenderMode(RENDERMODE_ENVIROMENTAL)
         model:SetOwner(self)
         model:SetNotSolid(true)
         model:SetNoDraw(true)
@@ -659,11 +658,11 @@ function SWEP:CreateAttachmentModel(entry, slot)
         model.TRMAttachmentModel = true
         model:InvalidateBoneCache()
         model:SetupBones()
-    
+
         model._IsAttachment = true
 
         if att.Init then
-            att.Init(self, model)
+            att:Init(self, model)
         end
         trm_weapon_base_util.DealWithFullUpdate(model)
         -- 立即缓存骨骼并返回
@@ -828,7 +827,7 @@ function SWEP:SetupViewmodel()
 
 
         local wep = IsValid(self) and IsValid(self:GetOwner()) and self:GetOwner().GetActiveWeapon and
-        self:GetOwner():GetActiveWeapon()
+            self:GetOwner():GetActiveWeapon()
         if not wep or not util.IsTRMBase(wep) then
             v.RenderOverride = nil
         end

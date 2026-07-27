@@ -134,6 +134,7 @@ end
 if SERVER then
     util.AddNetworkString("trmbase_tpanim")
     util.AddNetworkString("TRMBase_LHIKAnimation")
+    util.AddNetworkString("TRMBase_LHIKEvents")
     function SWEP:PlayIKAnimation(seqClass, useInternal)
         net.Start("TRMBase_LHIKAnimation")
         net.WriteString(seqClass)
@@ -146,7 +147,21 @@ if SERVER then
         local ent = net.ReadEntity()
         local time = net.ReadFloat()
         ent:SetNextAnimationTime(time)
-        ent:SetNextPrimaryFire(time)        
+        ent:SetNextPrimaryFire(time)
+    end)
+
+    net.Receive("TRMBase_LHIKEvents", function(len, ply)
+        local weapon = net.ReadEntity()
+        local attClass = net.ReadString()
+        local seqClass = net.ReadString()
+        local index = net.ReadInt(8)
+        local AttData = BASE_TRM_ATTS[attClass]
+        if AttData.Animations and AttData.Animations[seqClass] then
+            local tbl = AttData.Animations[seqClass].events
+            if (tbl != nil and tbl[index] != nil) then
+                tbl[index].callback(weapon)
+            end
+        end
     end)
 end
 
@@ -182,3 +197,17 @@ if CLIENT then
     end)
 end
 
+function SWEP:FireAnimationEvent(pos, ang, event, option, source)
+    if event == 9001 or event == 6001 then
+        return true
+    end
+
+    if event == 9031 then
+        if option == "ResetBullets" then
+            self._MagazineRequestedReset = true
+        end
+    end
+
+
+    return false
+end
