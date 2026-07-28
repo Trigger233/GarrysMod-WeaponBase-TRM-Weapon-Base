@@ -18,20 +18,14 @@ local reverbHull = Vector(4, 4, 4)
 local reverbCoroutines = {}
 
 function SWEP:DoFireSound()
-    if self.Reverb then
-        self:HandleReverb(self.Reverb)
-    end  
     local slience = self.Slienced and true or false
-    
-    if slience and self.Primary.SliencedSound then
-        self:EmitSound(self.Primary.SliencedSound)
-    elseif self.Primary.Sound then
-        self:EmitSound(self.Primary.Sound)
-    end
+
+    self:EmitSound(slience and self.Primary.SliencedSound or self.Primary.Sound)
     if self:Clip1() == 0 then
         self:EmitSound("weapons/pistol/pistol_empty.wav", 66, 100, 1, CHAN_ITEM)
     end
 end
+
 local function CheckRoomScale(dist)
     return dist > (REVERB_ROOMSIZE * REVERB_ROOMSIZE)
 end
@@ -138,7 +132,7 @@ function SWEP:HandleReverb(tbl)
     local reflection = isSup and sounds.ReflectionSup or sounds.Reflection
 
     if layer and layer ~= "" then
-        self:GetOwner():EmitSound(layer,nil,nil,nil,CHAN_ATMO)
+        self:GetOwner():EmitSound(layer, nil, nil, nil, CHAN_ATMO)
     end
     if reflection and reflection ~= "" then
         self:GetOwner():EmitSound(reflection, nil, nil, nil, CHAN_REFLECTION)

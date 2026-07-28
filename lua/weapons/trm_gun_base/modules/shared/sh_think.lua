@@ -9,7 +9,6 @@ function SWEP:Think()
     self:TaskTick()
     self:bThink()
     self:DoAnimationEvents()
-    self:DoCameraRecoil()
     self:Recover()
 
     self:AimThink()

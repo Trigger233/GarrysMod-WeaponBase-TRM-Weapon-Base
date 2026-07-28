@@ -2,15 +2,11 @@ SWEP.Tasks = {}
 
 function SWEP:TaskTick()
     local vm = self:GetViewModel()
-    if not IsValid(vm) or (CLIENT and game.SinglePlayer()) and not IsFirstTimePredicted() then return end
+    if not IsValid(vm) or (game.SinglePlayer() and CLIENT)  then return end
+
 
     local task = self.Tasks[self:GetCurrentTask()]
 
-    -- if not self.m_NextTaskThink then
-    --     self.m_NextTaskThink = CurTime()
-    -- end
-
-    -- if CurTime() < self.m_NextTaskThink then return end
 
     if (task.Think != nil) then
         task:Think(vm:GetCycle(), self)
@@ -21,7 +17,6 @@ function SWEP:TaskTick()
         return
     end
 
-    -- self.m_NextTaskThink = CurTime() + FrameTime() * 4
 end
 
 function SWEP:RegisterTask(task)

@@ -2,7 +2,7 @@ if SERVER then
 	util.AddNetworkString("TRMBase_TracerEffect")
 end
 
-
+local math = math
 
 function SWEP:CanPrimaryFire()
 	-- local seq =	self:GetPlayingSequence()
@@ -28,20 +28,7 @@ end
 local cvar_bullet = CreateConVar("trmbase_sv_physical_bullet", 0, FCVAR_ARCHIVE, "", 0, 1)
 local cvar_shake = CreateConVar("trmbase_sv_mod_shake", 1, FCVAR_ARCHIVE, "", 0, 10)
 
-local shakeDir = 1
-local shake = 0
-function SWEP:ApplyShake()
-	local owner = self:GetOwner()
-	if not IsValid(owner) or not owner:IsPlayer() then return end
 
-	if owner:IsPlayer() then
-		shakeDir = -shakeDir
-		shake    = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 1) * shakeDir *
-			cvar_shake:GetFloat()
-		owner:SetViewPunchAngles(Angle(0, 0, shake))
-		owner:SetViewPunchVelocity(Angle(0, 0, shake * 100))
-	end
-end
 
 function SWEP:FirePrimaryBullet()
 	if (not IsFirstTimePredicted()) then return end
@@ -60,7 +47,7 @@ function SWEP:FirePrimaryBullet()
 	local aimDir = self:GetAimVector()
 
 	--Shake
-	self:ApplyShake()
+	-- self:ApplyShake()
 
 	self:SetPenetrationCount(self.Bullet.Penetration.Max)
 
@@ -170,7 +157,7 @@ function SWEP:FireProjectile()
 	local eyeAng = owner:EyeAngles()
 	local aimDir = self:GetAimVector()
 
-	self:ApplyShake()
+	-- self:ApplyShake()
 
 	if owner:IsNPC() and IsValid(owner:GetEnemy()) then
 		local DirLength = aimDir:Length()
@@ -348,19 +335,17 @@ function SWEP:Recover()
 end
 
 local cvar_recoil = CreateConVar("trmbase_sv_mod_recoil", 1, FCVAR_ARCHIVE, "", 0, 10)
+local ShakeDirection = 1
+
 function SWEP:DoRecoil()
-	if CLIENT and not IsFirstTimePredicted() then return end
-	local Recoil = Angle(0, 0, 0)
-	local stats = self.Recoil
-	local delay = 60 / self.Primary.RPM
+	local owner = self:GetOwner()
+	if not IsFirstTimePredicted() then return end
+	local Recoil    = Angle(0, 0, 0)
+	local stats     = self.Recoil
+	local delay     = 60 / self.Primary.RPM
 
-	if stats.KickDown then
-		delay = delay * (1 - stats.KickDown)
-	end
-
-
-	Recoil          = self:GetRecoil()
-	local AdsScale  = Lerp(self:GetAimDelta(), 1, stats.AdsMultiplier) * 1
+	Recoil          = Angle(0, 0, 0)
+	local AdsScale  = Lerp(self:GetAimDelta(), 1, stats.AdsMultiplier)
 
 	local Vertical  = math.Rand(stats.Vertical[1], stats.Vertical[2]) * AdsScale
 	local Horizonal = math.Rand(stats.Horizonal[1], stats.Horizonal[2]) * AdsScale
@@ -382,11 +367,16 @@ function SWEP:DoRecoil()
 			self:SetRecoilProgress(progress)
 		end
 	end
+
 	Recoil:Mul(self:GetRecoilMultiplier())
 	Recoil:Normalize()
-
-	self:SetRecoil(Recoil)
-	self:SetNextRecoil(UnPredictedCurTime() + delay)
+	--owner:SetViewPunchVelocity( Recoil * 10)
+	--owner:ViewPunch(Recoil)
+	owner:SetViewPunchAngles(owner:GetViewPunchAngles() + Recoil * stats.KickDown * 1 +
+		Angle(0, 0, stats.Shake) * ShakeDirection * 3)
+	ShakeDirection = -ShakeDirection
+	--owner:SetViewPunchVelocity(owner:GetViewPunchVelocity() * 1.1)
+	owner:SetEyeAngles(owner:EyeAngles() + Recoil * 0.7)
 end
 
 function SWEP:GetRecoilMultiplier()
@@ -396,49 +386,6 @@ function SWEP:GetRecoilMultiplier()
 	end
 	local override = hook.Run("TRMBase_GetRecoilMultiplier", self, base)
 	return override or base
-end
-
-function SWEP:DoCameraRecoil()
-	if not (IsFirstTimePredicted() || game.SinglePlayer()) then return end
-	local owner = self:GetOwner()
-	if not IsValid(owner) then return end
-	local eyeAngles = owner:EyeAngles()
-	local delay = 60 / self.Primary.RPM
-	local nextRecoil = self:GetNextRecoil()
-	local isFiring = UnPredictedCurTime() - nextRecoil < delay + FrameTime()
-	local NextAngle = Angle(0, 0, 0)
-	local stat = self.Recoil
-
-	if not self.m_RecoilSum then
-		self.m_RecoilSum = Angle(0, 0, 0)
-		self.m_RecoilDelta = 0
-		self.m_LastEyePitch = eyeAngles.pitch
-	end
-
-	local playerPitchDelta = self.m_LastEyePitch - eyeAngles.pitch
-	local current = self:GetRecoil()
-	self.m_RecoilSum:Add(current)
-	self.m_RecoilDelta = self.m_RecoilDelta + current.pitch
-	self:SetRecoil(Angle(0, 0, 0))
-	if isFiring then
-		NextAngle = self.m_RecoilSum * stat.Factor
-		self.m_RecoilSum:Add(-NextAngle)
-		self.m_RecoilDelta = self.m_RecoilDelta - math.min(playerPitchDelta, 0)
-	else
-		-- 停火后：回正剩余的后坐力
-		if self.m_RecoilDelta * (current.pitch > 0 and 1 or -1) > 0 then
-			NextAngle.pitch = math.min(-self.m_RecoilDelta, stat.Recover * 10)
-			self.m_RecoilDelta = self.m_RecoilDelta + NextAngle.pitch
-		else
-			self.m_RecoilDelta = 0
-			self.m_RecoilSum = Angle(0, 0, 0)
-			NextAngle.pitch = 0
-		end
-	end
-
-	eyeAngles:Add(NextAngle)
-	self.m_LastEyePitch = eyeAngles.pitch
-	owner:SetEyeAngles(eyeAngles)
 end
 
 function SWEP:DoSpread()
@@ -506,12 +453,12 @@ function SWEP:GetAimVector()
 		return aimVector
 	end
 
-	local recoil = self:GetVisualRecoil()
 
-	local ang = aimVector:Angle()
-
-	ang:Add(recoil)
-	ang:Normalize()
-
+	local ang = owner:EyeAngles()
+	local punch = owner:GetViewPunchAngles()
+	ang:Add(self:GetVisualRecoil())
+	ang:Add(punch * 2)
+	--ang:Normalize()
+	--print(ang, "punch :",punch)
 	return ang:Forward() * aimVector:Length()
 end
