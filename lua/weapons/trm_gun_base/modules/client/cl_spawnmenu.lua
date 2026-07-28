@@ -11,8 +11,9 @@ hook.Add("PopulateToolMenu", "TRM_weapon_base_q_menu", function()
         panel:CheckBox(GetPhrase("TRMBase_SprintReload"), "trmbase_allow_sprintreload")
         panel:CheckBox(GetPhrase("TRMBase_LoadAttOnPickup"), "trmbase_load_attachment_on_pickup")
         panel:CheckBox(GetPhrase("TRMBase_Holster"), "trmbase_sv_holster_on_ladder")
+        panel:CheckBox(GetPhrase("TRMBase_AllowSprint"), "trmbase_sv_sprint")
+        panel:CheckBox(GetPhrase("TRMBase_ReloadSprint"), "trmbase_sv_reload_slowdown")
     end)
-
     spawnmenu.AddToolMenuOption("TriggerMiku_Work", "WeaponBase", "trmbase_admin_bullet", "Bullet", "", "",
         function(panel)
             panel:ClearControls()
@@ -71,4 +72,4 @@ hook.Add("PopulateToolMenu", "TRM_weapon_base_q_menu", function()
         end)
 end)
 
-RunConsoleCommand("spawnmenu_reload")
+--RunConsoleCommand("spawnmenu_reload")

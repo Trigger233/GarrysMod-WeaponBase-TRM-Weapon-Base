@@ -11,20 +11,20 @@ local function CreateFont()
     })
     surface.CreateFont("TRM_HUD_Button", {
         font = FONT_FAMILY,
-        size = 40,
+        size = 30,
         weight = 800,
         antialias = true,
     })
     surface.CreateFont("TRM_HUD_Hint", {
         font = FONT_FAMILY,
-        size = 30,
+        size = 25,
         weight = 800,
         shadow = true,
     })
 
     surface.CreateFont("TRM_HUD_Small", {
         font = FONT_FAMILY,
-        size = 18,
+        size = 16,
         weight = 800,
 
     })

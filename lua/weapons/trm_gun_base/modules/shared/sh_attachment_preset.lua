@@ -37,10 +37,9 @@ local function ApplyAttachmentTable(weapon, data)
         end
     end
 
-    if weapon.BuildCustomizedGun then weapon:BuildCustomizedGun() end
-
+    if weapon.OnAttachmentChanged then weapon:OnAttachmentChanged(true) end
     return true
-end
+end 
 
 function SWEP:EquipDefaultAttachments()
     if not SERVER then return end

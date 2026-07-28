@@ -100,7 +100,7 @@ function SWEP:ShouldDrawCrossHair()
 
     local seqClass = self:GetPlayingSequence()
 
-    
+
 
     if string.find(seqClass, "Holster") then
         return false
@@ -141,7 +141,7 @@ end
 function SWEP:DrawHUDHint(x, y)
     self:DrawFiremodeHint(x, y)
     self:DrawZoomHint(x, y + 50)
-    self:HUDControlHint(x - w * 0.3, y + h * 0.25)
+    self:HUDControlHint(x - w * 0.3, y + h * 0.32)
 end
 
 local Zoom = 1
@@ -182,7 +182,7 @@ local function DrawSingleHint(inputtext, Text, x, y, size, isDoubleTap, smaller)
 end
 function SWEP:HUDControlHint(x, y)
     local hintY = y
-    local size, Ygap = 40, 10
+    local size, Ygap = 30, 10
 
     if self:HasFlag("Aiming") then
         DrawSingleHint(input.LookupBinding("use"), Phrase("TRMBase_Hint_Tacsight"), x, hintY, size, true)
@@ -221,10 +221,15 @@ function SWEP:HUDControlHint(x, y)
         DrawSingleHint(input.LookupBinding("zoom"), Phrase("TRMBase_Hint_Firemode"), x, hintY, size, false)
         hintY = hintY - size - Ygap
     end
+
+    local bipod = self:HasFlag("BipodDeployed")
+    if bipod then
+        DrawSingleHint("", "BipodEnabled", x, hintY, size, false)
+    end
 end
 
-function SWEP:DrawDebugHUD(x,y)
-    local oy =y    
+function SWEP:DrawDebugHUD(x, y)
+    local oy = y
     draw.SimpleText("Debug", "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     local vm = self:GetViewModel()
     if IsValid(vm) then
@@ -234,7 +239,7 @@ function SWEP:DrawDebugHUD(x,y)
         draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     end
 
-    oy  = oy + 40
-    local name = math.Round(self:GetVisualRecoilBackward(),2)
+    oy         = oy + 40
+    local name = math.Round(self:GetVisualRecoilBackward(), 2)
     draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end

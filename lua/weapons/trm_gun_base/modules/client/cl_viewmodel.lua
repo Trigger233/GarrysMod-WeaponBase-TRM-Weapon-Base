@@ -10,16 +10,6 @@ require("trm_utils")
 function SWEP:ViewModelDrawn(vm, flag)
     if not IsValid(vm) or self.m_OverDraw then return end
     self:BuildViewmodelAttachmentsData(vm)
-
-    -- for _, att in pairs(self:GetAllAttachmentsInUse()) do
-    --     local attData = BASE_TRM_ATTS[att.Class]
-
-    --     if IsValid(att.m_Model) and self:IsFirstPerson() then
-    --         if attData.Render then
-    --             attData:Render(self, att.m_Model)
-    --         end
-    --     end
-    -- end
 end
 
 local NextUpdate = 0
@@ -34,7 +24,7 @@ function SWEP:BuildViewmodelAttachmentsData(vm)
             if not element or not element.attachment then
                 continue
             end
-            local attName =element.attachment
+            local attName = element.attachment
 
             local ent, attId = self:FindAttachment(self:IsFirstPerson() and vm or self, attName)
             if not IsValid(ent) or not attId or attId == -1 then
@@ -51,7 +41,7 @@ function SWEP:BuildViewmodelAttachmentsData(vm)
 
             self.m_Attachment[element.attachment] = att
         end
-        NextUpdate = SysTime() + 1 / 30 
+        NextUpdate = SysTime() + 1 / 30
     end
 end
 
@@ -61,32 +51,31 @@ end
 
 function SWEP:PostDrawViewModel(vm, weappon, ply, flag)
     if self.m_OverDraw then return end
-    cam.End3D()
 
+
+    cam.End3D()
 end
 
 local cvar_blur = CreateClientConVar("trmbase_cl_blur", 1, true, true, "helptext", 0, 1)
 local BlurMul = 0
 function SWEP:PreDrawViewModel(vm)
     if self.m_OverDraw then return end
-    
-    BlurMul = Lerp(RealFrameTime() * 10 , BlurMul, (self:IsReloading() and self:GetAimDelta() < 0.2  or self:IsCustomizing() or self:IsInspecting() ) and 1 or 0)
+
+    BlurMul = Lerp(RealFrameTime() * 10, BlurMul,
+        (self:IsReloading() and self:GetAimDelta() < 0.2 or self:IsCustomizing() or self:IsInspecting()) and 1 or 0)
     if BlurMul > 0.1 and cvar_blur:GetBool() then
         DrawBokehDOF(BlurMul * 5, 1, 12)
     end
 
-    cam.Start3D(EyePos() , EyeAngles() , self:GetViewmodelFov(), 0, 0, ScrW(), ScrH(), 1, 1024)
+    cam.Start3D(EyePos(), EyeAngles(), self:GetViewmodelFov(), 0, 0, ScrW(), ScrH(), 1, 1024)
     render.DepthRange(0.0, 0.0)
 
     if GetConVar("trmbase_cl_cheapscope"):GetBool() then
         self:RenderScopeView()
     end
-   self:DoLHIK()
-
+    self:DoLHIK()
 
 end
-
-
 
 -- 调试 ConVar
 CreateClientConVar("trmbase_freeze_vm", 0)
@@ -119,4 +108,3 @@ concommand.Add("trmbase_freeze_vm", function(ply, cmd, args)
         print("[TRMBase] Viewmodel 已解冻")
     end
 end)
-

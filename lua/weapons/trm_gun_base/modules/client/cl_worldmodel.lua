@@ -71,7 +71,7 @@ function SWEP:DrawWorldModelName()
             end
 
             local Data = BASE_TRM_ATTS[class]
-
+            if not Data then continue end
             text = Data.Name or ""
             y = y + 30
             DrawFullText(text, x - 100, y, colorTable.common, false)
@@ -92,8 +92,6 @@ function SWEP:RenderOverride(flags)
 
     self:SetupBones()
     self:DrawModel(flags)
-
-
     if off and not off.Bone and IsValid(owner) then
         -- == SetRenderOrigin/SetRenderAngles 模式 ==
         local handPos, handAng = GetHandBonePosAng(owner)
@@ -133,6 +131,7 @@ function SWEP:RenderOverride(flags)
     if self.CurrentAttachments then
         for _, entry in pairs(self.CurrentAttachments) do
             local att = BASE_TRM_ATTS[entry.Class]
+            if ! att then continue end
             if IsValid(entry.m_TpModel) and att.Render then
                 entry.m_TpModel:SetupBones()
                 att:Render(self, entry.m_TpModel)
@@ -177,7 +176,7 @@ end
 local LastRenderUpdate = 0
 
 hook.Add("PreRender", "TRMBase_CleanupUnUsedAttModels", function()
-    if SysTime() - LastRenderUpdate > 0 and not (VManip != nil and VManip:IsActive()) and not IsValid(TRM_AttachMenu_Instance) then
+    if SysTime() - LastRenderUpdate > 0 and not IsValid(TRM_AttachMenu_Instance) then
         local ply = LocalPlayer()
         local currentWeapon = ply:GetActiveWeapon()
 

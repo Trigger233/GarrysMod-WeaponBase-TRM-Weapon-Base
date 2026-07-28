@@ -167,13 +167,7 @@ SWEP.m_EjectDelay = 0.0
 
 SWEP.Primary.Damage = 8
 
-SWEP.Bullet = {
-    Penetration = {
-        Multiplier = 0.5,
-        Max = 2,
-        DamageMultiplier = 0.5,
-    }
-}
+
 
 -- SWEP.Primary.Range = 5000
 SWEP.Primary.Force = 1
@@ -300,11 +294,13 @@ SWEP.Spread = {
 
 }
 
-SWEP.DamageScale = {
-    Head = 4,
-    Body = 1,
-    Arms = 1,
-    Legs = 1,
+SWEP.Bullet = {
+    HeadShotMultiplier = 4,
+    Penetration = {
+        Max = 2,
+        DamageMultiplier = 0.5,
+        ArmorPenetrateDamage = 0.01,
+    }
 }
 
 
@@ -507,10 +503,18 @@ SWEP.BasePoseParameters = {
     sprint = { "sprint_offset", "sprint_loop" }
 }
 
+SWEP.HUDElement = {
+    Bullet = color_white
+}
 
+function SWEP:GetHUDElement(name)
+    return self.HUDElement[name]
+end
 
 function SWEP:Initialize()
     self.m_ViewModel = Model(self.ViewModel)
+
+
     self:SetHoldType(self.HoldType)
     self:SetWeaponHoldType("ar2")
     self.m_HoldType = self.HoldType
@@ -600,6 +604,7 @@ end
 function SWEP:Deploy()
     self:GetOwner():SetSaveValue("m_flNextAttack", 0)
     self:BuildCustomizedGun()
+    self:GetViewModel().m_CustomDelta = 1
     self:TrySetTask("Deploy")
     self:SetCanSwitch(false)
     self:SetAimDelta(0)
@@ -751,6 +756,7 @@ if SERVER then
     end)
 end
 
+local cvar_reload_slowmove = CreateConVar("trmbase_sv_reload_slowdown", 0, { FCVAR_ARCHIVE }, "helptext", 0, 1)
 -- 在武器文件中
 function SWEP:GetPlayerMoveMult(ply)
     local aimDelta = self:GetAimDelta() or 0
@@ -765,6 +771,10 @@ function SWEP:GetPlayerMoveMult(ply)
         runMult = Lerp(aimDelta, 1.0, self.MoveSpeed.Aim or 0.5)
     else
         runMult = self.MoveSpeed.Run or 1.0
+    end
+
+    if cvar_reload_slowmove:GetBool() and self:IsReloading() then
+        runMult = 0.7
     end
 
     return runMult, walkMult

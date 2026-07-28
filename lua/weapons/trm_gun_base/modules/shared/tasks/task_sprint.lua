@@ -30,13 +30,13 @@ function task_sprint:OnSet(weapon)
 end
 
 function task_sprint:Think(cycle, weapon)
-    if weapon.Animations.Sprint then
-    weapon:PlayAnimation(weapon:ChooseAnim("Sprint"),true)
-        
+    if weapon.Animations.Sprint and weapon:GetNextPrimaryFire() < UnPredictedCurTime() then
+        weapon:PlayAnimation(weapon:ChooseAnim("Sprint"), true)
+        -- weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes[weapon:GetCurrentHoldType()].Down)
     end
 
     local owner = weapon:GetOwner()
-    if IsValid(owner) and (not owner:KeyDown(IN_SPEED) or not owner:OnGround()  ) then
+    if IsValid(owner) and (not owner:KeyDown(IN_SPEED) or not owner:OnGround()) then
         weapon:TrySetTask("SprintOut")
     end
 end

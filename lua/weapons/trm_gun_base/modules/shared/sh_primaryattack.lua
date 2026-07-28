@@ -69,6 +69,7 @@ function SWEP:FirePrimaryBullet()
 		if not cvar_bullet:GetBool() then
 			local bullet = {
 				Attacker = self:GetOwner(),
+				Inflictor = self,
 				Num = self.Primary.NumBullets,
 				Src = self:GetShootPos(),
 				Dir = self:GetAimVector(),
@@ -229,7 +230,7 @@ end
 
 function SWEP:ImpactEffects(tr, type)
 	for slot, entry in pairs(self.CurrentAttachments or {}) do
-		if entry and entry.Class and BASE_TRM_ATTS[entry.Class].DoImpactEffect then
+		if entry and entry.Class and BASE_TRM_ATTS[entry.Class] and BASE_TRM_ATTS[entry.Class].DoImpactEffect then
 			BASE_TRM_ATTS[entry.Class]:DoImpactEffect(tr, type)
 		end
 	end
@@ -304,7 +305,7 @@ function SWEP:DoVisualRecoil()
 		backforward = self.VisualRecoil.Backward[3]
 	end
 
-	self:SetVisualRecoilBackward(self:GetVisualRecoilBackward() + backforward )
+	self:SetVisualRecoilBackward(self:GetVisualRecoilBackward() + backforward)
 end
 
 function SWEP:Recover()
@@ -319,7 +320,7 @@ function SWEP:Recover()
 		self:SetVisualRecoil(Vrecoil)
 		--VRecoil(Vector)
 		backforward = self:GetVisualRecoilBackward()
-		backforward = math.Approach(backforward, 0, 	1 / delay )
+		backforward = math.Approach(backforward, 0, 1 / delay)
 		self:SetVisualRecoilBackward(backforward)
 	end
 
@@ -390,20 +391,12 @@ end
 
 function SWEP:GetRecoilMultiplier()
 	local base = cvar_recoil:GetFloat()
-
-	local owner  = self:GetOwner()
-	if IsValid(owner)  and owner:IsPlayer()  then
-		if trm_weapon_base_util.IsDucking(owner) then
-			base = base * 0.7
-		end
+	if self:HasFlag("BipodDeployed") then
+		base = base * 0.1
 	end
-
-	local override = hook.Run("TRMBase_GetRecoilMultiplier",self,base)
-	if override then return override end
-	return base
+	local override = hook.Run("TRMBase_GetRecoilMultiplier", self, base)
+	return override or base
 end
-
-
 
 function SWEP:DoCameraRecoil()
 	if not (IsFirstTimePredicted() || game.SinglePlayer()) then return end
@@ -463,7 +456,7 @@ function SWEP:GetCurrentSpread()
 	if not owner.GetWalkSpeed then return baseSpread end
 	local walkSpeed = owner:GetWalkSpeed()
 	-- 移动扩散
-	local vel = math.max(owner:GetVelocity():Length2D() / owner:GetWalkSpeed(), 0)
+	local vel = math.max(owner:GetVelocity():Length2DSqr() / 20000, 0)
 	local moveMult = 1.0
 
 	moveMult = math.max(self.Spread.MoveMultiplier * vel or 1.0, 1)

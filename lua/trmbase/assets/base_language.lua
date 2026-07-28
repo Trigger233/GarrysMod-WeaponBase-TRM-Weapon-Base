@@ -48,6 +48,10 @@ TRMBase.Language.cn = {
     ["TRMBase_Stat_AimSpeed"]      = "开镜时间",
     ["TRMBase_Stat_Recoil"]        = "后坐力",
 
+
+    ["TRMBase_Stat_ArmorDamage"]   = "护甲伤害",
+    ["TRMBase_Stat_HeadDamage"]   = "头部伤害",
+    ["TRMBase_Stat_MoveSpeed"]     = "机动性",
     -- 菜单选项
     --3D2D
     ["TRMBase_3D2D"]               = "显示3D2D",
@@ -107,11 +111,11 @@ TRMBase.Language.cn = {
     -- Firemode
     ["TRMBase_Firemode"]           = "开火模式",
     --Hud Hint
-    ["TRMBase_Hint_Firemode"]           = "切换开火模式",
-    ["TRMBase_Hint_Inspect"]      = "监视武器",
-    ["TRMBase_Hint_Melee"]       = "肘击",
-    ["TRMBase_Hint_UBarrel"]         = "切换下挂武器",
-    ["TRMBase_Hint_Tacsight"]       = "切换战术侧瞄",
+    ["TRMBase_Hint_Firemode"]      = "切换开火模式",
+    ["TRMBase_Hint_Inspect"]       = "检视武器",
+    ["TRMBase_Hint_Melee"]         = "肘击",
+    ["TRMBase_Hint_UBarrel"]       = "切换下挂武器",
+    ["TRMBase_Hint_Tacsight"]      = "切换战术侧瞄",
     ["TRMBase_Hint_Hybrid"]        = "切换混合瞄具",
     ["TRMBase_Hint_ScrollScope"]   = "切换瞄具倍率",
 }
@@ -226,7 +230,7 @@ TRMBase.Language.en = {
     ["TRMBase_Hint_UBarrel"]       = "Switch Underbarrel",
     ["TRMBase_Hint_Tacsight"]      = "Switch TacSight",
     ["TRMBase_Hint_Hybrid"]        = "Switch HybridScope",
-    ["TRMBase_Hint_ScrollScope"]   = "Scroll Scope", 
+    ["TRMBase_Hint_ScrollScope"]   = "Scroll Scope",
 }
 -- 获取当前语言
 function TRMBase.GetLanguage()
@@ -250,6 +254,7 @@ refreshLang()
 function LanguageChanged(lang)
     print("New language: " .. lang)
     refreshLang()
+    if IsValid(TRM_AttachMenu_Instance) then
+        TRM_AttachMenu_Instance:RefreshAll()
+    end
 end
-
- 

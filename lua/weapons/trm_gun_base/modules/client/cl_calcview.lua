@@ -11,6 +11,8 @@ local bobt = 0
 local airDelta = 0
 local airTargetDelta = 0
 local hasJumped = false
+local math = math
+local trm_utils =trm_utils
 
 local function getJumpPoseDelta(c)
     local t = (c > 0.5 and 1 - c or c) * 2
@@ -167,7 +169,7 @@ function SWEP:CalcView(ply, pos, angles, fov)
     end
 
 
-    local attachmentID = vm:LookupAttachment(self.CameraAttachment)
+    local attachmentID = trm_utils.LookupAttachmentCached(vm, self.CameraAttachment)
     if not attachmentID or attachmentID <= 0 then
         return pos, angles, fov
     end
@@ -339,7 +341,7 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
 
 
 
-    back = Lerp( dt * 20 , back , self:GetVisualRecoilBackward())
+    back = Lerp(dt * 20, back, self:GetVisualRecoilBackward())
     pos:Add(Vector(-back * angles:Forward()))
     -- 后坐力角度偏移（pitch/yaw 让 viewmodel 上跳）
     visAng = self:GetClientVisualRecoil()

@@ -10,12 +10,13 @@ end
 
 
 hook.Add("PlayerSwitchFlashlight", "TRMBASE_FlashLight", function(ply, enabled)
+    if ! enabled then return true end
     local weapon = ply:GetActiveWeapon()
     if not IsValid(weapon) or not util.IsTRMBase(weapon) then return end
 
 
 
-    if weapon.SwitchFlashLight and weapon.flashlight and not ply:FlashlightIsOn() then
+    if weapon.SwitchFlashLight and weapon.flashlight then
         weapon:SwitchFlashLight()
         return false
     end

@@ -69,7 +69,7 @@ function SWEP:DoMeleeAttackDamage(tbl)
         filter = owner,
         mins = Vector(-hullSize * 2, -hullSize, -0),
         maxs = Vector(hullSize * 2, hullSize, hullSize),
-        mask = MASK_SHOT_HULL,
+        mask = MASK_SHOT,
     })
 
 
@@ -77,7 +77,7 @@ function SWEP:DoMeleeAttackDamage(tbl)
     dmginfo:SetDamage(damage)
     dmginfo:SetAttacker(owner)
     dmginfo:SetInflictor(self)
-    dmginfo:SetDamageForce(forward * (self.Melee.Force or 10))
+    dmginfo:SetDamageForce(forward * (damage * 100 or 10))
     dmginfo:SetDamageType(DMG_CLUB)
 
     if not tr.Hit then return end
@@ -87,9 +87,9 @@ function SWEP:DoMeleeAttackDamage(tbl)
 
 
     local ent = tr.Entity
-    if not (game.SinglePlayer() and CLIENT) then
-        self:EmitSound(self.Melee.Sound)
-    end
+    -- if not (game.SinglePlayer() and CLIENT) then
+    --     self:EmitSound(self.Melee.Sound)
+    -- end
 
 
     if CLIENT then return end
@@ -97,6 +97,10 @@ function SWEP:DoMeleeAttackDamage(tbl)
     if IsValid(ent) then
         if ent.TakeDamageInfo then
             ent:TakeDamageInfo(dmginfo)
+            local parent = ent:GetParent()
+            if IsValid(parent) and parent.TakeDamageInfo then
+                parent:TakeDamageInfo(dmginfo)
+            end
         end
     end
 
@@ -131,3 +135,15 @@ end
 function SWEP:CanInspect()
     return not self:IsInspecting() and (self:GetNextPrimaryFire() < CurTime())
 end
+
+function SWEP:HandlePenetrating(ent, dmginfo)
+--print("call")
+    if AlarmSys != nil then
+        AlarmSys:StunNPC(ent,1)
+    end
+    dmginfo:ScaleDamage(0.75)
+    return dmginfo
+end
+
+
+

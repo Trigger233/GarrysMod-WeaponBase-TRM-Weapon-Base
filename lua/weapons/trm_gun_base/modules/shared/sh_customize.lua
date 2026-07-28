@@ -1,12 +1,6 @@
 require("trm_utils")
 require("trm_math")
 function SWEP:RefreshAttTable()
-    for slot, entry in pairs(self.CurrentAttachments) do
-        if not entry or not entry.Class then continue end
-        if not self:CanEquip(slot, entry.Class) then
-            self:UnEquipAttachment(slot)
-        end
-    end
 end
 
 function SWEP:IsPlyCarry()
@@ -72,7 +66,24 @@ function SWEP:CanAttach(slotIndex)
     return self:CanEquip(slotIndex, entry and entry.Class or nil)
 end
 
---self:GetViewModel():SetWeaponModel("models/weapons/c_smg1.mdl",self)
+function SWEP:Attach(slot, attClass, NoSave)
+    local Weapon = self.Attachments[tonumber(slot)]
+    if attClass and self:CanEquip(slot, attClass) then
+        self.CurrentAttachments[slot] = { Class = attClass }
+    elseif Weapon != nil and Weapon.Default then
+        self.CurrentAttachments[slot] = { Class = Weapon.Default }
+    else
+        self.CurrentAttachments[slot] = nil
+    end
+    self:OnAttachmentChanged(NoSave)
+end
+
+function SWEP:OnAttachmentChanged(shouldntsave)
+    self:BuildCustomizedGun()
+    if not shouldntsave then
+        self:SaveAttachmentPreset()
+    end
+end
 
 function SWEP:PrecacheViewModel()
     self.m_ViewmodelCache = nil
@@ -213,7 +224,7 @@ function SWEP:ChangeWeaponStats()
     end
 
     for _, entry in pairs(self.CurrentAttachments or {}) do
-        if not entry or not entry.Class then continue end
+        if not entry or not entry.Class or not BASE_TRM_ATTS[entry.Class] then continue end
         if BASE_TRM_ATTS[entry.Class].ChangeWeaponStats then
             BASE_TRM_ATTS[entry.Class]:ChangeWeaponStats(self)
         end
@@ -275,12 +286,7 @@ end
 
 
 ---CustomizeSystem
-function SWEP:OnAttachmentChanged(shouldntsave)
-    self:BuildCustomizedGun()
-    if not shouldntsave then
-        self:SaveAttachmentPreset()
-    end
-end
+
 
 -- 统一移除配件模型，调用 attData:Remove 扩展钩子
 function SWEP:RemoveAttachmentModel(entry, isTp)
@@ -299,104 +305,10 @@ function SWEP:RemoveAttachmentModel(entry, isTp)
     end
 end
 
-function SWEP:EquipAttachment(slot, attClass)
-    local slotIndex = tonumber(slot)
-    if slotIndex and not self:CanEquip(slotIndex, attClass) then
-        print("[TRMBase] Slot", slot, "is excluded, cannot equip", attClass)
-        return
-    end
-
-    local attData = BASE_TRM_ATTS[attClass]
-    if attData then
-        self.CurrentAttachments[slot] = { Class = attClass }
-
-        -- 装完后检查其他槽是否因此被排除，如有则自动卸掉
-        local removedSlots = {}
-        for i = 1, #(self.Attachments or {}) do
-            local key = tostring(i)
-            if key ~= slot and self.CurrentAttachments[key] and self.CurrentAttachments[key].Class and not self:CanEquip(i, self.CurrentAttachments[key].Class) then
-                self:RemoveAttachmentModel(self.CurrentAttachments[key])
-                removedSlots[#removedSlots + 1] = key
-                self.CurrentAttachments[key] = nil
-            end
-        end
-
-        -- 被清空的槽位：先装默认配件，再发送同步
-        for _, removedKey in ipairs(removedSlots) do
-            local slotData = self.Attachments and self.Attachments[tonumber(removedKey)]
-            if slotData and slotData.Default and BASE_TRM_ATTS[slotData.Default] and self:CanEquip(tonumber(removedKey), slotData.Default) then
-                self.CurrentAttachments[removedKey] = { Class = slotData.Default }
-                net.Start("TRMBase_SyncAttachment")
-                net.WriteEntity(self)
-                net.WriteString(removedKey)
-                net.WriteString(slotData.Default)
-                net.Broadcast()
-            else
-                self.CurrentAttachments[removedKey] = nil
-                net.Start("TRMBase_SyncAttachment")
-                net.WriteEntity(self)
-                net.WriteString(removedKey)
-                net.WriteString("None")
-                net.Broadcast()
-            end
-        end
-
-        -- 发送主配件的同步消息
-        net.Start("TRMBase_SyncAttachment")
-        net.WriteEntity(self)
-        net.WriteString(slot)
-        net.WriteString(attClass)
-        net.Broadcast()
-    end
-    self:RefreshAttTable()
-
-    self:OnAttachmentChanged()
-
-    --print("Equipped:", slot, attClass)
-end
-
-function SWEP:UnEquipAttachment(slot)
-    local slotIndex = tonumber(slot)
-
-    -- 清理模型
-    local entry = self.CurrentAttachments[slot]
-    if entry and IsValid(entry.m_Model) then
-        BASE_TRM_ATTS[entry.Class]:Remove(self, entry.m_Model)
-    end
-
-    self.CurrentAttachments[slot] = nil
-
-    -- 注：不再自动装默认配件，让用户从列表中自行选择"无"或默认配件
-
-    -- 发一次同步
-    net.Start("TRMBase_SyncAttachment")
-    net.WriteEntity(self)
-    net.WriteString(slot)
-    net.WriteString("None")
-    net.Broadcast()
-
-    self:OnAttachmentChanged()
-
-    -- 恢复被排他配件清空的槽位默认配件（跳过刚卸掉的槽位本身）
-    timer.Simple(FrameTime() * 5, function()
-        if SERVER then
-            for i, slotData in ipairs(self.Attachments or {}) do
-                local key = tostring(i)
-                if key ~= slot and not self.CurrentAttachments[key] and slotData.Default and self:CanEquip(i, slotData.Default) then
-                    self:EquipAttachment(key, slotData.Default)
-                end
-            end
-        end
-    end)
-
-
-    --print("Unequipped:", slot, self.CurrentAttachments[slot] or "None")
-end
-
 function SWEP:ApplyCustomizationModels()
     if SERVER then return end
     local vm = self:GetViewModel()
-
+    self:InvalidateBoneCache()
     self:SetupBones()
 
 
@@ -406,6 +318,11 @@ function SWEP:ApplyCustomizationModels()
     for slot, entry in pairs(self:GetAllAttachmentsInUse()) do
         if not entry or not entry.Class then continue end
         local AttachmentData = BASE_TRM_ATTS[entry.Class]
+        if ! AttachmentData then
+            -- print(entry.Class or "Nil")
+            -- PrintTable(BASE_TRM_ATTS["att_ammo_ap"])
+            continue
+        end
         local WeaponData = self.Attachments and self.Attachments[tonumber(slot)]
         if not AttachmentData.Model then continue end
         local model = entry.m_Model
@@ -594,7 +511,7 @@ function SWEP:SyncAllAttachments()
     for _ in pairs(self.CurrentAttachments or {}) do
         count = count + 1
     end
-    net.WriteUInt(count, 8)
+    net.WriteUInt(count, 16)
     for slot, entry in pairs(self.CurrentAttachments or {}) do
         if not entry.Class then continue end
         net.WriteString(slot)
@@ -607,10 +524,10 @@ net.Receive("TRMBase_Attachment", function()
     local weapon = net.ReadEntity()
     local slot = net.ReadString()
     local attClass = net.ReadString()
-    if attClass == "None" then
-        weapon:UnEquipAttachment(slot)
+    if ! attClass then
+        weapon:Attach(slot)
     else
-        weapon:EquipAttachment(slot, attClass)
+        weapon:Attach(slot, attClass)
     end
 end)
 
@@ -659,6 +576,8 @@ function SWEP:CreateAttachmentModel(entry, slot)
         model:InvalidateBoneCache()
         model:SetupBones()
 
+        model.m_CustomDelta = self.CurrentAttachments[slot].CustomDelta
+        self.CurrentAttachments[slot].CustomDelta = 0
         model._IsAttachment = true
 
         if att.Init then
@@ -721,14 +640,14 @@ function SWEP:BuildCustomizedGun()
     local owner = self:GetOwner()
     local isActive = hasVM and owner and owner:GetActiveWeapon() == self
     self.sight = nil
-
-
     self.underbarrel = nil
-
-    self.flashlight = false
+    self.flashlight = nil
+    self.bipod = nil
 
     if CLIENT then
         self:CleanupFlashLights()
+        self:InvalidateBoneCache()
+        self:SetupBones()
     end
 
     self:ChangeWeaponStats()
@@ -757,7 +676,9 @@ function SWEP:BuildCustomizedGun()
         if CLIENT then
             vm:InvalidateBoneCache()
             vm:SetupBones()
+            vm:ClearPoseParameters()
         end
+
         self:PrecacheViewModel()
         self:PrepareViewModel()
         self:ApplyWeaponModelChange()
@@ -772,6 +693,7 @@ function SWEP:BuildCustomizedGun()
     if not self.underbarrel then
         self:SetUnderbarrel(false)
     end
+
 
     --self:RemoveFlag("HybridOn")
 
@@ -816,6 +738,38 @@ function SWEP:InvalidateAttachments(ent)
     end
 end
 
+local def_customcolor = color_white
+local function DrawCustomHighlight(model, att, weapon)
+    model.m_CustomDelta = (model.m_CustomDelta or 1) -
+        (math.min(FrameTime(), 0.1) * (weapon and weapon.IsCustomizing and weapon:IsCustomizing() and 3 or 1))
+    if model.m_CustomDelta <= 0 then return end
+    model:RemoveEFlags(EFL_USE_PARTITION_WHEN_NOT_SOLID)
+
+    render.SetStencilWriteMask(0xFF)
+    render.SetStencilTestMask(0xFF)
+    render.SetStencilReferenceValue(0)
+
+    render.SetStencilCompareFunction(STENCIL_ALWAYS)
+    render.SetStencilPassOperation(STENCIL_REPLACE)
+    render.SetStencilFailOperation(STENCIL_KEEP)
+    render.SetStencilZFailOperation(STENCIL_KEEP)
+
+    render.SetStencilEnable(true)
+    render.SetStencilReferenceValue(64 + 1)
+    model:RemoveEFlags(EFL_USE_PARTITION_WHEN_NOT_SOLID)
+
+    model:DrawModel()
+    render.SetStencilCompareFunction(STENCIL_EQUAL)
+    cam.Start2D()
+    local color = att and att.CustomColor or def_customcolor
+    surface.SetDrawColor(color.r, color.g, color.b, model.m_CustomDelta * 255)
+    surface.DrawRect(0, 0, ScrW(), ScrH())
+    cam.End2D()
+
+    render.SetStencilEnable(false)
+end
+
+local cvar_highlight = CreateClientConVar("trmbase_cl_alwaysdrawhighlight", 0, true, true, "", 0, 1)
 function SWEP:SetupViewmodel()
     local vm = self:GetViewModel()
     if not (vm and IsValid(vm)) then return end
@@ -834,20 +788,29 @@ function SWEP:SetupViewmodel()
         if not IsValid(v) then
             v.RenderOverride = nil
         end
-        --self:BuildViewmodelAttachmentsData(v)
 
         self.m_OverDraw = true
-        --v:SetupBones()
+        v:DrawShadow(false)
         v:DrawModel(flag)
+
+        if self:IsCustomizing() or cvar_highlight:GetBool() then
+            DrawCustomHighlight(v, self, wep)
+        end
         if self.GetAllAttachmentsInUse then
             for _, att in pairs(self:GetAllAttachmentsInUse()) do
                 local tbl = BASE_TRM_ATTS[att.Class]
                 if IsValid(att.m_Model) and tbl.Render then
                     tbl:Render(self, att.m_Model)
-                elseif tbl.Model then
+                    if self:IsCustomizing() or cvar_highlight:GetBool() then
+                        DrawCustomHighlight(att.m_Model, tbl, wep)
+                    end
+                elseif tbl and tbl.Model then
                     self:BuildCustomizedGun()
                 end
             end
+
+
+            render.SetStencilEnable(false)
         end
         --render.UpdateFullScreenDepthTexture()
         self.m_OverDraw = false

@@ -7,4 +7,3 @@ function SWEP:DrawWeaponSelection(x, y, w, h, alpha)
 end
 
 
-

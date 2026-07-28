@@ -6,12 +6,14 @@ function SWEP:Think()
     if not IsValid(owner) or not owner:IsPlayer() then return end
     self:SetWeaponHoldType(self.HoldType)
     self:UpdatePoseParameters()
-    self:AimThink()
     self:TaskTick()
     self:bThink()
     self:DoAnimationEvents()
     self:DoCameraRecoil()
     self:Recover()
+
+    self:AimThink()
+    self:BipodLogic()
 
     --ladder
     if (self:GetOwner():GetMoveType() == MOVETYPE_LADDER || (owner:WaterLevel() >= 2 and owner:IsSprinting())) and cvar_holster:GetBool() then

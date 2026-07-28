@@ -5,7 +5,7 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
 
 
 
-
+    local tbl = self.Bullet
     -- 只对玩家生效
     if  ent.TakeDamageInfo then
         local baseMulti = cvar_damage:GetFloat()
@@ -16,13 +16,7 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
         local scale = 1
         if attacker:IsPlayer() then
             if group == HITGROUP_HEAD then
-                scale = self.DamageScale.Head or 4
-            elseif group == HITGROUP_CHEST or group == HITGROUP_STOMACH then
-                scale = self.DamageScale.Body or 1
-            elseif group == HITGROUP_LEFTARM or group == HITGROUP_RIGHTARM then
-                scale = self.DamageScale.Arms or 0.8
-            elseif group == HITGROUP_LEFTLEG or group == HITGROUP_RIGHTLEG then
-                scale = self.DamageScale.Legs or 0.6
+                scale = tbl.HeadShotMultiplier 
             end
         end
 
@@ -31,10 +25,16 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
 
 
         for _, entry in pairs(self:GetAllAttachmentsInUse()) do
-            if entry and entry.Class and BASE_TRM_ATTS[entry.Class].BulletCallback then
+            if entry and entry.Class and BASE_TRM_ATTS[entry.Class] and BASE_TRM_ATTS[entry.Class].BulletCallback then
                 BASE_TRM_ATTS[entry.Class]:BulletCallback(attacker, tr, dmginfo)
             end
         end
+
+        if ent:IsPlayer() and ent:Armor() >0 then
+            local dmg = dmginfo:GetDamage() * tbl.Penetration.ArmorPenetrateDamage
+            ent:SetArmor(math.max(0,ent:Armor() - dmg))
+        end
+
     end
     self:BulletInterval(attacker, tr, dmginfo)
 end
@@ -90,6 +90,7 @@ function SWEP:BulletInterval(attacker, tr, dmginfo)
         --fire forward
         self:GetOwner():FireBullets({
             Attacker = self:GetOwner(),
+            Inflictor =  self,
             Src = output.HitPos,
             Dir = tr.Normal,
             Num = 1,
@@ -101,3 +102,19 @@ function SWEP:BulletInterval(attacker, tr, dmginfo)
         })
     end
 end
+
+--for our Alarm mod
+function SWEP:HandlePenetrating(ent,dmginfo)
+    dmginfo:ScaleDamage(self.Bullet.Penetration.ArmorPenetrateDamage)
+    return dmginfo
+end
+
+
+
+
+
+
+hook.Add("Alarm.ArmorPenetratingDamage", "TRMBase", function(ent,dmginfo)
+    local weapon = dmginfo:GetInflictor()
+    return weapon.HandlePenetrating and weapon:HandlePenetrating(ent,dmginfo)   
+end)

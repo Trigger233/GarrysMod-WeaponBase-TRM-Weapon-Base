@@ -52,13 +52,16 @@ surface.CreateFont("TRM_Mod_Tiny", {
 
 function SWEP:SendAttachmentToServer(slotKey, attID)
     if not (game.SinglePlayer() or CLIENT) then return end
-
     net.Start("TRMBase_Attachment")
     net.WriteEntity(self)
     net.WriteString(slotKey)
     net.WriteString(attID)
     net.SendToServer()
     self:SaveAttachmentPreset()
+
+    if self.CurrentAttachments[slotKey] and self.CurrentAttachments[slotKey].Class ~= attID then
+        self.CurrentAttachments[slotKey].CustomDelta = 1
+    end
 end
 
 local function Phrase(text, fallback)
@@ -243,6 +246,7 @@ local function CopyWeaponStats(source)
         "VisualRecoil",
         "MoveSpeed",
         "Animations",
+        "Bullet"
     }
 
     for _, key in ipairs(keys) do
@@ -314,12 +318,15 @@ end
 
 local function BuildStatsFromCopies(base, sim)
     return {
-        { Phrase("#TRMBase_Stat_Damage", "Damage"),       WeaponDamage(sim),                         WeaponDamage(base),                          true,  100 },
-        { Phrase("#TRMBase_Stat_ClipSize", "Magazine"),   Num(sim.Primary and sim.Primary.ClipSize), Num(base.Primary and base.Primary.ClipSize), true,  150 },
-        { Phrase("#TRMBase_Stat_RPM", "Fire rate"),       Num(sim.Primary and sim.Primary.RPM),      Num(base.Primary and base.Primary.RPM),      true,  1500 },
-        { Phrase("#TRMBase_Stat_Spread", "Spread"),       Num(sim.Spread and sim.Spread.Base),       Num(base.Spread and base.Spread.Base),       false, 0.1 },
-        { Phrase("#TRMBase_Stat_AimSpeed", "Ergonomics"), Num(sim.Aim and sim.Aim.Time),             Num(base.Aim and base.Aim.Time),             false, 1 },
-        { Phrase("#TRMBase_Stat_Recoil", "Recoil"),       WeaponRecoil(sim),                         WeaponRecoil(base),                          false, 10 },
+        { Phrase("#TRMBase_Stat_Damage", "Damage"),             WeaponDamage(sim),                                                    WeaponDamage(base),                                                     true,  100 },
+        { Phrase("#TRMBase_Stat_HeadDamage", "HeadShotDamage"), WeaponDamage(sim) * Num(sim.Bullet.HeadShotMultiplier),               WeaponDamage(base) * Num(base.Bullet.HeadShotMultiplier),               true,  300 },
+        { Phrase("#TRMBase_Stat_ArmorDamage", "ArmorDamage"),   WeaponDamage(sim) * Num(sim.Bullet.Penetration.ArmorPenetrateDamage), WeaponDamage(base) * Num(base.Bullet.Penetration.ArmorPenetrateDamage), true,  100 },
+        { Phrase("#TRMBase_Stat_ClipSize", "Magazine"),         Num(sim.Primary and sim.Primary.ClipSize),                            Num(base.Primary and base.Primary.ClipSize),                            true,  150 },
+        { Phrase("#TRMBase_Stat_RPM", "Fire rate"),             Num(sim.Primary and sim.Primary.RPM),                                 Num(base.Primary and base.Primary.RPM),                                 true,  1500 },
+        { Phrase("#TRMBase_Stat_Spread", "Spread"),             Num(sim.Spread and sim.Spread.Base),                                  Num(base.Spread and base.Spread.Base),                                  false, 0.1 },
+        { Phrase("#TRMBase_Stat_AimSpeed", "Ergonomics"),       Num(sim.Aim and sim.Aim.Time),                                        Num(base.Aim and base.Aim.Time),                                        false, 1 },
+        { Phrase("#TRMBase_Stat_MoveSpeed", "MoveSpeed"),       Avg(sim.MoveSpeed),                                                   Avg(base.MoveSpeed),                                                    true, 2 },
+        { Phrase("#TRMBase_Stat_Recoil", "Recoil"),             WeaponRecoil(sim),                                                    WeaponRecoil(base),                                                     false, 10 },
     }
 end
 
@@ -1991,8 +1998,6 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
         local id = attClass or "None"
         if not IsValid(weapon) then return end
 
-        weapon.CurrentAttachments = weapon.CurrentAttachments or {}
-        weapon.CurrentAttachments[slotKey] = (id ~= "None") and { Class = id } or nil
         weapon:SendAttachmentToServer(slotKey, id)
 
         surface.PlaySound(TRM_SOUNDS.Select)
@@ -2030,33 +2035,13 @@ concommand.Add("+trmbase_customize", function(ply)
     end
 end)
 
-net.Receive("TRMBase_SyncAttachment", function()
-    local wep = net.ReadEntity()
-    local slot = net.ReadString()
-    local attClass = net.ReadString()
 
-    if not IsValid(wep) then return end
-
-    wep.CurrentAttachments = wep.CurrentAttachments or {}
-    if attClass == "None" then
-        wep.CurrentAttachments[slot] = nil
-    else
-        wep.CurrentAttachments[slot] = { Class = attClass }
-    end
-
-    wep:BuildCustomizedGun()
-
-
-    if IsValid(TRM_AttachMenu_Instance) then
-        TRM_AttachMenu_Instance:RefreshAll()
-    end
-end)
 
 net.Receive("TRMBase_SyncAllAttachments", function()
     local wep = net.ReadEntity()
     if not IsValid(wep) then return end
 
-    local count = net.ReadUInt(8)
+    local count = net.ReadUInt(16)
     wep.CurrentAttachments = wep.CurrentAttachments or {}
 
     for i = 1, count do
@@ -2070,94 +2055,13 @@ net.Receive("TRMBase_SyncAllAttachments", function()
     if IsValid(TRM_AttachMenu_Instance) then
         TRM_AttachMenu_Instance:RefreshAll()
     end
+
+
 end)
 
-concommand.Add("trmbase_test_attach", function(ply, cmd, args)
-    local player = IsValid(ply) and ply or LocalPlayer()
-    local weapon = IsValid(player) and player:GetActiveWeapon()
-    if not IsValid(weapon) or not util.IsTRMBase(weapon) then return end
 
-    local slotKey = args[1] or ""
-    local attID = args[2] or ""
-    weapon:SendAttachmentToServer(slotKey, attID)
-end)
 
-concommand.Add("trmbase_rebuild_attach", function(ply)
-    local player = IsValid(ply) and ply or LocalPlayer()
-    local weapon = IsValid(player) and player:GetActiveWeapon()
-    if not IsValid(weapon) or not util.IsTRMBase(weapon) then return end
-
-    if weapon.CurrentAttachments then
-        for _, entry in pairs(weapon.CurrentAttachments) do
-            if entry then
-                weapon:RemoveAttachmentModel(entry)
-            end
-        end
-    end
-
-    print("[TRMBase] Attachment models rebuilt")
-end)
-
-concommand.Add("trmbase_show_attach", function(ply)
-    local player = IsValid(ply) and ply or LocalPlayer()
-    local weapon = IsValid(player) and player:GetActiveWeapon()
-    if not IsValid(weapon) or not util.IsTRMBase(weapon) then return end
-
-    print("-----------------------------------")
-    print(weapon:GetPrintName())
-    print("Can Attach")
-    PrintTable(weapon.Attachments)
-    print("Equipped:")
-    PrintTable(weapon.CurrentAttachments)
-end)
-
-concommand.Add("trmbase_debug_slots", function(ply)
-    local player = IsValid(ply) and ply or LocalPlayer()
-    local weapon = IsValid(player) and player:GetActiveWeapon()
-    if not IsValid(weapon) or not util.IsTRMBase(weapon) then
-        print("[TRMBase] Current weapon is not TRM Base")
-        return
-    end
-
-    print("========== TRMBase Slot Debug ==========")
-    print("Total attachments in BASE_TRM_ATTS: " .. table.Count(BASE_TRM_ATTS or {}))
-
-    print("--- All attachments with Category ---")
-    for name, data in pairs(BASE_TRM_ATTS or {}) do
-        if type(data) == "table" and data.Category then
-            print("  " ..
-                name .. " -> Category: " .. tostring(data.Category) .. ", Selectable: " .. tostring(data.Selectable))
-        end
-    end
-
-    if not weapon.Attachments then
-        print("Weapon has no Attachments table")
-        return
-    end
-
-    print("--- Weapon Attachments (" .. #weapon.Attachments .. " slots) ---")
-    for i, slot in ipairs(weapon.Attachments) do
-        if istable(slot) then
-            print("Slot " ..
-                i ..
-                ": Name=" ..
-                tostring(slot.Name) ..
-                ", Category={" .. table.concat(SlotCategories(slot), ", ") .. "}, Bone=" .. tostring(slot.Bone))
-
-            local matches = GetAttachmentsForSlot(slot)
-            if #matches > 0 then
-                print("  -> Matches: " .. table.concat(matches, ", "))
-            else
-                print("  -> NO MATCHES!")
-            end
-        else
-            print("Slot " .. i .. ": NOT A TABLE! type=" .. type(slot))
-        end
-    end
-    print("========================================")
-end)
-
-local cvar_hide = CreateClientConVar("trmbase_hidehud_inspect", 1, FCVAR_ARCHIVE)
+local cvar_hide = CreateClientConVar("trmbase_hidehud_inspect", 1, true, true)
 hook.Add("HUDShouldDraw", "HideWhileCustomizing", function()
     if IsValid(TRM_AttachMenu_Instance) then
         return false

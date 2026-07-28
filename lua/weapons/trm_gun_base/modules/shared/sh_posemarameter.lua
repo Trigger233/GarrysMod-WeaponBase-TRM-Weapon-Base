@@ -29,7 +29,7 @@ function SWEP:UpdatePoseParameters()
 
     local vm = self:GetViewModel()
     if not IsValid(vm) then return end
-    vm:ClearPoseParameters()
+    --vm:ClearPoseParameters()
     -- 速度乘相关（只算一次）
     local owner = self:GetOwner()
     local speed = IsValid(owner) and owner:GetVelocity():Length2D() or 0

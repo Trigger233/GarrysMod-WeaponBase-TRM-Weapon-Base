@@ -45,7 +45,7 @@ function SWEP:DoLHIK()
 
 
 
-    if (lhik_model != nil) then
+    if (lhik_model != nil and IsValid(lhik_model)) then
         vm:SetupBones()
         lhik_model:SetupBones()
 
@@ -126,7 +126,7 @@ function SWEP:CycleLHIKAnimation()
     local tbl = self:GetForegrip()
     if not tbl then return end
     local model, attData = tbl.Viewmodel, tbl.Data
-    if not model then
+    if not IsValid(model) then
         return
     end
     local cycle = model:GetCycle()

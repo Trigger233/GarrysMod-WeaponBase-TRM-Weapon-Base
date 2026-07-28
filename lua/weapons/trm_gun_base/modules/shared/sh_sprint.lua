@@ -1,7 +1,9 @@
 local cvar_sprint_reload = CreateConVar("trmbase_allow_sprintreload", 0, { FCVAR_ARCHIVE })
-
+local cvar_sprint_enable = CreateConVar("trmbase_sv_sprint", 1, { FCVAR_ARCHIVE }, "", 0, 1)
 function SWEP:CanSprint()
+    if ! cvar_sprint_enable:GetBool() then return false end
     local vm = self:GetViewModel(0)
+
     if not IsValid(vm) then return false end
 
     local owner = self:GetOwner()
@@ -20,7 +22,7 @@ function SWEP:CanSprint()
         end
 
         -- 这些动画未完成时绝对不能冲刺
-        local forbidAnims = { "Deploy", "Holster", "Inspect", "Melee", "Draw" ,"Rechamber"}
+        local forbidAnims = { "Deploy", "Holster", "Inspect", "Melee", "Draw", "Rechamber" }
         for _, v in ipairs(forbidAnims) do
             if string.find(seq, v) or string.find(task, v) then
                 return false
@@ -28,7 +30,7 @@ function SWEP:CanSprint()
         end
     end
 
-    local blacklist = {  "Inspect" , "Holster","Rechamber"}
+    local blacklist = { "Inspect", "Holster", "Rechamber" }
     for _, v in ipairs(blacklist) do
         if string.find(task, v) or string.find(seq, v) then
             return false
