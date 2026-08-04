@@ -83,7 +83,7 @@ function SWEP:DoTracer(startpos, endpos)
     local stats = self.Effects.Muzzle.Tracer
     
     if stats.IsParticle then
-        util.ParticleTracerEx(self.Slienced and "trm_tracer_mini" or  stats.Name, startpos, endpos, true ,self:EntIndex() , -1 )
+        util.ParticleTracerEx(  stats.Name, startpos, endpos, true ,self:EntIndex() , -1 )
     else
         local tracer = EffectData()
         tracer:SetScale(Tracerscale)

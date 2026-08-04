@@ -70,8 +70,8 @@ function SWEP:DoLHIK()
 
             VMMatrix:SetTranslation(LerpVector(delta, vm_pos, lhik_pos))
             VMMatrix:SetAngles(LerpAngle(delta, vm_ang, lhik_ang))
-            debugoverlay.Axis(vm_pos, vm_ang, 1, 0.1, true)
-            debugoverlay.Axis(lhik_pos, lhik_ang, 1, 0.1, true)
+            -- debugoverlay.Axis(vm_pos, vm_ang, 1, 0.1, true)
+            -- debugoverlay.Axis(lhik_pos, lhik_ang, 1, 0.1, true)
 
             vm:SetBoneMatrix(vmbone, VMMatrix)
         end

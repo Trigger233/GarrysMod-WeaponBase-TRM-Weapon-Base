@@ -16,6 +16,10 @@ function SWEP:CanInspect()
         return false
     end
 
+    if self:HasFlag("Aiming") then
+        return false
+    end
+
     return (taskStr == "Idle" or taskStr == "Rechamber" or string.find(taskStr, "Sprint")) and
         (self.Animations.Inspect or self.Animations.Inspect_Empty) 
 end

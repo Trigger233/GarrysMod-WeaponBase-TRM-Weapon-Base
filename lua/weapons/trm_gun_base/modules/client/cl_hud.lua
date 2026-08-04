@@ -11,7 +11,7 @@ timer.Simple(1, function()
         end
     end)
 end)
-
+local math = math
 
 local cv_debug = CreateClientConVar("trmbase_debug_hud", 1, true, false)
 local cv_crosshair_enable = CreateClientConVar("trmbase_crosshair_enable", 1, true, false)
@@ -21,7 +21,11 @@ local cv_crosshair_color_g = CreateClientConVar("trmbase_crosshair_color_g", 255
 local cv_crosshair_color_b = CreateClientConVar("trmbase_crosshair_color_b", 255, true, false)
 local cv_crosshair_alpha = CreateClientConVar("trmbase_crosshair_alpha", 210, true, false)
 local cv_crosshair_dot = CreateClientConVar("trmbase_crosshair_dot", 1, true, false)
-
+local cv_crosshair_width = CreateClientConVar("trmbase_crosshair_width", 20, true, false)
+local cv_crosshair_height = CreateClientConVar("trmbase_crosshair_height", 1, true, false)
+local cv_crosshair_outline = CreateClientConVar("trmbase_crosshair_outline", 3, true, false)
+local cv_crosshair_scale = CreateClientConVar("trmbase_crosshair_scale", 1, true, false)
+---------------------
 local MAT_TRM_MARK = Material("trmbase/ui/trm_mark.png", "smooth mips")
 local MAT_AMMO = Material("trmbase/ui/symbols/ammo.png", "smooth mips")
 
@@ -30,13 +34,45 @@ local cvar_key_bash = GetConVar("trmbase_cl_keybind_melee")
 local cv_inspect = GetConVar("trmbase_cl_keybind_inspect")
 local fov = GetConVar("fov_desired")
 local color_shadow = Color(0, 0, 0, 100)
-
+local rft = RealFrameTime
 local Phrase = language.GetPhrase
+local rndx = include("include/rndx.lua")
 local w, h = ScrW(), ScrH()
 hook.Add("OnScreenSizeChanged", "TRMBase_HUD", function(oldWidth, oldHeight, newWidth, newHeight)
     w, h = ScrW(), ScrH()
 end)
+local SwayX = 0
+local SwayY = 0
+local LastX = 0
+local LastY = 0
+
+local function DrawRoundBox(cornerRadius, x, y, width, height, color)
+    rndx.Rect(x, y, width, height)
+        :Rad(cornerRadius)
+        :Color(color)
+        :Draw()
+end
+ 
+function SWEP:GetCrosshairSway()
+    local eye = EyeAngles()
+    local currentX = eye.yaw
+    local currentY = eye.pitch
+
+
+    local deltaX = math.AngleDifference(currentX, LastX)
+    local deltaY = math.AngleDifference(currentY, LastY)
+    LastX = currentX
+    LastY = currentY
+    SwayX = SwayX * 0.9 + deltaX * 10
+    SwayY = SwayY * 0.9 + deltaY * 10
+
+    return SwayX, -SwayY
+end
+
 function SWEP:TRMHUD(ply)
+    if ! ply:GetAllowWeaponsInVehicle() and ply:InVehicle() then
+        return
+    end
     self:DrawCustomCrosshair(w * 0.5, h * 0.5, w, h)
     self:DrawHUDHint(w * 0.5, h * 0.6)
 
@@ -45,8 +81,13 @@ function SWEP:TRMHUD(ply)
     end
 end
 
-local function DrawCenterRoundBox(x, y, w, h)
-    surface.DrawRect(x - 0.5 * w, y - 0.5 * h, w, h)
+local function DrawCenterRoundBox(x, y, W, H, color)
+    local outline = cv_crosshair_outline:GetInt()
+    if outline > 0 then
+        local shadowW, shadowH = W + outline, H + outline
+        DrawRoundBox(0, x - 0.5 * shadowW, y - 0.5 * shadowH, shadowW, shadowH, color_shadow)
+    end
+    DrawRoundBox(0, x - 0.5 * W, y - 0.5 * H, W, H, color)
 end
 
 function SWEP:GetCrossHairColor()
@@ -55,41 +96,61 @@ function SWEP:GetCrossHairColor()
         cv_crosshair_alpha:GetInt())
 end
 
+local TraceOutPut = {}
+local CrossHairTrace = {
+    output = TraceOutPut
+}
+local NextTrace = 0
+local TraceLine = util.TraceLine
+
+
+
+function SWEP:GetCrosshairPos(x, y)
+    return x, y
+end
+
 function SWEP:DrawCustomCrosshair(x, y, w, h)
     if ! self:ShouldDrawCrossHair() then return end
-    local gap = self:GetCurrentSpread()
-    local recoil = self:GetClientVisualRecoil()
+    local gap = self:GetCurrentSpread() * cv_crosshair_scale:GetFloat()
 
+    local screenPosX, screenPosY = self:GetCrosshairPos(x, y)
 
-    local X, Y = x, y
-    surface.SetDrawColor(self:GetCrossHairColor())
-    draw.NoTexture()
+    local X, Y = screenPosX , screenPosY
+    local color = self:GetCrossHairColor()
+    local width, height = cv_crosshair_width:GetInt(), cv_crosshair_height:GetInt()
 
-    local width, height = 20, 3
+    if self.Primary and self.Primary.NumBullets > 1 then
+        width, height = height, width
+    end
 
-    DrawCenterRoundBox(X + (width * 0.5 + gap * h), Y, width, height)
-    DrawCenterRoundBox(X - (width * 0.5 + gap * h), Y, width, height)
+    DrawCenterRoundBox(X + (width * 0.5 + gap * h), Y, width, height, color)
+    DrawCenterRoundBox(X - (width * 0.5 + gap * h), Y, width, height, color)
 
     if self:GetUnderbarrel() then
-        DrawCenterRoundBox(X + (width * 0.5), Y + 50, width * 0.5, height)
-        DrawCenterRoundBox(X - (width * 0.5), Y + 50, width * 0.5, height)
+        DrawCenterRoundBox(X + (width * 0.5), Y + 50, width * 0.5, height, color)
+        DrawCenterRoundBox(X - (width * 0.5), Y + 50, width * 0.5, height, color)
 
-        DrawCenterRoundBox(X + (width * 0.5), Y + 100, width * 0.25, height)
-        DrawCenterRoundBox(X - (width * 0.5), Y + 100, width * 0.25, height)
+        DrawCenterRoundBox(X + (width * 0.5), Y + 100, width * 0.25, height, color)
+        DrawCenterRoundBox(X - (width * 0.5), Y + 100, width * 0.25, height, color)
     else
-        DrawCenterRoundBox(X, Y + (width * 0.5 + gap * h), height, width)
+        DrawCenterRoundBox(X, Y + (width * 0.5 + gap * h), height, width, color)
     end
 
     if self.Primary.Automatic then
-        DrawCenterRoundBox(X, Y - (width * 0.5 + gap * h), height, width)
+        DrawCenterRoundBox(X, Y - (width * 0.5 + gap * h), height, width, color)
     end
     if cv_crosshair_dot:GetBool() then
-        DrawCenterRoundBox(X, Y, height, height)
+        local dotSize = math.min(height, width)
+        DrawCenterRoundBox(X, Y, dotSize, dotSize, color)
     end
     return false
 end
 
 function SWEP:ShouldDrawCrossHair()
+    if LocalPlayer():ShouldDrawLocalPlayer() then
+        return true
+    end
+
     if ! cv_crosshair_enable:GetBool() then
         return false
     end
@@ -164,7 +225,7 @@ end
 
 local function DrawButton(inputtext, x, y, size, small)
     local text = string.NiceName(tostring(inputtext))
-    draw.RoundedBox(5, x, y, size, size, color_white)
+    DrawRoundBox(5, x, y, size, size, color_white)
     draw.SimpleText(text, small and "TRM_HUD_Small" or "TRM_HUD_Button", x + size * 0.5, y + size * 0.5, color_black,
         TEXT_ALIGN_CENTER,
         TEXT_ALIGN_CENTER)

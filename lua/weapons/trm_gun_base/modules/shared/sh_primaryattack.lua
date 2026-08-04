@@ -27,7 +27,7 @@ end
 
 local cvar_bullet = CreateConVar("trmbase_sv_physical_bullet", 0, FCVAR_ARCHIVE, "", 0, 1)
 local cvar_shake = CreateConVar("trmbase_sv_mod_shake", 1, FCVAR_ARCHIVE, "", 0, 10)
-
+local tick = engine.TickInterval
 
 
 function SWEP:FirePrimaryBullet()
@@ -121,7 +121,7 @@ function SWEP:FirePrimaryBullet()
 
 	self:DoRecoil()
 	self:DoSpread()
-	self:SetLastFireTime(CurTime())
+	self:SetLastFireTime(UnPredictedCurTime())
 	self:SetClip1(self:Clip1() - 1)
 
 	if self.Primary.BoltAction then
@@ -197,7 +197,7 @@ function SWEP:FireProjectile()
 	self:DoFireSound()
 	self:DoRecoil()
 	self:DoSpread()
-	self:SetLastFireTime(CurTime())
+	self:SetLastFireTime(UnPredictedCurTime())
 	self:SetClip1(self:Clip1() - 1)
 
 	if self.Primary.BoltAction and self.Animations.Rechamber then
@@ -295,15 +295,20 @@ function SWEP:DoVisualRecoil()
 	self:SetVisualRecoilBackward(self:GetVisualRecoilBackward() + backforward)
 end
 
+
 function SWEP:Recover()
 	if CLIENT then return end
+
+	
+
 	local last = self:GetLastFireTime()
 	local Curtime = UnPredictedCurTime()
 	local delay = 60 / self.Primary.RPM -- second
+	local ft = FrameTime()
 	--VRecoil(Angle)
 	if Curtime - last > (self.VisualRecoil.RecoverDelay or 0) then
 		local Vrecoil = self:GetVisualRecoil()
-		Vrecoil = LerpAngle(FrameTime() * self.VisualRecoil.RecoverSpeed * 10, Vrecoil, Angle(0, 0, 0))
+		Vrecoil = LerpAngle(ft * self.VisualRecoil.RecoverSpeed * 10, Vrecoil, Angle(0, 0, 0))
 		self:SetVisualRecoil(Vrecoil)
 		--VRecoil(Vector)
 		backforward = self:GetVisualRecoilBackward()
@@ -315,7 +320,7 @@ function SWEP:Recover()
 	if self.VisualRecoil.Functional then
 		progress = self:GetVisualRecoilProgress() or 0
 		local recover = self.VisualRecoil.Functional.Recover or 0.3
-		progress = math.max(0, progress - recover * FrameTime())
+		progress = math.max(0, progress - recover * ft)
 		self:SetVisualRecoilProgress(progress)
 	end
 
@@ -329,9 +334,16 @@ function SWEP:Recover()
 	--spread
 	if Curtime - last > (self.Spread.Delay or 0) then
 		local spread = self:GetSpread()
+			local min , max = self.Spread.Base, self.Spread.Max
+	if min > max then
+		min , max = max ,min
+	end
 		spread = math.Clamp(spread - self.Spread.Recover * FrameTime(), self.Spread.Base, self.Spread.Max)
 		self:SetSpread(spread)
 	end
+
+	---Recoil Spray
+	self:SetRecoil(Lerp(ft * self.Recoil.Recover or 1, self:GetRecoil(), 1))
 end
 
 local cvar_recoil = CreateConVar("trmbase_sv_mod_recoil", 1, FCVAR_ARCHIVE, "", 0, 10)
@@ -369,15 +381,22 @@ function SWEP:DoRecoil()
 	end
 
 	Recoil:Mul(self:GetRecoilMultiplier())
+	Recoil:Mul(self:GetRecoil())
+	self:SetRecoil(self:GetRecoil() + 1)
 	Recoil:Normalize()
+	
 	--owner:SetViewPunchVelocity( Recoil * 10)
 	--owner:ViewPunch(Recoil)
-	owner:SetViewPunchAngles(owner:GetViewPunchAngles() + Recoil * stats.KickDown * 1 +
-		Angle(0, 0, stats.Shake) * ShakeDirection * 3)
-	ShakeDirection = -ShakeDirection
-	--owner:SetViewPunchVelocity(owner:GetViewPunchVelocity() * 1.1)
-	owner:SetEyeAngles(owner:EyeAngles() + Recoil * 0.7)
+	if owner:IsPlayer() then
+		local kickDown = stats.KickDown
+		owner:ViewPunch(Recoil * kickDown * 0.4 + Angle(0, 0, stats.Shake) * ShakeDirection * 3)
+		ShakeDirection = -ShakeDirection
+		--owner:SetViewPunchVelocity(owner:GetViewPunchVelocity() * 1.1)
+		owner:SetEyeAngles(owner:EyeAngles() + Recoil * (1 - kickDown) * 0.02)
+	end
 end
+
+
 
 function SWEP:GetRecoilMultiplier()
 	local base = cvar_recoil:GetFloat()
@@ -390,7 +409,12 @@ end
 
 function SWEP:DoSpread()
 	local base = self:GetSpread()
-	base       = math.Clamp(base + self.Spread.Increase, self.Spread.Base, self.Spread.Max)
+	local min , max = self.Spread.Base, self.Spread.Max
+	if min > max then
+		min , max = max ,min
+	end
+
+	base = math.Clamp(base + self.Spread.Increase, min, max)
 	self:SetSpread(base)
 end
 
@@ -456,8 +480,10 @@ function SWEP:GetAimVector()
 
 	local ang = owner:EyeAngles()
 	local punch = owner:GetViewPunchAngles()
+	local velo = owner:GetViewPunchVelocity()
 	ang:Add(self:GetVisualRecoil())
-	ang:Add(punch * 2)
+	ang:Add(punch * 1)
+	--ang:Add(velo * tick())
 	--ang:Normalize()
 	--print(ang, "punch :",punch)
 	return ang:Forward() * aimVector:Length()

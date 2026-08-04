@@ -212,26 +212,28 @@ local function ReplaceWeaponOnPickup(ply, ent)
 
     local newClass = FindTRMReplacement(ent)
     if not newClass then return end
+    timer.Simple(engine.TickInterval() * 2, function()
+        if !IsValid(ent) then return end
+        local pos = ent:GetPos()
+        local ang = ent:GetAngles()
+        ent:Remove()
 
-    local pos = ent:GetPos()
-    local ang = ent:GetAngles()
+        local newEnt = ents.Create(newClass)
+        if IsValid(newEnt) then
+            newEnt:SetPos(pos)
+            newEnt:SetAngles(ang)
+            newEnt:Spawn()
+        end
+    end)
 
 
-    ent:Remove()
-
-    local newEnt = ents.Create(newClass)
-    if IsValid(newEnt) then
-        newEnt:SetPos(pos)
-        newEnt:SetAngles(ang)
-        newEnt:Spawn()
-    end
     return true
 end
 
 hook.Add("PlayerCanPickupWeapon", "TRMBase_ReplaceWeapon", function(ply, ent)
-     if ReplaceWeaponOnPickup(ply, ent) then
+    if ReplaceWeaponOnPickup(ply, ent) then
         return false
-     end
+    end
 
     if HasMelee(ply) and IsMelee(ent:GetClass()) then
         return false
@@ -267,4 +269,11 @@ hook.Add("Restored", "TRMBASE_ReplaceRestored", function()
             end
         end
     end)
+end)
+
+hook.Add("PlayerSpawnedSWEP", "TRMBase_Replace", function(ply, ent)
+    ReplaceWeapon(ent)
+end)
+hook.Add("WeaponEquip", "TRMBase_Replace", function(weapon, owner)
+    ReplaceWeapon(weapon)
 end)

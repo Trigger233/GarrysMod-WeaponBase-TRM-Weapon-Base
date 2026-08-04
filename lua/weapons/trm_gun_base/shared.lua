@@ -311,6 +311,7 @@ SWEP.Recoil = {
     AdsMultiplier = 0.7,
     KickDown = 1,
     Shake = 1,
+    Recover = 1 ,
     Functional = {
         Increase = 0.2,
         Recover = 0.4,
@@ -695,16 +696,7 @@ SWEP.BasePoseParameter = {
     -- Walk = {"jog_offset","jog_loop"}
 }
 
-hook.Add("PlayerPostThink", "PoseParameterControl", function(ply)
-    local weapon = ply:GetActiveWeapon()
-    if not weapon then return end
-    if not util.IsTRMBase(weapon) then
-        return
-    end
 
-    --weapon:bThink()
-    weapon:Sprint()
-end)
 
 
 SWEP.Attachments = {
@@ -732,18 +724,13 @@ if SERVER then
         end
     end
 
-    function SWEP:SetPlayerMoveMult(ply, runMult, walkMult)
-        if not IsValid(ply) then return end
-        InitMoveData(ply)
-        ply.TRM_MoveSpeed.Run = runMult or 1.0
-        ply.TRM_MoveSpeed.Walk = walkMult or 0.95
-    end
 
     -- Hook Move
-    hook.Add("Move", "TRM_MoveSpeed", function(ply, mv)
+    hook.Add("Move", "TRMBase_MoveSpeedMod", function(ply, mv)
         if not IsValid(ply) then return end
 
         local wep = ply:GetActiveWeapon()
+        if !util.IsTRMBase(wep) then return end
         if wep and wep.GetPlayerMoveMult then
             local runMult, walkMult = wep:GetPlayerMoveMult(ply)
             if runMult then
@@ -819,4 +806,8 @@ function TRMWeaponBase:UpdateAllAttachment()
     include(Path)
     net.Start("TRMBase_UpdateAttachments")
     net.Broadcast()
+end
+
+function SWEP:UpdateTransmitState()
+    return 2
 end

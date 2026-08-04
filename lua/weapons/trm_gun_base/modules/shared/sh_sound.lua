@@ -17,10 +17,13 @@ local REVERB_REFRESH_TIME = 0.3
 local reverbHull = Vector(4, 4, 4)
 local reverbCoroutines = {}
 
+local math = math
+
 function SWEP:DoFireSound()
     local slience = self.Slienced and true or false
-
-    self:EmitSound(slience and self.Primary.SliencedSound or self.Primary.Sound)
+    local precent = self:Clip1() / self:GetMaxClip1()
+    self:EmitSound(slience and self.Primary.SliencedSound or self.Primary.Sound, nil,
+        precent > 0.25 and 100 or math.Remap(precent, 0, 0.25, 155, 100))
     if self:Clip1() == 0 then
         self:EmitSound("weapons/pistol/pistol_empty.wav", 66, 100, 1, CHAN_ITEM)
     end

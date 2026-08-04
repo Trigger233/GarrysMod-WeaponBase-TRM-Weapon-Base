@@ -71,8 +71,8 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Bool", "Underbarrel")
     self:NetworkVar("String", "PlayingSequence")
     self:NetworkVar("Bool", "CanSwitch")
-    self:NetworkVar("Angle", "Recoil")
     self:NetworkVar("Angle", "VisualRecoil")
+    self:NetworkVar("Float", "Recoil")
     self:NetworkVar("Float", "VisualRecoilProgress") -- for custom recoil
     self:NetworkVar("Float", "VisualRecoilBackward")
 

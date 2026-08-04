@@ -106,6 +106,12 @@ end
 --for our Alarm mod
 function SWEP:HandlePenetrating(ent,dmginfo)
     dmginfo:ScaleDamage(self.Bullet.Penetration.ArmorPenetrateDamage)
+
+    local damage = dmginfo:GetDamage()
+    if AlarmSys != nil then
+        AlarmSys:StunNPC(ent, damage / 20)
+    end
+
     return dmginfo
 end
 
@@ -114,7 +120,7 @@ end
 
 
 
-hook.Add("Alarm.ArmorPenetratingDamage", "TRMBase", function(ent,dmginfo)
-    local weapon = dmginfo:GetInflictor()
-    return weapon.HandlePenetrating and weapon:HandlePenetrating(ent,dmginfo)   
-end)
+-- hook.Add("Alarm.ArmorPenetratingDamage", "TRMBase", function(ent,dmginfo)
+--     local weapon = dmginfo:GetInflictor()
+--     return weapon.HandlePenetrating and weapon:HandlePenetrating(ent,dmginfo)   
+-- end)

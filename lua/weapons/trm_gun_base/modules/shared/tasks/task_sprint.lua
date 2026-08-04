@@ -3,7 +3,7 @@ task_in.Name = "SprintIn"
 task_in.Priority = 150
 
 function task_in:CanBeSet(weapon)
-    return weapon:CanSprint()
+    return true
 end
 
 function task_in:OnSet(weapon)
@@ -27,12 +27,14 @@ end
 
 function task_sprint:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
+    if weapon.Animations.Sprint then
+        weapon:PlayAnimation(weapon:ChooseAnim("Sprint"), true)
+    end
 end
 
 function task_sprint:Think(cycle, weapon)
     if weapon.Animations.Sprint and weapon:GetNextPrimaryFire() < UnPredictedCurTime() then
         weapon:PlayAnimation(weapon:ChooseAnim("Sprint"), true)
-        -- weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes[weapon:GetCurrentHoldType()].Down)
     end
 
     local owner = weapon:GetOwner()

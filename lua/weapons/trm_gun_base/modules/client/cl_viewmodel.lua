@@ -12,38 +12,6 @@ function SWEP:ViewModelDrawn(vm, flag)
     self:BuildViewmodelAttachmentsData(vm)
 end
 
-local NextUpdate = 0
-function SWEP:BuildViewmodelAttachmentsData(vm)
-    if not IsValid(vm) then return end
-    if SysTime() - NextUpdate > 0 then
-        self.m_Attachment = self.m_Attachment or {}
-        local stats = self.Effects
-        if not stats then return end
-
-        for _, element in pairs(stats) do
-            if not element or not element.attachment then
-                continue
-            end
-            local attName = element.attachment
-
-            local ent, attId = self:FindAttachment(self:IsFirstPerson() and vm or self, attName)
-            if not IsValid(ent) or not attId or attId == -1 then
-                -- 可选：用默认值或跳过
-                self.m_Attachment[element.attachment] = false
-                continue
-            end
-
-            local att = ent:GetAttachment(attId)
-            if not att then
-                self.m_Attachment[element.attachment] = false
-                continue
-            end
-
-            self.m_Attachment[element.attachment] = att
-        end
-        NextUpdate = SysTime() + 1 / 30
-    end
-end
 
 function SWEP:GetAttachmentData(name)
     return self.m_Attachment[name] or false
@@ -108,3 +76,37 @@ concommand.Add("trmbase_freeze_vm", function(ply, cmd, args)
         print("[TRMBase] Viewmodel 已解冻")
     end
 end)
+
+
+local NextUpdate = 0
+function SWEP:BuildViewmodelAttachmentsData(vm)
+    if not IsValid(vm) then return end
+    if SysTime() - NextUpdate > 0 then
+        self.m_Attachment = self.m_Attachment or {}
+        local stats = self.Effects
+        if not stats then return end
+
+        for _, element in pairs(stats) do
+            if not element or not element.attachment then
+                continue
+            end
+            local attName = element.attachment
+
+            local ent, attId = self:FindAttachment(self:IsFirstPerson() and vm or self, attName)
+            if not IsValid(ent) or not attId or attId == -1 then
+                -- 可选：用默认值或跳过
+                self.m_Attachment[element.attachment] = false
+                continue
+            end
+
+            local att = ent:GetAttachment(attId)
+            if not att then
+                self.m_Attachment[element.attachment] = false
+                continue
+            end
+
+            self.m_Attachment[element.attachment] = att
+        end
+        NextUpdate = SysTime() + 1 / 30
+    end
+end

@@ -1,11 +1,9 @@
 local cvar_holster = CreateConVar("trmbase_sv_holster_on_ladder", 1, { FCVAR_ARCHIVE }, "", 0, 1)
-
+local Tick = engine.TickInterval
 function SWEP:Think()
-    -- 原有逻辑...
+    local dt = Tick()
     local owner = self:GetOwner()
-    if not IsValid(owner) or not owner:IsPlayer() then return end
     self:SetWeaponHoldType(self.HoldType)
-    self:UpdatePoseParameters()
     self:TaskTick()
     self:bThink()
     self:DoAnimationEvents()
@@ -26,6 +24,16 @@ function SWEP:Think()
     end
 
     self:TrySetTask("Rechamber")
+
+    self:Sprint()
+    self:NextThink(CurTime())
+
+    if CLIENT then
+        self:UpdatePoseParameters(dt)
+        self:SetNextClientThink(CurTime())
+    end
+
+    return true
 end
 
 local SprintDelta = 0

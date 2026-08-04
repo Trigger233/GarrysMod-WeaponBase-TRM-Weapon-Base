@@ -4,14 +4,13 @@ function SWEP:FireModeStat(index)
 
     if self.Firemode and self.Firemode[index] and self.Firemode[index].OnSet then
         local stat = self.Firemode[index].OnSet(self)
+                self.Primary.BrustEnabled = false
 
         if( stat != nil) then
             if stat == -1 then
                 self.Primary.Automatic = false
-                self.Primary.BrustEnabled = false
             elseif stat == 0 then
                 self.Primary.Automatic = true
-                self.Primary.BrustEnabled = false
             elseif stat > 0 then
                 self.Primary.BrustEnabled = true
             end

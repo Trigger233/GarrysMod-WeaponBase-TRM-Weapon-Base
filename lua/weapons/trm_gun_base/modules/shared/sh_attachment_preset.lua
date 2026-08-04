@@ -32,6 +32,9 @@ local function ApplyAttachmentTable(weapon, data)
 
     for i, attClass in ipairs(data) do
         local slotKey = tostring(i)
+        if i > #weapon.Attachments then
+            return
+        end
         if weapon.Attachments and weapon.Attachments[i] and attClass ~= "None" and BASE_TRM_ATTS and BASE_TRM_ATTS[attClass] and weapon:CanEquip(i,attClass) then
             weapon.CurrentAttachments[slotKey] = { Class = attClass }
         end

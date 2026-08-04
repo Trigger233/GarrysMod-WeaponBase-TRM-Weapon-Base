@@ -127,7 +127,7 @@ local r = Angle(0, 0, 0)
 function SWEP:GetClientVisualRecoil()
     if SERVER then return end
     local source = self:GetVisualRecoil()
-    r = LerpAngle(RealFrameTime() * 25, r, source)
+    r = LerpAngle(RealFrameTime() * 50, r, source)
 
     return r
 end
@@ -158,7 +158,7 @@ function SWEP:CalcView(ply, pos, angles, fov)
 
     -- 不需要相机跟随的动画
     local ignoreAnims = { "Fire", "Idle", "Sprint" }
-    local currentSeq = self.m_CurrentSequence or self:GetPlayingSequence() or ""
+    local currentSeq = self:GetPlayingSequence() 
     local shouldFollow = true
 
     for _, anim in ipairs(ignoreAnims) do
@@ -357,17 +357,17 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     angles:RotateAroundAxis(angles:Up(), visAng.y * Vrecoil_Mul)
 
     ------ViewModel Recoil
-    local fireInterval = (60 / self.Primary.RPM) * 0.5
-    local timeToNextFire = self:GetNextRecoil() - UnPredictedCurTime()
+    local fireInterval = (60 / self.Primary.RPM) 
+    local timeToNextFire = UnPredictedCurTime() -( self:GetLastFireTime() + fireInterval)
     local t = math.Clamp(timeToNextFire / fireInterval, 0, 1)
-    local Recoildelta = math.min((t > 0.5 and 1 - t or t) * 2, 1) *
-        Lerp(aimdelta, 1, self.ViewmodelRecoil.AdsMultiplier) -- 开火时 = 1，然后衰减到 0
-
+    local Recoildelta = math.min((t > 0.5 and 1 - t or t) * 2, 1) 
     local recoiloffsetpos = self.ViewmodelRecoil.Pos
     local recoiloffsetang = self.ViewmodelRecoil.Ang
-    pos:Add(Vector(recoiloffsetpos[1] * angles:Right() + recoiloffsetpos[2] * angles:Forward() +
-        recoiloffsetpos[3] * angles:Up()) * Recoildelta)
+    local addVector = Vector(recoiloffsetpos[1] * angles:Right() + recoiloffsetpos[2] * angles:Forward() +
+        recoiloffsetpos[3] * angles:Up()) * Recoildelta
 
+    pos:Add(addVector)
+    --print(addVector)
     angles:Add(recoiloffsetang * Recoildelta)
 
     if VManip then
@@ -464,8 +464,7 @@ function SWEP:CoolFov()
     end
     local reload = self:IsReloading()
     reloadFovDelta = Lerp(RealFrameTime() * 5, reloadFovDelta or 0, reload and 1 or 0)
-    aimFOV = aimFOV * (1 + reloadFovDelta * 0.2)
-
+    aimFOV = math.min(aimFOV * (1 + reloadFovDelta * 0.2), normalFOV)
     local easedDelta = aimDelta
     local FOV = Lerp(easedDelta, normalFOV, aimFOV)
     finalFOV = Lerp(RealFrameTime() * 15, finalFOV, FOV)

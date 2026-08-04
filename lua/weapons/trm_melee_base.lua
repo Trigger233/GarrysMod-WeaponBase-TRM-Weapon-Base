@@ -39,6 +39,9 @@ function SWEP:Initialize()
 end
 
 function SWEP:CanPrimaryAttack()
+    local seq = self:GetPlayingSequence()
+
+
     return self:GetNextPrimaryFire() <= CurTime()
 end
 
@@ -91,6 +94,9 @@ function SWEP:DoMeleeAttackDamage(tbl)
     --     self:EmitSound(self.Melee.Sound)
     -- end
 
+    if AlarmSys != nil then
+        AlarmSys:StunNPC(ent, 1)
+    end
 
     if CLIENT then return end
 
@@ -117,7 +123,7 @@ function SWEP:DoMeleeAttackDamage(tbl)
             ent:SetVelocity(owner:GetAimVector() * damage * 0.5)
             phys:SetVelocity(phys:GetVelocity() + forward * damage * 0.5)
         else
-            phys:ApplyForceOffset(forward * damage * 0.5, tr.HitPos)
+            phys:ApplyForceOffset(forward * damage * 0.4, tr.HitPos)
         end
     end
 end
@@ -141,7 +147,7 @@ function SWEP:HandlePenetrating(ent, dmginfo)
     if AlarmSys != nil then
         AlarmSys:StunNPC(ent,1)
     end
-    dmginfo:ScaleDamage(0.75)
+    dmginfo:ScaleDamage(2)
     return dmginfo
 end
 

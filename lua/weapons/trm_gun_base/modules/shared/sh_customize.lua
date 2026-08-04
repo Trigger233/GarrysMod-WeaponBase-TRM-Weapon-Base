@@ -16,12 +16,19 @@ function SWEP:CanEquip(slotIndex, attClass)
 
     -- 默认配件或空配件永远可装
     if slot.Default and attClass == slot.Default then return true end
+
+
+
     if not attClass then return true end
 
 
 
     local attData = BASE_TRM_ATTS[attClass]
     if not attData then return true end
+
+    if slot.Category and ! table.HasValue(slot.Category, attData.Category) then
+        return false
+    end
 
     if ! attData.Selectable then return false end
 
@@ -663,11 +670,7 @@ function SWEP:BuildCustomizedGun()
     self.wm_Bone = buildSingleModelBone(self)
 
 
-    self:RemoveAllAttachementModels()
 
-    for slot, att in pairs(self:GetAllAttachmentsInUse()) do
-        self:CreateAttachmentModel(att, slot)
-    end
 
     -- VM 相关操作只在 vm 有效时执行
     if hasVM and vm and owner and isActive then
@@ -685,7 +688,11 @@ function SWEP:BuildCustomizedGun()
         self:SetupViewmodel()
         vm:ResetSequence(sequence)
     end
+    self:RemoveAllAttachementModels()
 
+    for slot, att in pairs(self:GetAllAttachmentsInUse()) do
+        self:CreateAttachmentModel(att, slot)
+    end
 
     self:ApplyCustomizationModels()
     self:GenerateCustomizationStats()
@@ -738,10 +745,13 @@ function SWEP:InvalidateAttachments(ent)
     end
 end
 
+local cvar_highlight = CreateClientConVar("trmbase_cl_alwaysdrawhighlight", 0, true, true, "", 0, 1)
+
 local def_customcolor = color_white
 local function DrawCustomHighlight(model, att, weapon)
     model.m_CustomDelta = (model.m_CustomDelta or 1) -
         (math.min(FrameTime(), 0.1) * (weapon and weapon.IsCustomizing and weapon:IsCustomizing() and 3 or 1))
+    if ! (weapon:IsCustomizing() or cvar_highlight:GetBool()) then return end
     if model.m_CustomDelta <= 0 then return end
     model:RemoveEFlags(EFL_USE_PARTITION_WHEN_NOT_SOLID)
 
@@ -769,7 +779,6 @@ local function DrawCustomHighlight(model, att, weapon)
     render.SetStencilEnable(false)
 end
 
-local cvar_highlight = CreateClientConVar("trmbase_cl_alwaysdrawhighlight", 0, true, true, "", 0, 1)
 function SWEP:SetupViewmodel()
     local vm = self:GetViewModel()
     if not (vm and IsValid(vm)) then return end
@@ -784,35 +793,37 @@ function SWEP:SetupViewmodel()
             self:GetOwner():GetActiveWeapon()
         if not wep or not util.IsTRMBase(wep) then
             v.RenderOverride = nil
+            return
         end
+
+        if ! wep.IsCustomizing then
+        end
+
         if not IsValid(v) then
             v.RenderOverride = nil
+            return
         end
 
         self.m_OverDraw = true
-        v:DrawShadow(false)
         v:DrawModel(flag)
 
-        if self:IsCustomizing() or cvar_highlight:GetBool() then
+        if CLIENT then
             DrawCustomHighlight(v, self, wep)
         end
         if self.GetAllAttachmentsInUse then
             for _, att in pairs(self:GetAllAttachmentsInUse()) do
                 local tbl = BASE_TRM_ATTS[att.Class]
                 if IsValid(att.m_Model) and tbl.Render then
+                    att.m_Model:SetupBones()
                     tbl:Render(self, att.m_Model)
-                    if self:IsCustomizing() or cvar_highlight:GetBool() then
+                    if CLIENT then
                         DrawCustomHighlight(att.m_Model, tbl, wep)
                     end
                 elseif tbl and tbl.Model then
                     self:BuildCustomizedGun()
                 end
             end
-
-
-            render.SetStencilEnable(false)
         end
-        --render.UpdateFullScreenDepthTexture()
         self.m_OverDraw = false
     end
 end

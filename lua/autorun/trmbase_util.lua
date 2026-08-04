@@ -2,15 +2,16 @@ AddCSLuaFile()
 module("trm_weapon_base_util", package.seeall)
 trm_util = trm_util or {}
 
-local IsTRMBaseCache = {}
 local function getBase(weapon)
-    IsTRMBaseCache[weapon:GetClass()] = IsTRMBaseCache[weapon:GetClass()]
-        || weapons.IsBasedOn(weapon:GetClass(), "trm_gun_base")
-    return IsTRMBaseCache[weapon:GetClass()]
+    return weapons.IsBasedOn(weapon:GetClass(), "trm_gun_base")
 end
 
 function util.IsTRMBase(weapon)
-    return IsValid(weapon) and (getBase(weapon))
+    if !IsValid(weapon) then
+        return false
+    end
+
+    return getBase(weapon)
 end
 
 function trm_weapon_base_util.IsDucking(ply)

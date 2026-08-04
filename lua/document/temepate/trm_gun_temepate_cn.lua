@@ -97,15 +97,14 @@ SWEP.HoldType = "ar2"
 -- 世界模型偏移 通过偏移骨骼实现
 
 SWEP.WorldModelOffsets = {
-    Bone = "tag_sling",
+    Bone = "tag_sling",--Bone or false 如果是false则是相对于武器的原点偏移
     Angles = Angle(180, 90, 0),
     Pos = Vector(-1, 9.5, -5)
 }
 -- 瞄准配置
 SWEP.Sight = {
-    Ang = Angle(0, 0, -90),
-    Pos = Vector(-3.07, -1, 0.1),
-    Type = "Attachment" ,
+    Ang = Angle(0, 0, -0),
+    Pos = Vector(-0, -0, 0.0),
     PoseParameter = { "aim_offset" } -- 瞄准时调整PoseParameter
 }
 
@@ -183,22 +182,6 @@ SWEP.AltSwitch = false
 
 -- 动画
 SWEP.Animations = { --有些动作是给老一派的模型用的，没有也行
-    ["Draw"] = { sequence = { "base_draw" } },
-    ["Draw_First"] = { sequence = { "base_ready" } },
-    ["Holster"] = { sequence = { "base_holster" } },
-    
-    ["Idle"] = { sequence = { "base_idle" } },
-    -- ["Idle_Empty"] = { sequence = { "empty_idle" } },
-    -- ["Iron_Idle"] = { sequence = { "base_idle" } },
-    
-    ["Sprint"] = { sequence = { "base_sprint" }, Speed = 1.1 },
-    ["Sprint_Empty"] = { sequence = { "empty_sprint" }, Speed = 1.1 },
-    
-    ["Fire"] = { sequence = { "base_fire" } },
-    ["Fire_Last"] = { sequence = { "base_fire_last" } },
-    
-    -- ["Iron_Fire"] = { sequence = { "iron_fire" } },
-    -- ["Iron_Fire_Last"] = { sequence = { "iron_fire_last" } },
     
     ["Reload"] = {
         sequence = { "base_reload" },
@@ -240,12 +223,14 @@ SWEP.Animations = { --有些动作是给老一派的模型用的，没有也行
             SWEP:SetGrip1( bool ) 禁用/启用右手的Pose
             SWEP:MagzineLoaded() 换弹动画中执行这个函数来实现换弹
             SWEP:SingleLoad(num) 换弹动画中执行这个函数来实现逐发装填 num默认取0，一次上弹的数量
+            SWEP:DoShells() --换弹动画中执行这个函数来实现抛壳
+            SWEP:DoBolt() --动画中执行这个函数来实现拉栓
             SWEP:EmitSound( sound ) 播放音效
     ]]
 }
 
 
---这里写武器基本的PoseParameter 左右手的要用配件启用
+--这里写武器基本的PoseParameter 
 SWEP.BasePoseParameter = {
     -- Sprint = { "sprint_loop", "sprint_offset" },
     -- Empty = { "empty_offset" },

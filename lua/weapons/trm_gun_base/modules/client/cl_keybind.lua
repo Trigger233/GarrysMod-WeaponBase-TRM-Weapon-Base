@@ -9,24 +9,21 @@ local cv_underbarrel = CreateClientConVar("trmbase_cl_keybind_ub", 0, true, fals
 
 SWEP.BindState = {}
 
-hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
+hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed,code)
     local weapon = ply:GetActiveWeapon()
     if not util.IsTRMBase(weapon) then return end
 
-    -- Melee
-    if input.WasKeyPressed(cv_melee:GetInt()) and cv_melee:GetInt() > 0 then
-        RunConsoleCommand("+trmbase_melee")
-    end
 
-    if input.WasKeyPressed(cv_melee:GetInt()) and cv_melee:GetInt() > 0 then
+
+    if code ==  (cv_melee:GetInt()) and cv_melee:GetInt() > 0 and pressed then
         RunConsoleCommand("+trmbase_melee")
     end
     -- Inspect
-    if input.WasKeyPressed(cv_inspect:GetInt()) and cv_inspect:GetInt() > 0 then
+    if code == (cv_inspect:GetInt()) and cv_inspect:GetInt() > 0 and pressed then
         RunConsoleCommand("trmbase_weaponinspect")
     end
 
-    if input.WasKeyPressed(cv_underbarrel:GetInt()) and cv_underbarrel:GetInt() > 0 then
+    if code == (cv_underbarrel:GetInt()) and cv_underbarrel:GetInt() > 0 and pressed then
         RunConsoleCommand("+trmbase_switch_underbarrel")
     end
     -- Customize：独立按键 vs 菜单回退，两条路泾渭分明
@@ -34,7 +31,7 @@ hook.Add("PlayerBindPress", "TRMBASE_Weapon_Binds", function(ply, bind, pressed)
 
     -- 路径 A：有独立按键 → 只认该按键
     if custKey > 0 then
-        if input.WasKeyPressed(custKey) then
+        if code == (custKey) and pressed then
             RunConsoleCommand("+trmbase_customize")
             return true
         end

@@ -1,4 +1,6 @@
 if not CLIENT then return end
+local render = render
+
 local RecoilFactor = 0.1
 local Basefov = GetConVar("fov_desired"):GetInt()
 local zoomscale = 1.5
@@ -225,7 +227,7 @@ function SWEP:DoRTScope(model, att)
 
     local origin, angles = owner:EyePos(),
         self:GetOwner():EyeAngles() + recoil + additiveZero
-    local zoomfov = self:GetScopeZoomFov()
+    local zoomfov = self:GetScopeZoomFov() / CheapzoomMulti
     local reticleStats = att.Sight
 
     local fps = math.min(144, 1 / RealFrameTime())
@@ -332,7 +334,7 @@ function SWEP:DrawParallax(model, rtSize, att)
     centerX = centerX - AngleToPixel(additive.yaw) * ScrW()
 
     centerY = centerY + AngleToPixel(additive.p) * ScrH()
-    local _size = rtSize * 1.5
+    local _size = rtSize * (att.Scope.ParallaxSize or 1.5)
     surface.SetMaterial(att.Scope.Parallax or parallaxMat)
     surface.SetDrawColor(Color(255, 255, 255, 255))
 
@@ -440,6 +442,7 @@ function SWEP:DrawThermal(tx, att)
     render.SetStencilCompareFunction(STENCIL_ALWAYS)
     render.SetStencilPassOperation(STENCIL_REPLACE)
     render.SetStencilFailOperation(STENCIL_KEEP)
+    render.SetStencilZFailOperation(STENCIL_KEEP)
     render.SetBlend(0) -- 透明绘制，只写 Stencil
 
     -- 画 NPC 到 Stencil（只标记，不画颜色）

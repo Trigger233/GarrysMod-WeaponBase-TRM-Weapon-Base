@@ -110,3 +110,8 @@ CHAN_TRIGGER = 140
 CHAN_MINIGUNFIRE = 141
 CHAN_MAGAZINEDROP = 142
 CHAN_WPNFOLEY = 143
+
+AddCSLuaFile("include/rndx.lua")
+function TRMWeaponBase.GetRNDX()
+    return include("include/rndx.lua")
+end

@@ -107,7 +107,7 @@ function SWEP:ChooseAnim(animationClass)
     if not SERVER then return end
 
     local empty = self:IsEmpty()
-    local aim = self:GetAimDelta() > 0.5 and true or false
+    local aim = self:HasFlag("Aiming")
     local function hasAnim(Class)
         local anim = self.Animations
         return anim and anim[Class] and true or false

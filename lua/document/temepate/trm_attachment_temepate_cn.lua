@@ -2,6 +2,7 @@
 -- Base配件 其他配件可以以这个为基础进行修改 你也可以创建自己的Base配件来让其他配件以它为基础
 -- 你可以在这个文件里定义一个配件的属性 通过修改这些属性
 -- 以下配件如果用了特定功能，需要给上一个ATTACHMENT.Base = "att_base" 来继承这个Base配件 这样就能让这个配件拥有Base配件的功能了
+ATTACHMENT.Base = "att_base" --配件的基础配件 这个配件会继承基础配件的属性和功能 你可以在这里设置一个基础配件的名字来让这个配件继承它的属性和功能 如果不设置或者设置为nil则不会继承任何基础配件
 ATTACHMENT.Name = "att_base" --配件名字 这个会显示在配件栏里 可以本地化，vgui里已经有GetPhrase了
 ATTACHMENT.Category = nil --配件分类 这个决定了这个配件可以安装在哪些槽位上 你可以在武器的Attachments里定义一个槽位的Category来让它能安装对应分类的配件
 ATTACHMENT.Selectable = true --是否能被玩家选择安装 有些配件可能只是用来修改武器属性或者被其他配件调用的 这种配件就不需要Selectable
@@ -17,36 +18,14 @@ ATTACHMENT.Angles = Angle(0, 0, 0) --模型角度偏移 如果Bonemerge为false�
 
 
 --Laser 配件相关字段 你可以定义一个Laser字段来让这个配件在渲染时自动帮你画出激光 具体的渲染逻辑在trmbase里已经写好了 你只需要定义这个字段并设置好参数就行了
-
+--配件的Base最低是att_laser
 ATTACHMENT.Laser = {  --激光相关设置 att_laser可以通过定义这个字段来让它在渲染时自动帮你画出激光
-    Attach = "Laser",
+    Attach = "Laser", --激光的附件点名称 这个点是相对于配件模型的 你可以在模型里添加一个名为Laser的附件点来让激光从这个点发射出来
     Color = Color(255, 0, 0, 197),
     Width = 1,
     DotSize = 4,
 }
 
--- 材质缓存（放在配件表上，不是 self） 激光的材质
-local lineMat = nil
-local dotMat = nil
-
-function ATTACHMENT:GetLineMat()
-    if not lineMat then
-        lineMat = Material("sprites/physbeam")
-    end
-    return lineMat
-end
-
-function ATTACHMENT:GetDotMat()
-    if not dotMat then
-        dotMat = CreateMaterial("trmbase_laserdot", "UnLitGeneric", {
-            ["$basetexture"] = "sun/overlay",
-            ['$additive'] = 1,
-            ['$vertexalpha'] = 1,
-            ['$vertexcolor'] = 1,
-        })
-    end
-    return dotMat
-end
 
 --Global
 function ATTACHMENT:ChangeWeaponStats(weapon)
@@ -54,6 +33,7 @@ function ATTACHMENT:ChangeWeaponStats(weapon)
 
 end
 --Reticle 配件相关字段 你可以定义一个Sight字段来让这个配件在渲染时自动帮你画出准星 具体的渲染逻辑在trmbase里已经写好了 你只需要定义这个字段并设置好参数就行了
+--Base配件最低是att_sight,带有光标的是att_reticle,镜子是att_scope,算了不想写注释你还是问作者或者别人吧
 ATTACHMENT.Sight = {
     Pos = Vector(0.00, 0, -0.45), --准星位置偏移 这个位置是相对于玩家视角的偏移 你可以调整这个位置来让视角对准准星
     Align = "reticle", --准星对齐方式的附件名字
@@ -63,24 +43,3 @@ ATTACHMENT.Sight = {
     HideMaterial = { 2 }, --还没做好 这个字段是一个材质索引的表 你可以在这里设置一些材质索引来让这个配件安装时自动隐藏武器模型上的某些材质 例如你可以用它来隐藏原本的准星材质来避免和新的准星重叠 你需要知道你要隐藏的材质在模型里的索引才能使用这个功能
     Rotate = 90, --准星旋转 这个值是准星的旋转角度 你可以调整这个值来让准星旋转到不同的角度
 }
-function ATTACHMENT:Render(weapon, model) --渲染的函数 这个函数会在配件安装时调用 model是配件的模型 你可以通过修改model来改变它的外观 例如调整位置或者隐藏某些子模型等    
-    model:DrawModel() 
-end
-
-
-function ATTACHMENT:ScaleTableValue(tableData, mul) --这个函数可以用来递归地调整一个表里所有数值的大小 例如你可以用它来成比例地调整一个配件对武器属性的影响
-    if not tableData then return end
-    for key, val in pairs(tableData) do
-        if istable(val) then
-            self:ScaleTableValue(val, mul)
-        else
-            tableData[key] = val * mul -- ✅ 直接修改原表的值
-        end
-    end
-end
-
-function ATTACHMENT:Remove(weapon, model) --卸载时的函数 这个函数会在配件卸载时调用 model是配件的模型 你可以通过修改model来改变它的外观 例如调整位置或者隐藏某些子模型等
-    model:Remove()
-end
-
---

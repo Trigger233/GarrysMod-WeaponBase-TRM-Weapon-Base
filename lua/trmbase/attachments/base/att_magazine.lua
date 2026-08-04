@@ -86,13 +86,13 @@ function ATTACHMENT:Init(weapon, model)
         end
 
         for name, boneStuff in pairs(ent.cachedBones) do
-            if (! boneStuff.remove) then
+            if (! boneStuff.remove or !boneStuff.id) then
                 continue
             end
 
             local mat = ent:GetBoneMatrix(boneStuff.id)
 
-            if (mat == nil) then
+            if !mat then
                 continue
             end
 

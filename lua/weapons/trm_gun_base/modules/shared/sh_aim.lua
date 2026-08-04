@@ -23,8 +23,13 @@ function SWEP:CanAim()
         return false
     end
 
+    if self:GetOwner():IsSprinting() then
+        return false
+    end
+
+
     local seq = self:GetPlayingSequence()
-    if self:GetSprintDelta() > 0.5 or (self.IronsightReload == false and self:IsReloading()) or string.find(seq, "Melee") or string.find(seq, "Holster") or string.find(seq, "Draw") then return false end
+    if  (self.IronsightReload == false and self:IsReloading()) or string.find(seq, "Melee") or string.find(seq, "Holster") or string.find(seq, "Draw") then return false end
     return true
 end
 
