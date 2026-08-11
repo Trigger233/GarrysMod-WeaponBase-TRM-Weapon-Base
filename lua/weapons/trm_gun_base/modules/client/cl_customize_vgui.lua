@@ -1220,7 +1220,7 @@ function PANEL:RefreshPreview()
 
     local ent = self.m_ModelPanel:GetEntity()
     if not IsValid(ent) then return end
-
+    ent:SetModel(self.m_Weapon:GetViewModel():GetModel())
     for slotKey, entry in pairs(self.m_Weapon.CurrentAttachments or {}) do
         if not entry or not entry.Class then continue end
 

@@ -56,8 +56,7 @@ local AmmoBoxMap = {
 local function ShouldReplaceWeapon(ent)
     if not IsValid(ent) or not ent:IsWeapon() then return false end
     if weapons.IsBasedOn(ent:GetClass(), "trm_gun_base") then return false end
-    --if IsValid(ent:GetOwner()) then return false end -- 有主人的不替换
-
+    if IsValid(ent:GetOwner()) and !ent:GetOwner():IsPlayer() then return false end -- 有主人的不替换
     local class = ent:GetClass()
     for _, name in ipairs(ReplaceableWeapons) do
         if class == name then return true end
@@ -146,7 +145,7 @@ end
 local function ReplaceWeapon(ent)
     if not ShouldReplaceWeapon(ent) then return end
     if not GetConVar("trmbase_replace_weapon"):GetBool() then return end
-
+    
     local newClass = FindTRMReplacement(ent)
     if not newClass then return end
 
@@ -232,7 +231,7 @@ end
 
 hook.Add("PlayerCanPickupWeapon", "TRMBase_ReplaceWeapon", function(ply, ent)
     if ReplaceWeaponOnPickup(ply, ent) then
-        return false
+        return 
     end
 
     if HasMelee(ply) and IsMelee(ent:GetClass()) then

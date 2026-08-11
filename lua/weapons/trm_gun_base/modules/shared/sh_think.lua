@@ -29,9 +29,10 @@ function SWEP:Think()
     self:NextThink(CurTime())
 
     if CLIENT then
-        self:UpdatePoseParameters(dt)
+        self:LocoMotion(dt)
         self:SetNextClientThink(CurTime())
     end
+
 
     return true
 end
@@ -40,6 +41,7 @@ local SprintDelta = 0
 function SWEP:bThink()
     local seq = self:GetPlayingSequence()
     local owner = self:GetOwner()
+    if !owner then return end
     local task = self:GetCurrentTaskName() or ""
     local sprint = owner:IsSprinting()
 

@@ -65,16 +65,16 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
             filter = { weapon, weapon:GetOwner() },
             mask = MASK_SHOT
         })
-        local updateFps = 60
+        local updateFps = 120
         model._nextTrace = SysTime() + math.min(1 / updateFps, RealFrameTime())
     end
 
     local tr = model._lastTrace
     if not tr then return end
-    local distance = tr.HitPos:Distance(tr.StartPos)
+    local distance = tr.HitPos:DistToSqr(tr.StartPos)
     local color = data.Color
 
-    if distance < 10 then return end
+    if distance < 100 then return end
     local scale = math.random(0.5, 1)
     render.SetMaterial(self:GetLineMat())
     render.DrawBeam(att.Pos, tr.HitPos or tr.endpos, data.Width * scale, 0, 1, color)

@@ -94,6 +94,7 @@ end
 
 function SWEP:PrecacheViewModel()
     self.m_ViewmodelCache = nil
+    self.m_WorldModelCache = nil
     self.m_SkinCache = 0
     self.m_BodyGroupCache = {}
     self.m_PoseParameter = self.GripPoseParameters.Left or {}
@@ -105,15 +106,23 @@ function SWEP:PrecacheViewModel()
         local _att = BASE_TRM_ATTS[entry.Class]
         if _att.ViewModel then
             self.m_ViewmodelCache = _att.ViewModel
-        elseif _att.Skin then
+        end
+
+        if _att.WorldModel then
+            self.m_WorldModelCache = _att.WorldModel
+        end
+        if _att.Skin then
             self.m_SkinCache = _att.Skin
-        elseif _att.BodyGroup then
+        end
+        if _att.BodyGroup then
             for _model, _submodel in pairs(_att.BodyGroup) do
                 self.m_BodyGroupCache[_model] = _submodel
             end
-        elseif _att.poseParameter then
+        end
+        if _att.poseParameter then
             self.m_PoseParameter = _att.poseParameter
-        elseif _att.poseParameter2 then
+        end
+        if _att.poseParameter2 then
             self.m_PoseParameter2 = _att.poseParameter2
         end
     end
@@ -166,15 +175,15 @@ function changeBodyGroup(model, submodel, sub)
 end
 
 function SWEP:ApplyWeaponModelChange()
+    local wm = self.m_WorldModelCache or self.WorldModel
+    self:SetModel(wm)
     local vm = self:GetViewModel()
     if not IsValid(vm) or not self:IsPlyCarry() then return false end
     local viewmodel = self.m_ViewmodelCache or self.ViewModel
 
-    if CLIENT then
-        vm:SetModel(viewmodel)
-    elseif not game.SinglePlayer() then
-        vm:SetModel(viewmodel)
-    end
+    vm:SetModel(viewmodel)
+-----------
+    --------
     self.m_BodyGroupCache = self.m_BodyGroupCache or {}
     vm:SetSkin(self.m_SkinCache || 0)
     vm:ClearPoseParameters()
@@ -670,6 +679,9 @@ function SWEP:BuildCustomizedGun()
     self.wm_Bone = buildSingleModelBone(self)
 
 
+    for slot, att in pairs(self:GetAllAttachmentsInUse()) do
+        self:CreateAttachmentModel(att, slot)
+    end
 
 
     -- VM 相关操作只在 vm 有效时执行
@@ -690,9 +702,6 @@ function SWEP:BuildCustomizedGun()
     end
     self:RemoveAllAttachementModels()
 
-    for slot, att in pairs(self:GetAllAttachmentsInUse()) do
-        self:CreateAttachmentModel(att, slot)
-    end
 
     self:ApplyCustomizationModels()
     self:GenerateCustomizationStats()
@@ -819,7 +828,7 @@ function SWEP:SetupViewmodel()
                     if CLIENT then
                         DrawCustomHighlight(att.m_Model, tbl, wep)
                     end
-                elseif tbl and tbl.Model then
+                elseif tbl and tbl.Model and ! v:GetNoDraw() then
                     self:BuildCustomizedGun()
                 end
             end

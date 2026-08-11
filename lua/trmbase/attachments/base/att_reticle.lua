@@ -37,11 +37,11 @@ function ATTACHMENT:RenderReticle(weapon, model, ret)
     render.SetStencilCompareFunction(STENCIL_LESSEQUAL)
 
     -- 渲染红点
-    local length = 1000
     local size = ret.Size or 5.12
     local color = ret.Color or Color(255, 0, 0, 255)
     render.SetMaterial(ret.Material)
 
+    if ! att.Ang then return end
     local offset = att.Ang:Forward() * 100
     if ret.Offset then
         offset = offset + att.Ang:Right() * ret.Offset.x
@@ -51,7 +51,10 @@ function ATTACHMENT:RenderReticle(weapon, model, ret)
     if ret.Rotate then
         roll = roll + ret.Rotate
     end
-    render.DrawQuadEasy(att.Pos + offset, att.Ang:Forward():GetNegated(), size, size, color, roll)
+
+    local reticlePos = att.Pos + offset
+    --size = size *( reticlePos:Distance(EyePos()) / 100)
+    render.DrawQuadEasy(reticlePos, att.Ang:Forward():GetNegated(), size, size, color, roll)
     render.ClearStencil()
     render.SetStencilEnable(false)
 end

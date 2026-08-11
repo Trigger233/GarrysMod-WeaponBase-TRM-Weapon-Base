@@ -28,6 +28,8 @@ local RTMaterial_Cheap = CreateMaterial(matName .. "_cheap", "UnlitGeneric", {
     ["$vertexcolor"] = "1",
     ["$vertexalpha"] = "1",
     ["$smooth"] = "1" ,
+    ["$selfillum"] = "1",
+
 })
 local LenseMaterial = CreateMaterial(matName, "VertexLitGeneric", {
     ["$basetexture"] = rtmat_spare:GetName(),
@@ -300,7 +302,7 @@ function SWEP:RenderScopeReticle(model, att, stat, rtSize, zoomScale)
     local sway, _ = self:Sway()
 
     local additive = cvar_cheapscope:GetBool() and
-        (self:GetClientVisualRecoil() * self:GetZoomRecoilFactor() + self:GetScopeZeroAngle()) * zoomScale + sway * 4 or
+        (self:GetClientVisualRecoil() * self:GetZoomRecoilFactor() + self:GetScopeZeroAngle())+ sway * 4 or
         Angle(0, 0, 0) + sway * 4
 
 
@@ -423,7 +425,7 @@ function SWEP:DrawThermal(tx, att)
 
     cam.Start3D(EyePos(), cvar_cheapscope:GetBool() and EyeAngles() or self:GetOwner():EyeAngles())
     -- 1. 用 Stencil 标记 NPC
-    render.DepthRange(0.0, 0.1)
+    render.DepthRange(0.0, 1)
 
     render.SetStencilEnable(true)
     render.ClearStencil()

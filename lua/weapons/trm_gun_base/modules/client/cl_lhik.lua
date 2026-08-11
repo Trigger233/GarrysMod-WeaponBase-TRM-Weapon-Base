@@ -177,3 +177,23 @@ hook.Add("VManipPrePlayAnim", "TRM_VManipStopActions", function()
         return true
     end
 end)
+
+function SWEP:GetCameraControler()
+    if !self:GetUnderbarrel() then return end
+    local ik = self:GetForegrip()
+    if !ik then return  end
+    local anim_mdl , attData = ik.Viewmodel ,ik.Data
+    if !IsValid(anim_mdl) then return end
+
+    local attId = anim_mdl:LookupAttachment( "Camera")
+    if attId == -1 or !attId then
+        return
+    end
+    local ang = (anim_mdl:GetAttachment(attId)  or {}).Ang
+    if !ang then return end
+    ang.r = ang.r - 90
+
+    return anim_mdl:WorldToLocalAngles(ang)
+end
+
+local BodyMatrix = Matrix()

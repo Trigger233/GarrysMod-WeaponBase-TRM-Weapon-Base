@@ -9,7 +9,11 @@ function ATTACHMENT:Stats(w)
 end
 
 function ATTACHMENT:BulletCallback(attacker, tr, dmginfo)
-    if not tr or not tr.HitPos or not tr.Entity then return end
+
+end
+
+function ATTACHMENT:DoImpactEffect(tr, type)
+     if not tr or not tr.HitPos or not tr.Entity then return end
     local effect = EffectData()
     effect:SetOrigin(tr.HitPos)
     effect:SetNormal(tr.HitNormal)
@@ -18,5 +22,5 @@ function ATTACHMENT:BulletCallback(attacker, tr, dmginfo)
     effect:SetScale(1)
     effect:SetRadius(10)
     effect:SetFlags(0)
-    util.Effect("AR2Impact", effect)
+    util.Effect("AR2Impact", effect)   
 end

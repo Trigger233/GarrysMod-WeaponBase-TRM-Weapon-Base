@@ -57,7 +57,7 @@ function SWEP:DrawWorldModelName()
     ang:RotateAroundAxis(ang:Up(), 90)
 
     cam.Start3D2D(self:WorldSpaceCenter() + Vector(0, 0, 16), ang, 0.1)
-    srf.SetFont("TRM_Mod_Title")
+    srf.SetFont("TRM_HUD_Button")
     local text = self.PrintName or "Unknown"
     DrawFullText(text, x, y, colorTable.common)
     y = y + 10
@@ -135,7 +135,7 @@ function SWEP:RenderOverride(flags)
             if IsValid(entry.m_TpModel) and att.Render then
                 entry.m_TpModel:SetupBones()
                 att:Render(self, entry.m_TpModel)
-            elseif att.Model then
+            elseif att.Model and self:ShouldRebuild() then
                 self:BuildCustomizedGun()
             end
         end
@@ -158,9 +158,23 @@ function SWEP:DrawWorldModelTranslucent(flags)
     self:DrawWorldModel(flags)
 end
 
-function SWEP:DrawHolsterModel(flag)
-    self:SetRenderOrigin(self:GetShootPos())
-    self:DrawWorldModel()
+local NextRenderUpdate = 0
+
+function SWEP:ShouldRebuild()
+    -- if SysTime() < NextRenderUpdate then
+    --     return false
+    -- end
+
+    if self:WorldSpaceCenter():DistToSqr(EyePos()) > (262144) then
+        return false
+    end
+
+    if self:GetNoDraw() then
+        return false
+    end
+
+
+    return true
 end
 
 local function cheakModelIsVaildInWeapon(ent, wep)
@@ -173,10 +187,9 @@ local function cheakModelIsVaildInWeapon(ent, wep)
     return false
 end
 
-local LastRenderUpdate = 0
 
 hook.Add("PreRender", "TRMBase_CleanupUnUsedAttModels", function()
-    if SysTime() - LastRenderUpdate > 0 and not IsValid(TRM_AttachMenu_Instance) then
+    if SysTime() - NextRenderUpdate > 0 and not IsValid(TRM_AttachMenu_Instance) then
         local ply = LocalPlayer()
         local currentWeapon = ply:GetActiveWeapon()
 
@@ -185,9 +198,7 @@ hook.Add("PreRender", "TRMBase_CleanupUnUsedAttModels", function()
         for _, ent in ents.Iterator() do
             if ent:GetClass() == "class C_BaseFlex" and ent.TRMAttachmentModel then
                 local owner = ent:GetOwner()
-                if (not IsValid(owner) or not cheakModelIsVaildInWeapon(ent, owner)) or (EyePos() - owner:WorldSpaceCenter()):LengthSqr() > (distanceSqr or 1048576) then
-                    --print(ent.TRMAttachmentModel)
-                    -- print("Remove :", ent:GetModel())
+                if (not IsValid(owner) or not cheakModelIsVaildInWeapon(ent, owner)) or ! owner:ShouldRebuild() then
                     ent:Remove()
                     continue
                 end
@@ -196,7 +207,7 @@ hook.Add("PreRender", "TRMBase_CleanupUnUsedAttModels", function()
                 ent:RemoveAllAttachementModels()
             end
         end
-        LastRenderUpdate = SysTime() + 5
+        NextRenderUpdate = SysTime() + 10
     end
 end)
 

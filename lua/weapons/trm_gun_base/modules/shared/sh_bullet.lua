@@ -34,7 +34,7 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
             local dmg = dmginfo:GetDamage() * tbl.Penetration.ArmorPenetrateDamage
             ent:SetArmor(math.max(0,ent:Armor() - dmg))
         end
-
+        --print(ent,"Take Damage",dmginfo:GetDamage())
     end
     self:BulletInterval(attacker, tr, dmginfo)
 end
@@ -47,6 +47,7 @@ function SWEP:BulletInterval(attacker, tr, dmginfo)
     local output = {}
     local dir = tr.Normal
     local start = tr.HitPos
+    
 
     local pen = self.Bullet.Penetration
     if not pen then return end
@@ -86,13 +87,14 @@ function SWEP:BulletInterval(attacker, tr, dmginfo)
         self:SetPenetrationCount(current - 1)
 
 
-
+        if SERVER then
         --fire forward
         self:GetOwner():FireBullets({
             Attacker = self:GetOwner(),
             Inflictor =  self,
             Src = output.HitPos,
             Dir = tr.Normal,
+            IgnoreEntity = tr.Entity ,
             Num = 1,
             Tracer = 0,
             Damage = damage,
@@ -100,6 +102,7 @@ function SWEP:BulletInterval(attacker, tr, dmginfo)
                 self:BulletCallback(attacker, tr, dmgInfo)
             end
         })
+        end
     end
 end
 
@@ -108,7 +111,7 @@ function SWEP:HandlePenetrating(ent,dmginfo)
     dmginfo:ScaleDamage(self.Bullet.Penetration.ArmorPenetrateDamage)
 
     local damage = dmginfo:GetDamage()
-    if AlarmSys != nil then
+    if AlarmSys != nil and math.Rand(0, 1) > 0.6 then
         AlarmSys:StunNPC(ent, damage / 20)
     end
 
@@ -120,7 +123,7 @@ end
 
 
 
--- hook.Add("Alarm.ArmorPenetratingDamage", "TRMBase", function(ent,dmginfo)
---     local weapon = dmginfo:GetInflictor()
---     return weapon.HandlePenetrating and weapon:HandlePenetrating(ent,dmginfo)   
--- end)
+hook.Add("Alarm.ArmorPenetratingDamage", "TRMBase", function(ent,dmginfo)
+    local weapon = dmginfo:GetInflictor()
+    return weapon.HandlePenetrating and weapon:HandlePenetrating(ent,dmginfo)   
+end)

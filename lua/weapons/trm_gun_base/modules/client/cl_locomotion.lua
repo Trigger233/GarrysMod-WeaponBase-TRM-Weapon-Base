@@ -1,6 +1,4 @@
--- =============================================
--- Pose 参数更新（合并四合一，减少重复 GetViewModel / GetVelocity）
--- =============================================
+if not CLIENT then return end
 
 function SWEP:LookupRangeCache(name)
     if not self.vm_PoseParameterRangeCache then
@@ -23,9 +21,7 @@ local walkPose = 0
 local grip1Pose = 0
 local grip2Pose = 0
 
-function SWEP:UpdatePoseParameters(deltaTime)
-    if not CLIENT then return end
-
+function SWEP:LocoMotion(deltaTime)
     local vm = self:GetViewModel()
     if not IsValid(vm) then return end
     --vm:ClearPoseParameters()
@@ -34,7 +30,7 @@ function SWEP:UpdatePoseParameters(deltaTime)
     local speed = IsValid(owner) and owner:GetVelocity():Length2D() or 0
     local runSpeed = IsValid(owner) and owner:GetRunSpeed() or 1
     local walkSpeed = IsValid(owner) and owner:GetWalkSpeed() or 1
-    local dt = deltaTime *1
+    local dt = deltaTime * 0.5
     -- Aim Pose
     if self.Sight and self.Sight.PoseParameter then
         aimPose = Lerp(dt * 10, aimPose, self:GetAimDelta())
@@ -46,7 +42,7 @@ function SWEP:UpdatePoseParameters(deltaTime)
     -- Sprint Pose
     if self.BasePoseParameter and self.BasePoseParameter.Sprint then
         local sprintVal = self:CanSprint() and speed > walkSpeed and self:GetSprintDelta() or 0
-        sprintPose = math.Approach(sprintPose, sprintVal, dt *2 )
+        sprintPose = math.Approach(sprintPose, sprintVal, dt * 2)
         for _, Pose in pairs(self.BasePoseParameter.Sprint) do
             local max = self:LookupRangeCache(Pose) or 1
             vm:SetPoseParameter(Pose, sprintPose * max)
@@ -64,7 +60,7 @@ function SWEP:UpdatePoseParameters(deltaTime)
     -- Walk Pose
     if self.BasePoseParameter and self.BasePoseParameter.Walk then
         local walkVal = self:GetAimDelta() < 0.25 and (speed / walkSpeed) * (1 - self:GetSprintDelta()) or 0
-        walkPose = math.Approach(walkPose, walkVal, dt *2)
+        walkPose = math.Approach(walkPose, walkVal, dt * 2)
         for _, Pose in pairs(self.BasePoseParameter.Walk) do
             vm:SetPoseParameter(Pose, walkPose)
         end
@@ -94,23 +90,15 @@ function SWEP:UpdatePoseParameters(deltaTime)
         end
     end
 
-    --firemode 
-    local firemode  = self:GetFiremodeIndex()
-    local stat = self.Firemode
+    --firemode
+    local firemode = self:GetFiremodeIndex()
+    local stat     = self.Firemode
     if stat then
-        local info = stat[firemode] 
+        local info = stat[firemode]
         if info and info.PoseParameter then
-            for pose , value in pairs(info.PoseParameter or {}) do
-                vm:SetPoseParameter(pose,value)
+            for pose, value in pairs(info.PoseParameter or {}) do
+                vm:SetPoseParameter(pose, value)
             end
-        end      
+        end
     end
-end
-
-
-function SWEP:ResetPose()
-    local vm = self:GetViewModel()
-    if not IsValid(vm) then return end
-
-    vm:ClearPoseParameters()
 end

@@ -12,7 +12,7 @@ local airDelta = 0
 local airTargetDelta = 0
 local hasJumped = false
 local math = math
-local trm_utils =trm_utils
+local trm_utils = trm_utils
 
 local function getJumpPoseDelta(c)
     local t = (c > 0.5 and 1 - c or c) * 2
@@ -132,16 +132,16 @@ function SWEP:GetClientVisualRecoil()
     return r
 end
 
+local DuckDelta = 0
 function SWEP:GetDucking()
     local owner = self:GetOwner()
-    self.m_DuckDelta = self.m_DuckDelta or 0
     if IsValid(owner) then
         local target = (trm_weapon_base_util.IsDucking(owner) and owner:OnGround()) and 1 or 0
-        self.m_DuckDelta = Lerp(RealFrameTime() * 2, self.m_DuckDelta, target)
+        DuckDelta = Lerp(RealFrameTime() * 5, DuckDelta, target)
     else
-        self.m_DuckDelta = 0
+        DuckDelta = 0
     end
-    return self.m_DuckDelta
+    return DuckDelta
 end
 
 local cvar_camera = CreateClientConVar("trmbase_camera_animation_scale", 1.0)
@@ -151,14 +151,15 @@ local ZERO_ANGLE  = Angle(0, 0, 0)
 
 
 
-
+local localAng = Angle()
 function SWEP:CalcView(ply, pos, angles, fov)
+
     local vm = self:GetViewModel(0)
     if not IsValid(vm) then return pos, angles, fov end
-
+    localAng:Zero()
     -- 不需要相机跟随的动画
     local ignoreAnims = { "Fire", "Idle", "Sprint" }
-    local currentSeq = self:GetPlayingSequence() 
+    local currentSeq = self:GetPlayingSequence()
     local shouldFollow = true
 
     for _, anim in ipairs(ignoreAnims) do
@@ -174,10 +175,18 @@ function SWEP:CalcView(ply, pos, angles, fov)
         return pos, angles, fov
     end
 
-    local attachment = vm:GetAttachment(attachmentID)
-    if not attachment then return pos, angles, fov end
 
-    local localAng = vm:WorldToLocalAngles(attachment.Ang)
+    if self.m_StoredAngle != nil and self:GetUnderbarrel() then
+        shouldFollow = true
+        localAng = self.m_StoredAngle
+    else
+        local attachment = vm:GetAttachment(attachmentID)
+
+        if not attachment then return pos, angles, fov end
+
+        localAng = vm:WorldToLocalAngles(attachment.Ang)
+    end
+
 
     if self.CameraReserve then
         localAng:Mul(-1)
@@ -248,8 +257,6 @@ end
 
 
 function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
-    if not CLIENT then return end
-
     -- 冻结 VM 调试（直接读 ConVar，不依赖 m_VMFrozen 同步）
     if GetConVar("trmbase_freeze_vm"):GetInt() ~= 0 then
         if not self.m_VMFreezeAng then self.m_VMFreezeAng = angles end
@@ -357,18 +364,8 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     angles:RotateAroundAxis(angles:Up(), visAng.y * Vrecoil_Mul)
 
     ------ViewModel Recoil
-    local fireInterval = (60 / self.Primary.RPM) 
-    local timeToNextFire = UnPredictedCurTime() -( self:GetLastFireTime() + fireInterval)
-    local t = math.Clamp(timeToNextFire / fireInterval, 0, 1)
-    local Recoildelta = math.min((t > 0.5 and 1 - t or t) * 2, 1) 
-    local recoiloffsetpos = self.ViewmodelRecoil.Pos
-    local recoiloffsetang = self.ViewmodelRecoil.Ang
-    local addVector = Vector(recoiloffsetpos[1] * angles:Right() + recoiloffsetpos[2] * angles:Forward() +
-        recoiloffsetpos[3] * angles:Up()) * Recoildelta
 
-    pos:Add(addVector)
-    --print(addVector)
-    angles:Add(recoiloffsetang * Recoildelta)
+
 
     if VManip then
         if self.VMOffset.VManip then
@@ -391,6 +388,8 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
         angles:RotateAroundAxis(angles:Up(), vmanipAng.y)
         angles:RotateAroundAxis(angles:Right(), vmanipAng.p)
     end
+
+
 
     return pos, angles
 end
@@ -470,11 +469,11 @@ function SWEP:CoolFov()
     finalFOV = Lerp(RealFrameTime() * 15, finalFOV, FOV)
 
 
-    local fireInterval = (60 / self.Primary.RPM)
-    local timeToNextFire = self:GetNextRecoil() - UnPredictedCurTime()
+    local fireInterval = math.min(60 / self.Primary.RPM, 0.2)
+    local timeToNextFire = (UnPredictedCurTime() - self:GetLastFireTime()) / 0.1
     local t = math.Clamp(timeToNextFire / fireInterval, 0, 1)
-    local Recoildelta = math.min((t > 0.5 and 1 - t or t) * 2, 1) -- 开火时 = 1，然后衰减到 0
-    finalFOV = finalFOV + Recoildelta * self.Recoil.Shake * 1
+    local Recoildelta = math.Clamp((t > 0.5 and 1 - t or t) * 2, 0, 1) -- 开火时 = 1，然后衰减到 0
+    -- finalFOV = finalFOV + Recoildelta * math.min(self.Recoil.Shake *5 , 5 )* Lerp(aimDelta, 1, self.Recoil.AdsShakeMultiplier or 1)
     -- finalFOV = finalFOV * (1 + Recoildelta * self.Recoil.Shake * 0.08)
     return finalFOV
 end

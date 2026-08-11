@@ -59,6 +59,9 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Float", "SpreadHorizonal")
     self:NetworkVar("Float", "RecoilProgress") -- for custom recoil
     self:NetworkVar("Float", "NextRecoil")
+    self:NetworkVar("Float", "RecoilUp")
+    self:NetworkVar("Float", "RecoilSide")
+    
     self:NetworkVar("Entity", "NextWeapon")
     self:NetworkVar("Int", "ChamberAmmo")
     self:NetworkVar("Int", "SecondaryChamberAmmo")
@@ -72,7 +75,6 @@ function SWEP:SetupDataTables()
     self:NetworkVar("String", "PlayingSequence")
     self:NetworkVar("Bool", "CanSwitch")
     self:NetworkVar("Angle", "VisualRecoil")
-    self:NetworkVar("Float", "Recoil")
     self:NetworkVar("Float", "VisualRecoilProgress") -- for custom recoil
     self:NetworkVar("Float", "VisualRecoilBackward")
 

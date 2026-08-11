@@ -52,7 +52,7 @@ local function DrawRoundBox(cornerRadius, x, y, width, height, color)
         :Color(color)
         :Draw()
 end
- 
+
 function SWEP:GetCrosshairSway()
     local eye = EyeAngles()
     local currentX = eye.yaw
@@ -73,7 +73,7 @@ function SWEP:TRMHUD(ply)
     if ! ply:GetAllowWeaponsInVehicle() and ply:InVehicle() then
         return
     end
-    self:DrawCustomCrosshair(w * 0.5, h * 0.5, w, h)
+    self:DrawCustomCrosshair(w * 0.5, h * 0.5, w, h, ply)
     self:DrawHUDHint(w * 0.5, h * 0.6)
 
     if cv_debug:GetBool() then
@@ -105,17 +105,23 @@ local TraceLine = util.TraceLine
 
 
 
-function SWEP:GetCrosshairPos(x, y)
+function SWEP:GetCrosshairPos(x, y, ply)
+    if ply:ShouldDrawLocalPlayer() then
+        local scr = ply:GetEyeTraceNoCursor().HitPos:ToScreen()
+        return scr.x, scr.y
+    end
+
+
     return x, y
 end
 
-function SWEP:DrawCustomCrosshair(x, y, w, h)
+function SWEP:DrawCustomCrosshair(x, y, w, h, ply)
     if ! self:ShouldDrawCrossHair() then return end
     local gap = self:GetCurrentSpread() * cv_crosshair_scale:GetFloat()
 
-    local screenPosX, screenPosY = self:GetCrosshairPos(x, y)
+    local screenPosX, screenPosY = self:GetCrosshairPos(x, y, ply)
 
-    local X, Y = screenPosX , screenPosY
+    local X, Y = screenPosX, screenPosY
     local color = self:GetCrossHairColor()
     local width, height = cv_crosshair_width:GetInt(), cv_crosshair_height:GetInt()
 
@@ -202,27 +208,28 @@ end
 function SWEP:DrawHUDHint(x, y)
     self:DrawFiremodeHint(x, y)
     self:DrawZoomHint(x, y + 50)
-    self:HUDControlHint(x - w * 0.3, y + h * 0.32)
+    self:HUDControlHint(x - w * 0.25, y + h * 0.32)
 end
 
-local Zoom = 1
-local ZoomDelta = 1
-function SWEP:DrawZoomHint(x, y)
-    local CurrentZoom = self:GetScopeZoom()
-    if Zoom != CurrentZoom then
-        Zoom = CurrentZoom
-        ZoomDelta = 1
-    end
+do
+    local Zoom = 1
+    local ZoomDelta = 1
+    function SWEP:DrawZoomHint(x, y)
+        local CurrentZoom = self:GetScopeZoom()
+        if Zoom != CurrentZoom then
+            Zoom = CurrentZoom
+            ZoomDelta = 1
+        end
 
-    if ZoomDelta > 0 then
-        local text = math.Round(CurrentZoom, 2) .. " X"
-        surface.SetAlphaMultiplier(ZoomDelta * 5)
-        draw.SimpleText(text, "TRM_HUD_Firemode", x, y, color_white, TEXT_ALIGN_CENTER, 1)
-        ZoomDelta = Lerp(RealFrameTime() * 2, ZoomDelta, 0)
+        if ZoomDelta > 0 then
+            local text = math.Round(CurrentZoom, 2) .. " X"
+            surface.SetAlphaMultiplier(ZoomDelta * 5)
+            draw.SimpleText(text, "TRM_HUD_Firemode", x, y, color_white, TEXT_ALIGN_CENTER, 1)
+            ZoomDelta = Lerp(RealFrameTime() * 2, ZoomDelta, 0)
+        end
+        surface.SetAlphaMultiplier(1)
     end
-    surface.SetAlphaMultiplier(1)
 end
-
 local function DrawButton(inputtext, x, y, size, small)
     local text = string.NiceName(tostring(inputtext))
     DrawRoundBox(5, x, y, size, size, color_white)

@@ -10,6 +10,8 @@ require("trm_utils")
 function SWEP:ViewModelDrawn(vm, flag)
     if not IsValid(vm) or self.m_OverDraw then return end
     self:BuildViewmodelAttachmentsData(vm)
+
+    self.m_StoredAngle = self:GetCameraControler()
 end
 
 
@@ -29,10 +31,11 @@ local BlurMul = 0
 function SWEP:PreDrawViewModel(vm)
     if self.m_OverDraw then return end
 
+
     BlurMul = Lerp(RealFrameTime() * 10, BlurMul,
         (self:IsReloading() and self:GetAimDelta() < 0.2 or self:IsCustomizing() or self:IsInspecting()) and 1 or 0)
     if BlurMul > 0.1 and cvar_blur:GetBool() then
-        DrawBokehDOF(BlurMul * 5, 1, 12)
+        DrawBokehDOF(BlurMul * 5, 1, 1)
     end
 
     cam.Start3D(EyePos(), EyeAngles(), self:GetViewmodelFov(), 0, 0, ScrW(), ScrH(), 1, 1024)
@@ -110,3 +113,4 @@ function SWEP:BuildViewmodelAttachmentsData(vm)
         NextUpdate = SysTime() + 1 / 30
     end
 end
+

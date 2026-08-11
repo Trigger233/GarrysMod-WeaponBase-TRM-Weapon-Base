@@ -21,8 +21,11 @@ end
 
 function SWEP:DoUnderbarrelAttack()
     self:SetNextAnimationTime(0)
-
+    if self.NoIK then
     self:PlayAnimation(self:ChooseAnim("UnderBarrel_Fire"), false)
+    else
+        self:PlayIKAnimation("Fire", false)
+    end
 
     if self.Secondary.SpecialAmmo == -1 then
         self:FireSecondaryBullet()

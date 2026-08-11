@@ -147,7 +147,7 @@ function SWEP:HandlePenetrating(ent, dmginfo)
     if AlarmSys != nil then
         AlarmSys:StunNPC(ent,1)
     end
-    dmginfo:ScaleDamage(2)
+    dmginfo:ScaleDamage(1.25)
     return dmginfo
 end
 

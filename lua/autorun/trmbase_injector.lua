@@ -3,9 +3,9 @@ if SERVER then
 end
 
 BASE_TRM_INJECTOR = BASE_TRM_INJECTOR or {}
-
-
-
+    
+ 
+    
 local function LoadInjectorStat(path, fileName)
     local name = string.Replace(fileName, ".lua", "")
     local fullPath = path .. "/" .. fileName
@@ -32,7 +32,6 @@ local function LoadInjectorStat(path, fileName)
 end
 local function LoadInjector(path)
     local files, folders = file.Find(path .. "/*", "LUA")
-    print("Loading Injector ")
     for _, fileName in ipairs(files) do
         if string.EndsWith(fileName, ".lua") then
             LoadInjectorStat(path, fileName)

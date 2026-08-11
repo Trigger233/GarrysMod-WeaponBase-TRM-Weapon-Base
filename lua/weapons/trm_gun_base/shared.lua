@@ -148,7 +148,7 @@ end
 SWEP.m_WeaponDeploySpeed = 1
 SWEP.Primary.ClipSize = 8
 SWEP.Primary.ChamberSize = 1
-SWEP.Primary.DefaultClip = 0
+SWEP.Primary.DefaultClip = 20
 SWEP.Primary.Ammo = ""
 SWEP.Primary.SpecialAmmo = -1
 SWEP.Primary.RPM = 600
@@ -205,6 +205,7 @@ SWEP.Primary.BrustNum = 3
 SWEP.Primary.BrustDelay = 0.25
 SWEP.Primary.BrustMode = "Single"     -- Single / Auto
 SWEP.Primary.BrustModeOnce = "Single" -- Single / Full
+
 
 SWEP.Secondary.ClipSize = 0
 SWEP.Secondary.DefaultClip = 0
@@ -309,9 +310,9 @@ SWEP.Recoil = {
     Vertical = { 5.5, 5.5 },
     Horizonal = { -0.0, 0.0 },
     AdsMultiplier = 0.7,
-    KickDown = 1,
     Shake = 1,
-    Recover = 1 ,
+    Factor = 0.25,
+    Recover = 1,
     Functional = {
         Increase = 0.2,
         Recover = 0.4,
@@ -353,10 +354,6 @@ SWEP.ViewmodelRecoil = {
     AdsMultiplier = 0.25,
 }
 
-SWEP.CameraShake = {
-    Angle = Angle(0, 0, 0),
-    AdsMult = 0.25,
-}
 SWEP.CameraAttachment = "Camera"
 SWEP.CameraOffset = Angle(0, 0, 0)
 SWEP.CameraReserve = false
@@ -607,6 +604,8 @@ function SWEP:Deploy()
     self:TrySetTask("Deploy")
     self:SetCanSwitch(false)
     self:SetAimDelta(0)
+
+
     return true
 end
 
@@ -730,7 +729,7 @@ if SERVER then
         if not IsValid(ply) then return end
 
         local wep = ply:GetActiveWeapon()
-        if !util.IsTRMBase(wep) then return end
+        if ! util.IsTRMBase(wep) then return end
         if wep and wep.GetPlayerMoveMult then
             local runMult, walkMult = wep:GetPlayerMoveMult(ply)
             if runMult then
@@ -781,15 +780,17 @@ function SWEP:OnRemove()
     end
 end
 
-local Path = "autorun/trm_loader.lua"
-
+local Paths = { "autorun/trm_loader.lua", "autorun/trmbase_injector.lua" }
 if (SERVER) then
     util.AddNetworkString("TRMBase_UpdateAttachments")
 else
     net.Receive("TRMBase_UpdateAttachments", function(len, ply)
         BASE_TRM_ATTS = {}
+        BASE_TRM_INJECTOR = {}
 
-        include(Path)
+        for _, v in ipairs(Paths) do
+            include(v)
+        end
     end)
 end
 
@@ -802,8 +803,11 @@ TRMWeaponBase = TRMWeaponBase or {}
 
 function TRMWeaponBase:UpdateAllAttachment()
     BASE_TRM_ATTS = {}
-    AddCSLuaFile(Path)
-    include(Path)
+
+    for _, v in ipairs(Paths) do
+        AddCSLuaFile(v)
+        include(v)
+    end
     net.Start("TRMBase_UpdateAttachments")
     net.Broadcast()
 end

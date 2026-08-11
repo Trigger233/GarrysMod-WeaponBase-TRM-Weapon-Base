@@ -12,6 +12,7 @@ INJECTOR.Anim = {}
 
 
 local function findAttInjectSlot(injector, weapon)
+    if ! injector.Attachments then return end
     --find by name
     if injector.AttachmentType and injector.AttachmentType == "Name" and injector.AttachmentSlot then
         for slot, att in pairs(weapon.Attachments) do
@@ -32,7 +33,6 @@ local function findAttInjectSlot(injector, weapon)
         end
     end
 
-
     return false
 end
 function INJECTOR:Inject(weapon)
@@ -49,23 +49,18 @@ function INJECTOR:Inject(weapon)
     end
 
     self:Stats(weapon)
-
-    
 end
 
 function INJECTOR:AttachmentsInject(weapon)
     local slot = findAttInjectSlot(self, weapon)
     if not slot then return end
-    if not weapon.Attachments[slot] then
-        weapon.Attachments[slot] = {
-            Name = self.Name or self.ClassName,
-        }
-    end
-    if not weapon.Attachments[slot].Category then
-        weapon.Attachments[slot].Category = {}
-    end
+    weapon.Attachments[slot] = weapon.Attachments[slot] or {
+        Name = self.Name or self.ClassName,
+    }
 
-    for _, className in ipairs(self.Attachments) do
+    weapon.Attachments[slot].Category = weapon.Attachments[slot].Category or {}
+
+    for _, className in pairs(self.Attachments) do
         table.insert(weapon.Attachments[slot].Category, className)
     end
 end
@@ -82,11 +77,8 @@ end
 function INJECTOR:Stats(weapon)
 end
 
-
-
 function INJECTOR:Animation(weapon)
     for newAnimName, animData in pairs(self.Anim or {}) do
-
         -- 如果有 base，先复制 base 的数据
         if animData.base and weapon.Animations[animData.base] then
             weapon.Animations[newAnimName] = table.Copy(weapon.Animations[animData.base])
@@ -123,7 +115,7 @@ end
 -- INJECTOR.Anim = {
 -- ["new_anim_class"] = {
 --      base = "which_anim_u_base_on" ,
---          
+--
 --      events = {
 --      --White all event u want to insert in this anim
 --      {time = 0.5 , callback = function(weapon) end},
