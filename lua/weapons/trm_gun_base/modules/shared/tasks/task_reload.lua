@@ -17,9 +17,9 @@ function task_reload:OnSet(weapon)
     if not isReloadSeq(seq) then
         if weapon.ReloadType == "Single" then
             if weapon:Clip1() == 0 and weapon.Animations.Reload_Empty then
-                weapon:PlayAnimation(weapon:ChooseAnim( "Reload_Empty"), true)
+                weapon:PlayAnimation(weapon:ChooseAnim("Reload_Empty"), true)
             elseif weapon.Animations.Reload_Start then
-                weapon:PlayAnimation(weapon:ChooseAnim( "Reload_Start"), true)
+                weapon:PlayAnimation(weapon:ChooseAnim("Reload_Start"), true)
             end
 
             weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes["BoltAction"].Reload)
@@ -27,19 +27,18 @@ function task_reload:OnSet(weapon)
             weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes[weapon:GetCurrentHoldType()].Reload)
 
             weapon:PlayAnimation(weapon:ChooseAnim("Reload"), true)
-            if cvar_firebreakreload:GetBool( ) then
-                weapon:SetNextPrimaryFire( 60 / weapon.Primary.RPM )
-            end            
+            if cvar_firebreakreload:GetBool() then
+                weapon:SetNextPrimaryFire(60 / weapon.Primary.RPM)
+            end
         end
     end
 end
 
 function task_reload:Think(cycle, weapon)
     if weapon.ReloadType == "Single" then
-            weapon:TrySetTask("ReloadLoop")
+        weapon:TrySetTask("ReloadLoop")
     elseif weapon:GetNextAnimationTime() > CurTime() then
-            weapon:TrySetTask("Idle")
-            
+        weapon:TrySetTask("Idle")
     end
 end
 

@@ -24,7 +24,7 @@ local function SerializeAttachments(weapon)
     return data
 end
 
-local function ApplyAttachmentTable(weapon, data)
+local function ApplyAttachmentTable(weapon, data , save)
     if not data or not istable(data) then return false end
 
     weapon.CurrentAttachments = weapon.CurrentAttachments or {}
@@ -40,7 +40,7 @@ local function ApplyAttachmentTable(weapon, data)
         end
     end
 
-    if weapon.OnAttachmentChanged then weapon:OnAttachmentChanged(true) end
+    if weapon.OnAttachmentChanged then weapon:OnAttachmentChanged(!save) end
     return true
 end 
 
@@ -110,7 +110,7 @@ function SWEP:LoadAttachmentLoadout(slot)
     if not json or json == "" then return false end
 
     local data = util.JSONToTable(json)
-    return ApplyAttachmentTable(self, data)
+    return ApplyAttachmentTable(self, data ,true)
 end
 
 if SERVER then

@@ -14,7 +14,6 @@ function SWEP:ViewModelDrawn(vm, flag)
     self.m_StoredAngle = self:GetCameraControler()
 end
 
-
 function SWEP:GetAttachmentData(name)
     return self.m_Attachment[name] or false
 end
@@ -24,12 +23,16 @@ function SWEP:PostDrawViewModel(vm, weappon, ply, flag)
 
 
     cam.End3D()
+    
 end
 
 local cvar_blur = CreateClientConVar("trmbase_cl_blur", 1, true, true, "helptext", 0, 1)
 local BlurMul = 0
+local CycleLerp = 0
 function SWEP:PreDrawViewModel(vm)
     if self.m_OverDraw then return end
+
+
 
 
     BlurMul = Lerp(RealFrameTime() * 10, BlurMul,
@@ -45,7 +48,6 @@ function SWEP:PreDrawViewModel(vm)
         self:RenderScopeView()
     end
     self:DoLHIK()
-
 end
 
 -- 调试 ConVar
@@ -113,4 +115,3 @@ function SWEP:BuildViewmodelAttachmentsData(vm)
         NextUpdate = SysTime() + 1 / 30
     end
 end
-

@@ -33,7 +33,7 @@ function SWEP:GetAnimation(Class)
     return self.Animations[Class] or false
 end
 
-function SWEP:PlayAnimation(sequenceClass, useInternalDuration, forceoverride)
+function SWEP:PlayAnimation(sequenceClass, useInternalDuration, startAt)
     if not (IsFirstTimePredicted() and SERVER) then return end
     if self:GetNextAnimationTime() > CurTime() then return end
     local vm = self:GetViewModel()
@@ -60,7 +60,7 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration, forceoverride)
     self:SetGrip2(true)
     local duration = vm:SequenceDuration(vm:LookupSequence(sequencePlay))
 
-    vm:SetCycle(0)
+    vm:SetCycle( 0)
 
     resetEvents(self, sequenceClass)
 
@@ -71,10 +71,12 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration, forceoverride)
     self:ApplySpecialAnimationStat(vm, sequenceClass, duration, animData)
 
     if useInternalDuration and SERVER then
-        local nexttime = (animData.RealLength or duration) * (animData.Length or 1) / speed
+        local nexttime = (1 - (startAt or 0)) * (animData.RealLength or duration) * (animData.Length or 1) / speed
         self:SetNextAnimationTime(CurTime() + nexttime)
         self:SetNextFireTime(nexttime)
     end
+
+
 end
 
 function SWEP:DoAnimationEvents()
@@ -85,7 +87,7 @@ function SWEP:DoAnimationEvents()
 
     local progress = vm:GetCycle()
     local sequenceClass = self:GetPlayingSequence()
-
+    self:SetCurrentCycle(progress)
     if not sequenceClass or not self.Animations or not self.Animations[sequenceClass] or not self.Animations[sequenceClass].events then
         return
     end
@@ -195,6 +197,8 @@ if CLIENT then
 
         ply:AnimRestartGesture(slot, anim, true)
     end)
+
+
 end
 
 function SWEP:FireAnimationEvent(pos, ang, event, option, source)

@@ -36,7 +36,6 @@ require("trm_utils")
 function SWEP:DoLHIK()
     local vm = self:GetViewModel()
     if vm == nil then return end
-
     self:CycleLHIKAnimation()
 
     local lhik = self:GetForegrip()

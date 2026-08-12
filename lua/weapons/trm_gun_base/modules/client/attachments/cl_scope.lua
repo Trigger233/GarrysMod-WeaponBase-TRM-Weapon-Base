@@ -358,7 +358,7 @@ hook.Add("RenderScene", "TRMBASE_ScopeUpdate", function()
 end)
 
 function SWEP:GetZoomRecoilFactor()
-    return math.Clamp(RecoilFactor * self:GetScopeZoom() * CheapzoomMulti, 0, 1)
+    return math.Clamp(RecoilFactor * self:GetScopeZoom() , 0, 1)
 end
 
 local function DrawCheapScopeMaterial(wep, w, h, size, Zoom)

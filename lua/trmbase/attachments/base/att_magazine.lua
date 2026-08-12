@@ -3,7 +3,7 @@ ATTACHMENT.Name = "att_magazine"
 ATTACHMENT.BulletList = {}        -- 一维数组：{"bullet_01", "bullet_02", "bullet_03"}
 ATTACHMENT.ReserveBulletList = {} -- 同样一维数组
 ATTACHMENT.BulletPoseParameter = "bullets_offset"
-
+ATTACHMENT.Bonemerge = true
 local small = Vector(0, 0, 0)
 local normal = Vector(1, 1, 1)
 
@@ -86,13 +86,13 @@ function ATTACHMENT:Init(weapon, model)
         end
 
         for name, boneStuff in pairs(ent.cachedBones) do
-            if (! boneStuff.remove or !boneStuff.id) then
+            if (! boneStuff.remove or ! boneStuff.id) then
                 continue
             end
 
             local mat = ent:GetBoneMatrix(boneStuff.id)
 
-            if !mat then
+            if ! mat then
                 continue
             end
 

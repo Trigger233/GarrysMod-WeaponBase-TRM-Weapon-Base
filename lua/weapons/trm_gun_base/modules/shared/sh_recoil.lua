@@ -112,7 +112,7 @@ function SWEP:Recover()
 	end
 
 	---Recoil Spray
-	local factor = math.Clamp(self.Recoil.Factor,0.01,0.99)
+	local factor = math.Clamp(self.Recoil.Factor ,0.01,0.99)
 	self:SetRecoilUp(self:GetRecoilUp() * factor  )
 	self:SetRecoilSide(self:GetRecoilSide() * factor )
 end
@@ -155,12 +155,8 @@ function SWEP:DoRecoil()
 	RecoilSide = RecoilSide * mul
 	self:SetRecoilUp(RecoilUp)
 	self:SetRecoilSide(RecoilSide)
-	----
-	ShakeAngle.r = ShakeDirection * stats.Shake * 15 * Lerp(aimdelta, 1, self.Recoil.AdsShakeMultiplier or 1)
-	
-
-	ShakeDirection = -ShakeDirection
-	owner:ViewPunch(ShakeAngle)
+	-- ----
+	self:SendScreenShake()
 end
 
 function SWEP:GetRecoilMultiplier()

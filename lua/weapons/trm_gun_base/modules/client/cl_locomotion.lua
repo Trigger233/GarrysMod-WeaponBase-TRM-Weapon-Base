@@ -71,7 +71,6 @@ function SWEP:LocoMotion(deltaTime)
     grip1Pose = Lerp(dt * 5, grip1Pose or 0, (self:GetGrip1() and 1 or 0))
 
 
-    -- 再设置当前配件的 pose
     if self.m_PoseParameter then
         for _, poseName in pairs(self.m_PoseParameter) do
             local val = self:LookupRangeCache(poseName) * grip1Pose

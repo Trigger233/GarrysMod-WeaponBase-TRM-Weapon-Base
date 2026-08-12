@@ -311,7 +311,7 @@ SWEP.Recoil = {
     Horizonal = { -0.0, 0.0 },
     AdsMultiplier = 0.7,
     Shake = 1,
-    Factor = 0.25,
+    Factor = 0.85,
     Recover = 1,
     Functional = {
         Increase = 0.2,
@@ -352,6 +352,9 @@ SWEP.ViewmodelRecoil = {
     Pos = Vector(0, -0, -0),
     Ang = Angle(-0.0, 0, 0),
     AdsMultiplier = 0.25,
+    YawMultiplier = 1,
+    PitchMultiplier = 1,
+
 }
 
 SWEP.CameraAttachment = "Camera"

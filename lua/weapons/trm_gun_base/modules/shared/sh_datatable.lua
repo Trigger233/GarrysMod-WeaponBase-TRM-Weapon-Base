@@ -61,7 +61,7 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Float", "NextRecoil")
     self:NetworkVar("Float", "RecoilUp")
     self:NetworkVar("Float", "RecoilSide")
-    
+    self:NetworkVar("Float", "CurrentCycle")
     self:NetworkVar("Entity", "NextWeapon")
     self:NetworkVar("Int", "ChamberAmmo")
     self:NetworkVar("Int", "SecondaryChamberAmmo")
