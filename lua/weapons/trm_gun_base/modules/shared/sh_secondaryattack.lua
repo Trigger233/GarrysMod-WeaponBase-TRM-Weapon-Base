@@ -7,7 +7,7 @@ end)
 
 function SWEP:CycleUnderBarrel()
     local status = self:GetUnderbarrel()
-    if not self.underbarrel or (self:Ammo2() == 0 and self:Clip2() == 0 ) and !status then return end
+    if not self.underbarrel or (self:Ammo2() == 0 and self:Clip2() == 0) and ! status then return end
     if not status then
         self:TrySetTask("UnderBarrel_In")
     else
@@ -16,13 +16,18 @@ function SWEP:CycleUnderBarrel()
 end
 
 function SWEP:CanSecondaryFire()
+    if self:GetNextPrimaryFire() > CurTime() then
+        return false
+    end
+
+
     return self:GetNextSecondaryFire() <= CurTime() and self:Clip2() > 0
 end
 
 function SWEP:DoUnderbarrelAttack()
     self:SetNextAnimationTime(0)
     if self.NoIK then
-    self:PlayAnimation(self:ChooseAnim("UnderBarrel_Fire"), false)
+        self:PlayAnimation(self:ChooseAnim("UnderBarrel_Fire"), false)
     else
         self:PlayIKAnimation("Fire", false)
     end
@@ -31,6 +36,10 @@ function SWEP:DoUnderbarrelAttack()
         self:FireSecondaryBullet()
     else
         self:FireSecondaryProjectile()
+    end
+    if self.Secondary.Recoil then
+        self:SetRecoilUp(self.Secondary.Recoil.p or 0)
+        self:SetRecoilSide(self.Secondary.Recoil.y or 0)
     end
 
     self:SetNextSecondaryFire(CurTime() + 60 / (self.Secondary.RPM or 150))
@@ -106,8 +115,6 @@ function SWEP:FireSecondaryBullet()
     self:EmitSound(self.Secondary.Sound)
 
 
-    self:DoRecoil()
-    self:DoSpread()
     self:SetLastFireTime(CurTime())
 
     if self.Secondary.BoltAction and self.Animations.UnderBarrel_Rechamber then
@@ -167,8 +174,6 @@ function SWEP:FireSecondaryProjectile()
     self:EmitSound(self.Secondary.Sound)
 
 
-    self:DoRecoil()
-    self:DoSpread()
     self:SetLastFireTime(CurTime())
 
     if self.Secondary.BoltAction and self.Animations.UnderBarrel_Rechamber then

@@ -2,7 +2,7 @@ SWEP.Base = "trm_gun_base"
 --WIP
 SWEP.IsMeleeWeapon = 1
 SWEP.Slot = 0
-SWEP.Primary.Automatic = false
+SWEP.Primary.Automatic = true
 SWEP.Primary.Chamber = 1
 SWEP.Category = "TRM Weapons"
 SWEP.Primary.Attacks = {}
@@ -143,13 +143,10 @@ function SWEP:CanInspect()
 end
 
 function SWEP:HandlePenetrating(ent, dmginfo)
---print("call")
+    --print("call")
     if AlarmSys != nil then
-        AlarmSys:StunNPC(ent,1)
+        AlarmSys:StunNPC(ent, 1)
     end
     dmginfo:ScaleDamage(1.25)
     return dmginfo
 end
-
-
-

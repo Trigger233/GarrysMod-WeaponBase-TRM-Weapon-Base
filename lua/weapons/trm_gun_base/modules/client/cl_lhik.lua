@@ -150,7 +150,7 @@ function SWEP:CycleLHIKAnimation()
     end
 
 
-    model:SetCycle(cycle + FrameTime() / (SequenceDuration / Speed))
+    model:FrameAdvance()
 end
 
 net.Receive("TRMBase_LHIKAnimation", function(len)

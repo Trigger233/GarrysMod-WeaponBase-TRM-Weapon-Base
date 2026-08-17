@@ -1,6 +1,87 @@
 require("trm_utils")
 require("trm_math")
-function SWEP:RefreshAttTable()
+local cvar_highlight = CreateClientConVar("trmbase_cl_alwaysdrawhighlight", 0, true, true, "", 0, 1)
+
+local def_customcolor = color_white
+local function DrawCustomHighlight(model, att, weapon)
+    if ! weapon:IsCarriedByLocalPlayer() then return end
+    model.m_CustomDelta = (model.m_CustomDelta or 1) -
+        (math.min(FrameTime(), 0.1) * (weapon and weapon.IsCustomizing and weapon:IsCustomizing() and 3 or 1))
+    if ! (weapon:IsCustomizing() or cvar_highlight:GetBool()) then return end
+    if model.m_CustomDelta <= 0 then return end
+    model:RemoveEFlags(EFL_USE_PARTITION_WHEN_NOT_SOLID)
+
+    render.SetStencilWriteMask(0xFF)
+    render.SetStencilTestMask(0xFF)
+    render.SetStencilReferenceValue(0)
+
+    render.SetStencilCompareFunction(STENCIL_ALWAYS)
+    render.SetStencilPassOperation(STENCIL_REPLACE)
+    render.SetStencilFailOperation(STENCIL_KEEP)
+    render.SetStencilZFailOperation(STENCIL_KEEP)
+
+    render.SetStencilEnable(true)
+    render.SetStencilReferenceValue(64 + 1)
+    model:RemoveEFlags(EFL_USE_PARTITION_WHEN_NOT_SOLID)
+
+    model:DrawModel()
+    render.SetStencilCompareFunction(STENCIL_EQUAL)
+    cam.Start2D()
+    local color = att and att.CustomColor or def_customcolor
+    surface.SetDrawColor(color.r, color.g, color.b, model.m_CustomDelta * 255)
+    surface.DrawRect(0, 0, ScrW(), ScrH())
+    cam.End2D()
+
+    render.SetStencilEnable(false)
+end
+
+function SWEP:SetupViewmodel()
+    local vm = self:GetViewModel()
+    if not (vm and IsValid(vm)) then return end
+
+    vm.RenderOverride = function(v, flag)
+        if not self or not util.IsTRMBase(self) then
+            v.RenderOverride = nil
+        end
+
+
+        local wep = IsValid(self) and IsValid(self:GetOwner()) and self:GetOwner().GetActiveWeapon and
+            self:GetOwner():GetActiveWeapon()
+        if not wep or not util.IsTRMBase(wep) then
+            v.RenderOverride = nil
+            return
+        end
+
+        if ! wep.IsCustomizing then
+        end
+
+        if not IsValid(v) then
+            v.RenderOverride = nil
+            return
+        end
+
+        self.m_OverDraw = true
+        v:DrawModel(flag)
+
+        if CLIENT then
+            DrawCustomHighlight(v, self, wep)
+        end
+        if self.GetAllAttachmentsInUse then
+            for _, att in pairs(self:GetAllAttachmentsInUse()) do
+                local tbl = BASE_TRM_ATTS[att.Class]
+                if IsValid(att.m_Model) and tbl.Render then
+                    att.m_Model:SetupBones()
+                    tbl:Render(self, att.m_Model)
+                    if CLIENT then
+                        DrawCustomHighlight(att.m_Model, tbl, wep)
+                    end
+                elseif tbl and tbl.Model and ! v:GetNoDraw() then
+                    self:BuildCustomizedGun()
+                end
+            end
+        end
+        self.m_OverDraw = false
+    end
 end
 
 function SWEP:IsPlyCarry()
@@ -182,7 +263,7 @@ function SWEP:ApplyWeaponModelChange()
     local viewmodel = self.m_ViewmodelCache or self.ViewModel
 
     vm:SetModel(viewmodel)
------------
+    -----------
     --------
     self.m_BodyGroupCache = self.m_BodyGroupCache or {}
     vm:SetSkin(self.m_SkinCache || 0)
@@ -552,7 +633,7 @@ function SWEP:GetAllAttachmentsInUse()
     return self.CurrentAttachments or {}
 end
 
-local function buildSingleModelBone(ent)
+function SWEP:BuildSingleModelBone(ent)
     if not CLIENT then return end
     if not ent or not IsValid(ent) then
         return
@@ -574,43 +655,42 @@ local function buildSingleModelBone(ent)
     return bones
 end
 
+function SWEP:CreatSingleAttModelForUse(att)
+    local model = ClientsideModel(att.Model, RENDERGROUP_OTHER)
+    if not IsValid(model) then return end
+    model:SetRenderMode(RENDERMODE_ENVIROMENTAL)
+    model:SetOwner(self)
+    model:SetNotSolid(true)
+    model:SetNoDraw(true)
+    model:AddEffects(EF_PARENT_ANIMATES)
+    model.TRMAttachmentModel = true
+    model:InvalidateBoneCache()
+    model:SetupBones()
+    model.m_CustomDelta = 1
+    model._IsAttachment = true
+
+    if att.Init then
+        att:Init(self, model)
+    end
+    trm_weapon_base_util.DealWithFullUpdate(model)
+    -- 立即缓存骨骼并返回
+    local bones = self:BuildSingleModelBone(model)
+
+
+    return model, bones
+end
+
 function SWEP:CreateAttachmentModel(entry, slot)
     if SERVER then return end
 
     local Att = BASE_TRM_ATTS[entry.Class]
     if not Att or not Att.Model then return end
 
-    local function CreateModel(att)
-        local model = ClientsideModel(att.Model, RENDERGROUP_VIEWMODEL)
-        if not IsValid(model) then return end
-        model:SetRenderMode(RENDERMODE_ENVIROMENTAL)
-        model:SetOwner(self)
-        model:SetNotSolid(true)
-        model:SetNoDraw(true)
-        model:AddEffects(EF_PARENT_ANIMATES)
-        model.TRMAttachmentModel = true
-        model:InvalidateBoneCache()
-        model:SetupBones()
-
-        model.m_CustomDelta = self.CurrentAttachments[slot].CustomDelta
-        self.CurrentAttachments[slot].CustomDelta = 0
-        model._IsAttachment = true
-
-        if att.Init then
-            att:Init(self, model)
-        end
-        trm_weapon_base_util.DealWithFullUpdate(model)
-        -- 立即缓存骨骼并返回
-        local bones = buildSingleModelBone(model)
 
 
-
-        return model, bones
-    end
-
-    local model, vBones = CreateModel(Att)
+    local model, vBones = self:CreatSingleAttModelForUse(Att)
     entry.m_Model = model
-    local tpModel, tpBones = CreateModel(Att)
+    local tpModel, tpBones = self:CreatSingleAttModelForUse(Att)
     entry.m_TpModel = tpModel
     if Att.Bonemerge then
         if vBones then
@@ -674,10 +754,9 @@ function SWEP:BuildCustomizedGun()
 
     self:ResetWeaponModelData()
     if IsValid(vm) then
-        self.m_Bone = buildSingleModelBone(vm)
+        self.m_Bone = self:BuildSingleModelBone(vm)
     end
-    self.wm_Bone = buildSingleModelBone(self)
-
+    self.wm_Bone = self:BuildSingleModelBone(self)
 
     for slot, att in pairs(self:GetAllAttachmentsInUse()) do
         self:CreateAttachmentModel(att, slot)
@@ -728,6 +807,8 @@ function SWEP:BuildCustomizedGun()
     if isActive then
         self:TrySetTask("Idle", true)
     end
+
+
 end
 
 function SWEP:FindBone(name)
@@ -751,88 +832,5 @@ function SWEP:InvalidateAttachments(ent)
             continue
         end
         self:InvalidateAttachments(c)
-    end
-end
-
-local cvar_highlight = CreateClientConVar("trmbase_cl_alwaysdrawhighlight", 0, true, true, "", 0, 1)
-
-local def_customcolor = color_white
-local function DrawCustomHighlight(model, att, weapon)
-    model.m_CustomDelta = (model.m_CustomDelta or 1) -
-        (math.min(FrameTime(), 0.1) * (weapon and weapon.IsCustomizing and weapon:IsCustomizing() and 3 or 1))
-    if ! (weapon:IsCustomizing() or cvar_highlight:GetBool()) then return end
-    if model.m_CustomDelta <= 0 then return end
-    model:RemoveEFlags(EFL_USE_PARTITION_WHEN_NOT_SOLID)
-
-    render.SetStencilWriteMask(0xFF)
-    render.SetStencilTestMask(0xFF)
-    render.SetStencilReferenceValue(0)
-
-    render.SetStencilCompareFunction(STENCIL_ALWAYS)
-    render.SetStencilPassOperation(STENCIL_REPLACE)
-    render.SetStencilFailOperation(STENCIL_KEEP)
-    render.SetStencilZFailOperation(STENCIL_KEEP)
-
-    render.SetStencilEnable(true)
-    render.SetStencilReferenceValue(64 + 1)
-    model:RemoveEFlags(EFL_USE_PARTITION_WHEN_NOT_SOLID)
-
-    model:DrawModel()
-    render.SetStencilCompareFunction(STENCIL_EQUAL)
-    cam.Start2D()
-    local color = att and att.CustomColor or def_customcolor
-    surface.SetDrawColor(color.r, color.g, color.b, model.m_CustomDelta * 255)
-    surface.DrawRect(0, 0, ScrW(), ScrH())
-    cam.End2D()
-
-    render.SetStencilEnable(false)
-end
-
-function SWEP:SetupViewmodel()
-    local vm = self:GetViewModel()
-    if not (vm and IsValid(vm)) then return end
-
-    vm.RenderOverride = function(v, flag)
-        if not self or not util.IsTRMBase(self) then
-            v.RenderOverride = nil
-        end
-
-
-        local wep = IsValid(self) and IsValid(self:GetOwner()) and self:GetOwner().GetActiveWeapon and
-            self:GetOwner():GetActiveWeapon()
-        if not wep or not util.IsTRMBase(wep) then
-            v.RenderOverride = nil
-            return
-        end
-
-        if ! wep.IsCustomizing then
-        end
-
-        if not IsValid(v) then
-            v.RenderOverride = nil
-            return
-        end
-
-        self.m_OverDraw = true
-        v:DrawModel(flag)
-
-        if CLIENT then
-            DrawCustomHighlight(v, self, wep)
-        end
-        if self.GetAllAttachmentsInUse then
-            for _, att in pairs(self:GetAllAttachmentsInUse()) do
-                local tbl = BASE_TRM_ATTS[att.Class]
-                if IsValid(att.m_Model) and tbl.Render then
-                    att.m_Model:SetupBones()
-                    tbl:Render(self, att.m_Model)
-                    if CLIENT then
-                        DrawCustomHighlight(att.m_Model, tbl, wep)
-                    end
-                elseif tbl and tbl.Model and ! v:GetNoDraw() then
-                    self:BuildCustomizedGun()
-                end
-            end
-        end
-        self.m_OverDraw = false
     end
 end

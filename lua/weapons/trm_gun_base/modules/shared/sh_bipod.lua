@@ -1,7 +1,6 @@
 function SWEP:BipodLogic()
     if ! self.bipod then
         if self:HasFlag("BipodDeployed") then
-            self:EmitSound("Weapon_AR2.Empty")
             self:RemoveFlag("BipodDeployed")
         end
         return
@@ -29,9 +28,7 @@ function SWEP:BipodLogic()
         end
     end
 
-    if self:HasFlag("BipodDeployed") != bDeployed then
-        self:EmitSound("Weapon_AR2.Empty")
-    end
+
 
 
 

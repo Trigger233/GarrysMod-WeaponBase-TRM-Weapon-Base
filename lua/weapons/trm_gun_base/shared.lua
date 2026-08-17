@@ -54,33 +54,24 @@ end
 -- ==========================================
 -- 包含所有 client 文件（只在客户端执行，但需要发送给客户端）
 -- ==========================================
-local function IncludeClientFiles()
-    local folder = "weapons/trm_gun_base/modules/client/"
-    local files, _ = file.Find(folder .. "*.lua", "LUA")
-    for _, fileName in ipairs(files) do
-        local fullPath = folder .. fileName
+local function IncludeClientFiles(path)
+    path = path or "weapons/trm_gun_base/modules/client/"
+    local files , folders = file.Find(path.."/*","LUA")
+    for _ , fileName in ipairs(files) do
+        local fullPath = path.."/"..fileName
         if SERVER then
-            AddCSLuaFile(fullPath) -- 发送给客户端
+            AddCSLuaFile(fullPath)
+        else
+            include(fullPath)
         end
-        if CLIENT then
-            include(fullPath) -- 客户端执行
-        end
+    end
+
+    for _ , folderName in ipairs(folders) do
+        IncludeClientFiles(path.."/"..folderName)
     end
 end
 
-local function IncludeClientAttachmentsFiles()
-    local folder = "weapons/trm_gun_base/modules/client/attachments/"
-    local files, _ = file.Find(folder .. "*.lua", "LUA")
-    for _, fileName in ipairs(files) do
-        local fullPath = folder .. fileName
-        if SERVER then
-            AddCSLuaFile(fullPath) -- 发送给客户端
-        end
-        if CLIENT then
-            include(fullPath) -- 客户端执行
-        end
-    end
-end
+
 
 
 if CLIENT then
@@ -89,7 +80,6 @@ if CLIENT then
     CreateClientConVar("trmbase_cl_keybind_customize", 0, true, false, "Customize keybind")
     CreateClientConVar("trmbase_cl_keybind_firemode", 0, true, false, "Firemode keybind")
 end
-IncludeClientAttachmentsFiles()
 IncludeSharedFiles()
 IncludeTaskFiles()
 IncludeClientFiles()
@@ -210,6 +200,8 @@ SWEP.Primary.BrustModeOnce = "Single" -- Single / Full
 SWEP.Secondary.ClipSize = 0
 SWEP.Secondary.DefaultClip = 0
 SWEP.Secondary.Ammo = -1
+
+SWEP.Secondary.Recoil = Angle(0,0,0)
 
 SWEP.HoldType = "shotgun"
 SWEP.ReloadType = "Single"
@@ -480,10 +472,7 @@ SWEP.VMOffset = {
         Pos = Vector(2, -2, 0.5),
         Ang = Angle(-0, 0, -0)
     },
-    Sprint = {
-        Pos = Vector(-0, -0, -0),
-        Ang = Angle(-0, 0, -0)
-    },
+
     Crouch = {
         Pos = Vector(0, -0, 0),
         Ang = Angle(0, 0, 0)

@@ -35,7 +35,7 @@ function ATTACHMENT:Render(wep, model)
     if hybridData and hybridData.PoseParameter then
         self:SetHybridPoseParam(wep, model)
     end
-    
+
 
 
     if wep:IsCarriedByLocalPlayer() then
@@ -43,9 +43,14 @@ function ATTACHMENT:Render(wep, model)
     end
 
     -- 2. 渲染瞄准镜
-    -- 红点模式：渲染红点准星
-    self:RenderReticle(wep, model, self.Sight)
 
+    -- 红点模式：渲染红点准星
+
+    if hybridOn then
+        self:RenderReticle(wep, model, self.Sight)
+    else
+        model:DrawModel()
+    end
     -- 3. 绘制模型
 end
 
@@ -60,14 +65,14 @@ function ATTACHMENT:RTCode(weapon, size)
     -- 倍镜的 PiP 渲染代码（由 att_scope 处理）
 end
 
-function ATTACHMENT:SetHybridPoseParam(weapon,model)
-    if !self.HybridSight.PoseParameter then
-        return 
+function ATTACHMENT:SetHybridPoseParam(weapon, model)
+    if ! self.HybridSight.PoseParameter then
+        return
     end
 
-    local target =  weapon:HasFlag("HybridOn") and 1 or 0
-    pose = math.Approach(pose, target, RealFrameTime() * (self.HybridSight.SmoothPose or 2) )
+    local target = weapon:HasFlag("HybridOn") and 1 or 0
+    pose = math.Approach(pose, target, RealFrameTime() * (self.HybridSight.SmoothPose or 2))
     local ppid = model:LookupPoseParameter(self.HybridSight.PoseParameter)
-    local min , max = model:GetPoseParameterRange(ppid)
-    model:SetPoseParameter(ppid,pose)
+    local min, max = model:GetPoseParameterRange(ppid)
+    model:SetPoseParameter(ppid, pose)
 end

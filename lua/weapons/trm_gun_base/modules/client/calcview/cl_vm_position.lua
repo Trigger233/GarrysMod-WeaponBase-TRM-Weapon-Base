@@ -76,7 +76,7 @@ function SWEP:Sway()
 
 
     local owner = self:GetOwner()
-    local angles = owner:EyeAngles()
+    local angles = EyeAngles()
     local velo = owner:GetVelocity()
 
 
@@ -117,7 +117,7 @@ function SWEP:GetClientAimDelta()
 
     self.ClientState["aim"] = self.ClientState["aim"] or 0
     local target            = self:GetAimDelta() or 0
-    local smoothSpeed       = 20 -- 平滑速度，越大越快
+    local smoothSpeed       = self.Aim.Type == "Linear" and 20 or 1 -- 平滑速度，越大越快
 
     self.ClientState["aim"] = Lerp(RealFrameTime() * smoothSpeed, self.ClientState["aim"], target) or 0
     return self.ClientState["aim"] or 0
@@ -152,7 +152,9 @@ local aimOffset = Vector()
 local aimAngle = Angle()
 
 local back = 0
-
+local sprintDelta = 0
+local sprintPosOffset = Vector()
+local sprintAngOffset = Angle()
 local idledelta = 0
 local const_vrec = 0.5
 local Vrecoil_Mul = 0
@@ -207,6 +209,10 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
         self.m_VMFreezePos = nil
     end
 
+    if LocalPlayer():ShouldDrawLocalPlayer() then
+        return pos, angles
+    end
+
     local dt       = RealFrameTime()
     local aimdelta = self:GetClientAimDelta()
 
@@ -226,47 +232,40 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
         currentIdleAng = self.VMOffset.Inspect.Ang or currentIdleAng
     end
 
-    CachePos = ((currentIdlePos.x + offsetX:GetFloat()) * right +
-        (currentIdlePos.y + offsetY:GetFloat()) * forward -
-        (currentIdlePos.z + offsetZ:GetFloat()) * up) * idledelta
-    CacheAngle = currentIdleAng * idledelta
+    CachePos:Set(currentIdlePos * idledelta)
+    CacheAngle:Set(currentIdleAng * idledelta)
 
-    pos:Add(CachePos)
-    angles:Add(CacheAngle)
 
     -- ========== Sway ==========
     local swayAng, swayPos = self:Sway()
     local swayMul = Lerp(aimdelta, 1, 0.1)
-    local applySwayPos = -(right * swayPos.x + forward * swayPos.y + up * swayPos.z) * swayMul
-    pos:Add(applySwayPos)
-    angles:Add(swayAng * swayMul)
-
+    local applySwayPos = -swayPos * swayMul
+    CachePos:Add(applySwayPos)
+    CacheAngle:Add(swayAng * swayMul)
     -- ========== Bob ==========
     local bobPos, bobAng = self:CustomBob()
     local bobMul = (1 - aimdelta)
-    local applyBobPos = (right * bobPos.x + forward * bobPos.y + up * bobPos.z) * bobMul
+    local applyBobPos = bobPos * bobMul
     bobAng:Mul(bobMul * 0.9)
-    pos:Add(applyBobPos)
-    angles:Add(bobAng)
-
+    CachePos:Add(applyBobPos)
+    CacheAngle:Add(bobAng)
     -- ========== Duck ==========
     local duckMul = (1 - aimdelta) * self:GetDucking()
     local duckPosOffset = self.VMOffset.Crouch.Pos
-    local applyDuckPos = (right * duckPosOffset.x +
-        forward * duckPosOffset.y +
-        up * duckPosOffset.z) * duckMul
-    pos:Add(applyDuckPos)
-    angles:Add(self.VMOffset.Crouch.Ang * duckMul)
-
+    local applyDuckPos = duckPosOffset * duckMul
+    CachePos:Add(applyDuckPos)
+    CacheAngle:Add(self.VMOffset.Crouch.Ang * duckMul)
     -- ========== Sprint ==========
-    local sprintDelta = self:GetSprintDelta() * (self:CanSprint() and 1 or 0)
-    local sprintPosOffset = self.VMOffset.Sprint.Pos
-    local applySprintPos = (right * sprintPosOffset.x +
-        forward * sprintPosOffset.y +
-        up * sprintPosOffset.z) * sprintDelta
-    pos:Add(applySprintPos)
-    angles:Add(self.VMOffset.Sprint.Ang * sprintDelta)
+    if self.VMOffset.Sprint then
+        sprintDelta = Lerp(rft * 2, sprintDelta, self:GetSprintDelta() > 0 and 1 or 0)
+        sprintPosOffset:Set(self.VMOffset.Sprint.Pos)
+        sprintAngOffset:Set(self.VMOffset.Sprint.Ang)
+        sprintPosOffset:Mul(sprintDelta)
+        sprintAngOffset:Mul(sprintDelta)
 
+        CachePos:Add(sprintPosOffset)
+        CacheAngle:Add(sprintAngOffset)
+    end
     -- ========== Aim Offset ==========
     AimOffset = Vector(self.Sight.Pos)
     AimOffsetAngle = Angle(self.Sight.Ang)
@@ -278,10 +277,9 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     aimOffset = LerpVector(dt * 10, aimOffset, AimOffset)
     aimAngle = LerpAngle(dt * 10, aimAngle, AimOffsetAngle)
 
-    local applyAimPos = (right * aimOffset.x + forward * aimOffset.y + up * aimOffset.z) * aimdelta
-    pos:Add(applyAimPos)
-    angles:Add(aimAngle * aimdelta)
-
+    local applyAimPos = aimOffset * aimdelta
+    CachePos:Add(applyAimPos)
+    CacheAngle:Add(aimAngle * aimdelta)
     -- ========== 配件瞄具偏移 ==========
     if self:GetSight() and not self:HasFlag("Tacsight") then
         local sight = self:GetSight()
@@ -290,9 +288,9 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
             sightPos = sight.HybridSight.AimPos
         end
 
-        local applySightPos = (right * sightPos.x + forward * sightPos.y + up * sightPos.z) * aimdelta
-        pos:Add(applySightPos)
-        angles:Add(sight.AimAng * aimdelta)
+        local applySightPos = sightPos * aimdelta
+        CachePos:Add(applySightPos)
+        CacheAngle:Add(sight.AimAng * aimdelta)
     end
 
     -- ========== 后坐力后退 ==========
@@ -303,6 +301,9 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     visAng = self:GetClientVisualRecoil()
     local tacRoll = self:HasFlag("Tacsight") and (self.TacSight.Ang and self.TacSight.Ang.r or 0) or 0
     visAng = dealTacsight(visAng, tacRoll)
+
+    CachePos.z = CachePos.z + visAng.pitch * 0.005
+    CachePos.x = CachePos.x + visAng.yaw * 0.005
 
     angles:RotateAroundAxis(right, -visAng.p * const_vrec)
     angles:RotateAroundAxis(up, visAng.y * const_vrec)
@@ -321,7 +322,7 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
         vmanipAng:Mul(vmanipMul)
         vmanipPos:Mul(vmanipMul)
 
-        pos:Add(vmanipPos.x * right + vmanipPos.y * forward + vmanipPos.z * up)
+        CachePos:Add(vmanipPos)
 
         angles:RotateAroundAxis(forward, vmanipAng.r)
         angles:RotateAroundAxis(up, vmanipAng.y)
@@ -329,11 +330,14 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     end
 
     --
-    VMRecoilPos = LerpVector(dt * 10, VMRecoilPos, self.ViewModelRecoilPos)
-    VMRecoilAng = LerpAngle(dt * 10, VMRecoilAng, self.ViewModelRecoilAng)
-    pos:Add(VMRecoilPos.x * right + VMRecoilPos.y * forward + VMRecoilPos.z * up)
-    angles:Add(VMRecoilAng)
+    VMRecoilPos = LerpVector(dt * 5, VMRecoilPos, self.ViewModelRecoilPos)
+    VMRecoilAng = LerpAngle(dt * 5, VMRecoilAng, self.ViewModelRecoilAng)
+    CachePos:Add(VMRecoilPos)
+    CacheAngle:Add(VMRecoilAng)
     self:RecoverViewModelRecoil()
+
+    pos:Add(CachePos.x * right + CachePos.y * forward + CachePos.z * up)
+    angles:Add(CacheAngle)
 
     return pos, angles
 end
@@ -385,25 +389,39 @@ function SWEP:DoViewModelRecoil()
     --Add
     local currentPos = self.ViewModelRecoilPos
     local currentAng = self.ViewModelRecoilAng
-    math.randomseed(14546)
-    currentPos = tbl.Pos
-    currentAng = tbl.Ang
-    local yawDelta = math.Rand(-1, 1) * tbl.YawMultiplier * 0.05
+    currentPos:Set(tbl.Pos)
+    currentAng:Set(tbl.Ang)
+
+
+    local yawDelta = math.Rand(-1, 1) * tbl.YawMultiplier * 0.25
     currentPos.x = currentPos.x + yawDelta
     currentAng.y = currentAng.y + yawDelta
-    local PitchDelta = math.Rand(-1, 0) * tbl.PitchMultiplier * 0.005
+    local PitchDelta = math.Rand(-1, 0) * tbl.PitchMultiplier * 0.25
     currentPos.z = currentPos.z + PitchDelta
-    currentAng.p = currentAng.p + PitchDelta 
+    currentAng.p = currentAng.p + PitchDelta
+
+    local mul = Lerp(self:GetAimDelta(), 1, tbl.AdsMultiplier or 0.25)
+    currentPos:Mul(mul)
+    currentAng:Mul(mul)
     --
+    local VeloUp = self:GetRecoilUp()
+    local VeloSide = self:GetRecoilSide()
+
+    currentAng.p = currentAng.p - VeloUp * 2.5
+    currentAng.y = currentAng.y - VeloSide * 2.5
+
+    currentPos.z = currentPos.z - VeloUp * 1
+    currentPos.x = currentPos.x - VeloSide * 1
+    ---
     self.ViewModelRecoilPos = currentPos
     self.ViewModelRecoilAng = currentAng
 end
-
 
 local ZERO_VECTOR = Vector(0, 0, 0)
 local ZERO_ANGLE = Angle(0, 0, 0)
 function SWEP:RecoverViewModelRecoil()
     local dt = RealFrameTime()
-    self.ViewModelRecoilAng = LerpAngle(dt * 20, self.ViewModelRecoilAng, ZERO_ANGLE)
-    self.ViewModelRecoilPos = LerpVector(dt * 20, self.ViewModelRecoilPos, ZERO_VECTOR)
+    local recoverMul = 20 * (self.ViewmodelRecoil.RecoverMultiplier or 1)
+    self.ViewModelRecoilAng:Set(LerpAngle(dt * recoverMul, self.ViewModelRecoilAng, ZERO_ANGLE))
+    self.ViewModelRecoilPos:Set(LerpVector(dt * recoverMul, self.ViewModelRecoilPos, ZERO_VECTOR))
 end

@@ -128,16 +128,8 @@ function SWEP:HandleReverb(tbl)
         isOutside = math.pow(distance, 2) > (tbl.RoomScale or 50000)
     end
 
-    -- 消音器检测：优先使用 Suppressed 音效
-    local isSup = self.Slienced
-    local sounds = isOutside and tbl.Sounds.Outside or tbl.Sounds.Inside
-    local layer = isSup and sounds.LayerSup or sounds.Layer
-    local reflection = isSup and sounds.ReflectionSup or sounds.Reflection
-
-    if layer and layer ~= "" then
-        self:GetOwner():EmitSound(layer, nil, nil, nil, CHAN_ATMO)
-    end
-    if reflection and reflection ~= "" then
-        self:GetOwner():EmitSound(reflection, nil, nil, nil, CHAN_REFLECTION)
+    local atmo = self.Primary.Reverb
+    if atmo then
+        self:GetOwner():EmitSound(atmo)
     end
 end

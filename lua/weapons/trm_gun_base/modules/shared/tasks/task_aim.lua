@@ -7,9 +7,9 @@ function task_in:CanBeSet(weapon)
 end
 
 function task_in:OnSet(weapon)
-        weapon:SetNextAnimationTime(0)
         weapon:PlayAnimation(weapon:ChooseAnim("Ads_In"), true)
         weapon:SetNextFireTime(0)
+        weapon:SetNextAnimationTime(CurTime() + weapon:GetAimTime())
 end
 
 function task_in:Think(cycle, weapon)
@@ -30,6 +30,7 @@ function task_out:OnSet(weapon)
         weapon:SetNextAnimationTime(0)
         weapon:PlayAnimation(weapon:ChooseAnim("Ads_Out"), true)
         weapon:SetNextFireTime(0)
+        weapon:SetNextAnimationTime(CurTime() + weapon:GetAimTime())
 end
 
 function task_out:Think(cycle, weapon)

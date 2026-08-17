@@ -4,8 +4,6 @@ local function approxEqualsZero(a)
     return math.abs(a) < 0.0001
 end
 
-TRMBase.RecoilTimeStep = 0.03
-TRMBase.RecoilTime = 0
 TRMBase.ClientRecoil = Angle()
 TRMBase.RecoilRise = Angle()
 TRMBase.RecoilReset = Angle()
@@ -30,6 +28,8 @@ function TRMBase:StartCommand(ply, cmd)
 end
 
 local diff = 0
+
+
 function TRMBase:StartCmdRecoil(ply, cmd, wpn)
     if SERVER then return end
     local EyeAngle = cmd:GetViewAngles()
@@ -55,8 +55,10 @@ function TRMBase:StartCmdRecoil(ply, cmd, wpn)
     self.ClientRecoil.y = wpnSide
     self.RecoilRise = self.RecoilRise + self.ClientRecoil
 
-    if( math.abs(wpnUp) < 0.0001 and clientShake < 0.1  )or wpn.Recoil.AutoControl  then
-        self.RecoilReset =  self.RecoilRise * 0.05 * wpn.Recoil.Recover
+    if (math.abs(wpnUp) < 0.01  ) then
+        local recoverScale = wpn.Recoil.Recover * 0.2
+        self.RecoilReset.p = math.Approach(0, self.RecoilRise.p, recoverScale)
+        self.RecoilReset.y = math.Approach(0, self.RecoilRise.y, recoverScale * 0.5)
         self.ClientRecoil:Sub(self.RecoilReset)
         self.RecoilRise = self.RecoilRise - self.RecoilReset
     end
@@ -70,10 +72,3 @@ function TRMBase:StartCmdRecoil(ply, cmd, wpn)
     self.LastEyeAnglePitch = EyeAngle.p
 end
 
-hook.Add("HUDPaint", "TRM_Recoil_Debug", function()
-    if ! GetConVar("developer"):GetBool() then return end
-    local w, h = ScrH(), ScrH()
-    draw.SimpleText(diff, "Default", w * 0.5, h * 0.5, color_white, TEXT_ALIGN_CENTER, 1)
-    draw.SimpleText(TRMBase.ClientRecoil, "Default", w * 0.5, h * 0.55, color_white, TEXT_ALIGN_CENTER, 1)
-    draw.SimpleText(TRMBase.RecoilRise, "Default", w * 0.5, h * 0.6, color_white, 1, 1)
-end)

@@ -52,10 +52,9 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration, startAt)
     local sequencePlay = seq[math.Round(math.Rand(1, #seq))] -- 修复2：直接用 #seq 获取长度
 
     self:SetPlayingSequence(sequenceClass)
+    local seqId = vm:LookupSequence(sequencePlay)
 
-
-    vm:SendViewModelMatchingSequence(vm:LookupSequence(sequencePlay))
-
+    vm:SendViewModelMatchingSequence(seqId)
     self:SetGrip1(true)
     self:SetGrip2(true)
     local duration = vm:SequenceDuration(vm:LookupSequence(sequencePlay))
@@ -77,11 +76,15 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration, startAt)
     end
 
 
+    net.Start("trmbase_tpikanim")
+    net.WriteEntity(self)
+    net.WriteUInt(seqId,8)
+    net.Broadcast()
 end
 
 function SWEP:DoAnimationEvents()
     local vm = self:GetViewModel()
-    if not vm or not IsValid(vm) or not IsFirstTimePredicted() then
+    if not vm or not IsValid(vm)  then
         return
     end
 
@@ -134,6 +137,7 @@ function SWEP:IsAnimFinished()
 end
 
 if SERVER then
+    util.AddNetworkString("trmbase_tpikanim")
     util.AddNetworkString("trmbase_tpanim")
     util.AddNetworkString("TRMBase_LHIKAnimation")
     util.AddNetworkString("TRMBase_LHIKEvents")
@@ -195,7 +199,7 @@ if CLIENT then
             return
         end
 
-        ply:AnimRestartGesture(slot, anim, true)
+      --  ply:AnimRestartGesture(slot, anim, true)
     end)
 
 

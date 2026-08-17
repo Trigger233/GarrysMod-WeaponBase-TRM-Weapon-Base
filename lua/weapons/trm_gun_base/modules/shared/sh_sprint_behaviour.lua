@@ -6,10 +6,21 @@ function SWEP:CanSprint()
 
     if not IsValid(vm) then return false end
 
-    local owner = self:GetOwner()
-    if not IsValid(owner) then return false end
+    local p = self:GetOwner()
+    if not IsValid(p) then return false end
+    
+    if p.GetSliding and p:GetSliding() then
+        return false
+    end
+
+    if p:KeyDown(IN_ATTACK ) then
+        return false
+    end
+
     local seq = self:GetPlayingSequence() or ""
     local task = self:GetCurrentTaskName() or ""
+
+
 
     -- 动画是否播放完毕
     local animFinished = self:GetNextAnimationTime() <= CurTime()
@@ -51,7 +62,7 @@ function SWEP:Sprint()
         return
     end
 
-    if self:GetOwner():KeyDown(IN_SPEED) and self:CanSprint() and radio > 0.8 and self:GetOwner():OnGround() then
+    if self:GetOwner():IsSprinting() and self:CanSprint() and radio > 0.8 and self:GetOwner():OnGround() then
         self:TrySetTask("SprintIn")
     end
 end

@@ -5,7 +5,7 @@ local RecoilFactor = 0.1
 local Basefov = GetConVar("fov_desired"):GetInt()
 local zoomscale = 1.5
 local globalzoom = 1
-local CheapzoomMulti = 3
+local CheapzoomMulti = 4
 
 local oldRenderResolutionCache = 0
 local rtsize = 1024
@@ -22,19 +22,26 @@ local RTMaterial = CreateMaterial(matName .. "_scene", "UnlitGeneric", {
     ["$basetexture"] = rtmat:GetName(),
     ["$vertexcolor"] = "1",
     ["$vertexalpha"] = "1",
+    ["$selfillum"] = "1",
+    ["$color2"] = "[1.2 1.2 1.2]",
 })
 local RTMaterial_Cheap = CreateMaterial(matName .. "_cheap", "UnlitGeneric", {
     ["$basetexture"] = rtmat_cheap:GetName(),
     ["$vertexcolor"] = "1",
     ["$vertexalpha"] = "1",
-    ["$smooth"] = "1" ,
-    ["$selfillum"] = "1",
+    ["$smooth"] = "1",
+    ["$selfillum"] = "0",
+    ["$color2"] = "[1.2 1.2 1.2]",
 
 })
 local LenseMaterial = CreateMaterial(matName, "VertexLitGeneric", {
     ["$basetexture"] = rtmat_spare:GetName(),
     ["$model"] = "1",
     ["$selfillum"] = "1",
+    ["$color2"] = "[1.2 1.2 1.2]",
+    ["$vertexcolor"] = "1",
+    ["$vertexalpha"] = "1",
+
 })
 
 local isModelApplyActiveScope = {}
@@ -266,7 +273,7 @@ function SWEP:DoRTScope(model, att)
     self:DrawThermal(rtmat, att)
 
     render.PushRenderTarget(rtmat_spare)
-    render.Clear(0, 0, 0, 0, true, true)
+    render.Clear(3, 3, 3, 0, true, true)
 
     cam.Start2D()
 
@@ -302,7 +309,7 @@ function SWEP:RenderScopeReticle(model, att, stat, rtSize, zoomScale)
     local sway, _ = self:Sway()
 
     local additive = cvar_cheapscope:GetBool() and
-        (self:GetClientVisualRecoil() * self:GetZoomRecoilFactor() + self:GetScopeZeroAngle())+ sway * 4 or
+        (self:GetClientVisualRecoil() * self:GetZoomRecoilFactor() + self:GetScopeZeroAngle()) + sway * 4 or
         Angle(0, 0, 0) + sway * 4
 
 
@@ -336,9 +343,9 @@ function SWEP:DrawParallax(model, rtSize, att)
     centerX = centerX - AngleToPixel(additive.yaw) * ScrW()
 
     centerY = centerY + AngleToPixel(additive.p) * ScrH()
-    local _size = rtSize * (att.Scope.ParallaxSize or 1.5)
+    local _size = rtSize * (att.Scope.ParallaxSize or 1.4)
     surface.SetMaterial(att.Scope.Parallax or parallaxMat)
-    surface.SetDrawColor(Color(255, 255, 255, 255))
+    surface.SetDrawColor(Color(255, 255, 255, 100))
 
     surface.DrawTexturedRect(
         centerX - _size / 2,
@@ -358,7 +365,7 @@ hook.Add("RenderScene", "TRMBASE_ScopeUpdate", function()
 end)
 
 function SWEP:GetZoomRecoilFactor()
-    return math.Clamp(RecoilFactor * self:GetScopeZoom() , 0, 1)
+    return math.Clamp(RecoilFactor * self:GetScopeZoom(), 0, 1)
 end
 
 local function DrawCheapScopeMaterial(wep, w, h, size, Zoom)
@@ -387,8 +394,9 @@ function SWEP:DoCheapScope(model, att)
     local reticleStats = att.Sight
 
     render.PushRenderTarget(rtmat_cheap)
-    render.Clear(0, 0, 0, 255, true, true)
+    render.Clear(255, 248, 248, 255, true, true)
     render.PopRenderTarget()
+
 
     render.CopyTexture(screen, rtmat_cheap)
 
@@ -397,6 +405,7 @@ function SWEP:DoCheapScope(model, att)
     if att.RTCode then
         att:RTCode(self, rtmat_cheap, size)
     end
+
 
     render.PushRenderTarget(rtmat_spare)
     render.Clear(0, 0, 0, 0, true, true)

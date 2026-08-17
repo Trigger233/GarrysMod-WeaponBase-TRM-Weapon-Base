@@ -30,7 +30,7 @@ function SWEP:LocoMotion(deltaTime)
     local speed = IsValid(owner) and owner:GetVelocity():Length2D() or 0
     local runSpeed = IsValid(owner) and owner:GetRunSpeed() or 1
     local walkSpeed = IsValid(owner) and owner:GetWalkSpeed() or 1
-    local dt = deltaTime * 0.5
+    local dt =  RealFrameTime() * (game.SinglePlayer() and 3 or 6)
     -- Aim Pose
     if self.Sight and self.Sight.PoseParameter then
         aimPose = Lerp(dt * 10, aimPose, self:GetAimDelta())
@@ -59,8 +59,8 @@ function SWEP:LocoMotion(deltaTime)
 
     -- Walk Pose
     if self.BasePoseParameter and self.BasePoseParameter.Walk then
-        local walkVal = self:GetAimDelta() < 0.25 and (speed / walkSpeed) * (1 - self:GetSprintDelta()) or 0
-        walkPose = math.Approach(walkPose, walkVal, dt * 2)
+        local walkVal = self:GetAimDelta() < 0.1 and (speed / walkSpeed) * (1 - self:GetSprintDelta()) or 0
+        walkPose = math.Approach(walkPose, walkVal, dt * 2) 
         for _, Pose in pairs(self.BasePoseParameter.Walk) do
             vm:SetPoseParameter(Pose, walkPose)
         end

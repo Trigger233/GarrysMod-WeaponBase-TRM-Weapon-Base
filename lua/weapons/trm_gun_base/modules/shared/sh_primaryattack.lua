@@ -1,19 +1,9 @@
 if SERVER then
 	util.AddNetworkString("TRMBase_TracerEffect")
-	util.AddNetworkString("TRMBase_ScreenShake")
 end
 
 
-function SWEP:SendScreenShake()
-	if CLIENT then return end
-	local owner = self:GetOwner()
-	if ! IsValid(owner) or ! owner:IsPlayer() then
-		return
-	end
-	net.Start("TRMBase_ScreenShake")
-	net.WriteEntity(self)
-	net.Send(owner)
-end
+
 
 local math = math
 

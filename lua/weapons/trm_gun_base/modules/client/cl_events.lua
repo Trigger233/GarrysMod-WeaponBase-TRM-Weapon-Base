@@ -32,7 +32,7 @@ function SWEP:DoShell()
     effect:SetEntity(ent)
     effect:SetOrigin(attachment.Pos)
     effect:SetAngles(attachment.Ang)
-
+    effect:SetScale(stats.Scale or 1)
     local owner = self:GetOwner()
 
     while (IsValid(owner) && ! owner:IsPlayer()) do
@@ -82,26 +82,22 @@ function SWEP:DoTracer(startpos, endpos)
     
     local stats = self.Effects.Muzzle.Tracer
     
-    if stats.IsParticle then
-        util.ParticleTracerEx(  stats.Name, startpos, endpos, true ,self:EntIndex() , -1 )
-    else
-        local tracer = EffectData()
-        tracer:SetScale(Tracerscale)
-        tracer:SetOrigin(endpos)
-        tracer:SetStart(startpos)
-        utilf(tracerName, tracer)
-    end
+    util.ParticleTracerEx(  stats.Name or "trm_tracer", startpos, endpos, true ,self:EntIndex() , -1 )
 end
 
 local function findAttachmentInChildren(ent, attName, weapon)
     local attId = trm_utils.LookupAttachmentCached(ent, attName)
 
     for _, child in pairs(ent:GetChildren()) do
-        if child:GetClass() == "gmod_hands" then
+        if ! child:GetClass() == "class C_BaseFlex" then
             continue
         end
 
         if child:GetOwner() != weapon then
+            continue
+        end
+
+        if weapon.m_TPIKModelCreated and table.HasValue(weapon.m_TPIKModelCreated, child) then
             continue
         end
 

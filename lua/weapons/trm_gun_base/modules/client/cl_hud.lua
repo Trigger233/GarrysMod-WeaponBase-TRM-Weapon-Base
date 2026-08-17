@@ -1,19 +1,8 @@
 if not CLIENT then return end
-timer.Simple(1, function()
-    hook.Add("HUDPaint", "TRMBase_HUD", function()
-        local ply = LocalPlayer()
-        if IsValid(ply) and ply:Alive() then
-            local weapon = ply:GetActiveWeapon()
-            if ! util.IsTRMBase(weapon) then return end
-            if weapon.TRMHUD then
-                weapon:TRMHUD(ply)
-            end
-        end
-    end)
-end)
+
 local math = math
 
-local cv_debug = CreateClientConVar("trmbase_debug_hud", 1, true, false)
+local cv_debug = GetConVar("developer")
 local cv_crosshair_enable = CreateClientConVar("trmbase_crosshair_enable", 1, true, false)
 local cv_crosshair_style = CreateClientConVar("trmbase_crosshair_style", 1, true, false)
 local cv_crosshair_color_r = CreateClientConVar("trmbase_crosshair_color_r", 255, true, false)
@@ -69,7 +58,8 @@ function SWEP:GetCrosshairSway()
     return SwayX, -SwayY
 end
 
-function SWEP:TRMHUD(ply)
+function SWEP:DrawHUD()
+    local ply = LocalPlayer()
     if ! ply:GetAllowWeaponsInVehicle() and ply:InVehicle() then
         return
     end
@@ -85,9 +75,9 @@ local function DrawCenterRoundBox(x, y, W, H, color)
     local outline = cv_crosshair_outline:GetInt()
     if outline > 0 then
         local shadowW, shadowH = W + outline, H + outline
-        DrawRoundBox(0, x - 0.5 * shadowW, y - 0.5 * shadowH, shadowW, shadowH, color_shadow)
+        DrawRoundBox(2, x - 0.5 * shadowW, y - 0.5 * shadowH, shadowW, shadowH, color_shadow)
     end
-    DrawRoundBox(0, x - 0.5 * W, y - 0.5 * H, W, H, color)
+    DrawRoundBox(2, x - 0.5 * W, y - 0.5 * H, W, H, color)
 end
 
 function SWEP:GetCrossHairColor()
@@ -231,7 +221,7 @@ do
     end
 end
 local function DrawButton(inputtext, x, y, size, small)
-    local text = string.NiceName(tostring(inputtext))
+    local text = string.upper(tostring(inputtext))
     DrawRoundBox(5, x, y, size, size, color_white)
     draw.SimpleText(text, small and "TRM_HUD_Small" or "TRM_HUD_Button", x + size * 0.5, y + size * 0.5, color_black,
         TEXT_ALIGN_CENTER,
@@ -255,12 +245,12 @@ function SWEP:HUDControlHint(x, y)
     if self:HasFlag("Aiming") then
         DrawSingleHint(input.LookupBinding("use"), Phrase("TRMBase_Hint_Tacsight"), x, hintY, size, true)
         hintY = hintY - size - Ygap
-
-        if self:GetSight() and self:GetSight().HybridSight and not self:HasFlag("Tacsight") then
+        local tac = self:HasFlag("Tacsight")
+        if self:GetSight() and self:GetSight().HybridSight and not tac then
             DrawSingleHint("Scroll", Phrase("TRMBase_Hint_Hybrid"), x, hintY, size, false, true)
             hintY = hintY - size - Ygap
         end
-        if self:GetSight() and not self:HasFlag("Tacsight") and self:GetSight().MaxZoom and self:GetSight().MinZoom and self:GetSight().MaxZoom != self:GetSight().MinZoom then
+        if self:GetSight() and not tac and self:GetSight().MaxZoom and self:GetSight().MinZoom and self:GetSight().MaxZoom != self:GetSight().MinZoom then
             DrawSingleHint("Scroll", Phrase("TRMBase_Hint_ScrollScope"), x, hintY, size, false, true)
             hintY = hintY - size - Ygap
         end
@@ -309,5 +299,8 @@ function SWEP:DrawDebugHUD(x, y)
 
     oy         = oy + 40
     local name = math.Round(self:GetVisualRecoilBackward(), 2)
+    draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    oy         = oy + 40
+    name = self:GetPlayingSequence()
     draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end

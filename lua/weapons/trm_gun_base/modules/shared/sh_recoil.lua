@@ -112,7 +112,7 @@ function SWEP:Recover()
 	end
 
 	---Recoil Spray
-	local factor = math.Clamp(self.Recoil.Factor ,0.01,0.99)
+	local factor = math.Clamp( self.Recoil.Factor /( ft * 70),0.01,0.99)
 	self:SetRecoilUp(self:GetRecoilUp() * factor  )
 	self:SetRecoilSide(self:GetRecoilSide() * factor )
 end
@@ -150,13 +150,19 @@ function SWEP:DoRecoil()
 			self:SetRecoilProgress(progress)
 		end
 	end
+
+	local Shake = math.Rand(-1, 1) * self.Recoil.Shake
+	RecoilUp = RecoilUp + Shake * 1
 	local mul = self:GetRecoilMultiplier()
 	RecoilUp = RecoilUp *	mul
 	RecoilSide = RecoilSide * mul
+
+	RecoilSide = Lerp(0.5, RecoilSide, self:GetRecoilSide())
+	RecoilUp = Lerp(0.5, RecoilUp, self:GetRecoilUp())
 	self:SetRecoilUp(RecoilUp)
 	self:SetRecoilSide(RecoilSide)
 	-- ----
-	self:SendScreenShake()
+	self:CallOnClient("DoViewModelShake")
 end
 
 function SWEP:GetRecoilMultiplier()

@@ -5,7 +5,7 @@ function SWEP:Think()
     local owner = self:GetOwner()
     self:SetWeaponHoldType(self.HoldType)
     self:TaskTick()
-    self:bThink()
+    self:OnPostThink()
     self:DoAnimationEvents()
     self:Recover()
 
@@ -25,7 +25,6 @@ function SWEP:Think()
 
     self:TrySetTask("Rechamber")
 
-    self:Sprint()
     self:NextThink(CurTime())
 
     if CLIENT then
@@ -38,10 +37,11 @@ function SWEP:Think()
 end
 
 local SprintDelta = 0
-function SWEP:bThink()
+function SWEP:OnPostThink()
+    if CLIENT then return end
     local seq = self:GetPlayingSequence()
     local owner = self:GetOwner()
-    if !owner then return end
+    if ! IsValid(owner) then return end
     local task = self:GetCurrentTaskName() or ""
     local sprint = owner:IsSprinting()
 
@@ -56,8 +56,7 @@ function SWEP:bThink()
     end
 
 
-    SprintDelta = Lerp(50, SprintDelta,
-        sprint and owner:OnGround() and owner:GetVelocity():Length2D() > owner:GetWalkSpeed() and self:CanSprint() and 1 or
-        0)
+    SprintDelta = sprint and owner:OnGround() and self:CanSprint() and 1 or 0
     self:SetSprintDelta(SprintDelta)
+    self:Sprint()
 end

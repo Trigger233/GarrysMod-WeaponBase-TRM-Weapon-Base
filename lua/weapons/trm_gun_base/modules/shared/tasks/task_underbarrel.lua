@@ -36,7 +36,7 @@ function task_out:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
 
     if weapon.NoIK then
-        weapon:PlayAnimation("UnderBarrel_Out")
+        weapon:PlayAnimation("UnderBarrel_Out",true)
         return
     end
     weapon:PlayIKAnimation("Out", true)
@@ -78,13 +78,20 @@ local task_reload = {}
 task_reload.Name = "UnderBarrel_Reload"
 
 function task_reload:CanBeSet(weapon)
+    if weapon:Ammo2() == 0 then
+        weapon:TrySetTask("UnderBarrel_Out")
+        return false
+    end
+
+
+
     return weapon:CanReload2()
 end
 
 function task_reload:OnSet(w)
     w:SetNextAnimationTime(0)
     if w.NoIK then
-        w:PlayAnimation("UnderBarrel_Reload")
+        w:PlayAnimation("UnderBarrel_Reload",true)
         return
     end
 

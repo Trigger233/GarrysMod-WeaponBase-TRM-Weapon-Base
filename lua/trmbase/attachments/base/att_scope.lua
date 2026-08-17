@@ -7,7 +7,7 @@ function ATTACHMENT:Render(wep, model)
     if wep:IsCarriedByLocalPlayer() then
         wep:RenderScopeSight(model, self)
     end 
-    --self:ApplyReticleMaterial(wep, model, self.Sight)
+    self:ApplyReticleMaterial(wep, model, self.Sight)
 
     if IsValid(model) then
         model:DrawModel()

@@ -54,10 +54,10 @@ function task_out:CanBeSet(weapon)
 end
 
 function task_out:OnSet(weapon)
-    weapon:SetNextFireTime(0.0)
     if weapon.Animations.SprintOut then
-        weapon:PlayAnimation(weapon:ChooseAnim("SprintOut"))
+        weapon:PlayAnimation(weapon:ChooseAnim("SprintOut"),true)
     end
+    weapon:SetNextFireTime(0.1)
 end
 
 function task_out:Think(cycle, weapon)

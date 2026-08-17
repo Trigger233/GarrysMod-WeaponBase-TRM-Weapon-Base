@@ -92,13 +92,13 @@ function SWEP:CoolFov()
     local aimFOV = normalFOV / self.Aim.Scale -- 建议 55-65 之间
     -- 使用平滑曲线，让过渡更自然
     if self.sight and self.sight.zoom and (GetConVar("trmbase_cl_cheapscope"):GetBool() or not self:IsFirstPerson()) and self:ShouldZoom() then
-        aimFOV = self:GetScopeZoomFov()
+        aimFOV = math.min(aimFOV, self:GetScopeZoomFov())
     end
     local reload = self:IsReloading()
     reloadFovDelta = Lerp(RealFrameTime() * 5, reloadFovDelta or 0, reload and 1 or 0)
     aimFOV = math.min(aimFOV * (1 + reloadFovDelta * 0.2), normalFOV)
     local easedDelta = aimDelta
-    local FOV = Lerp(easedDelta, normalFOV, aimFOV) +   self:CameraShakeFOV(finalFOV)
+    local FOV = Lerp(easedDelta, normalFOV, aimFOV) + self:CameraShakeFOV(finalFOV)
 
     finalFOV = Lerp(RealFrameTime() * 15, finalFOV, FOV)
 
@@ -109,27 +109,44 @@ function SWEP:TranslateFOV(fov)
     return self:CoolFov()
 end
 
-net.Receive("TRMBase_ScreenShake", function(len)
-    local wpn = net.ReadEntity()
-    if ! wpn.IsTRMWeapon then return end
-    wpn.m_ScreenShake = 1
-    wpn.m_ShakeDirection = -wpn.m_ShakeDirection 
-    wpn:DoViewModelRecoil()
-end)
+function SWEP:DoViewModelShake()
+    self.m_ScreenShake = 1
+    self.m_ShakeDirection = -self.m_ShakeDirection
+    self:DoViewModelRecoil()
+    hook.Run("TRM_Weapon_PostFireEffect", self, self:GetOwner())
+end
 
-
+local pi = 3.1415
 SWEP.m_ScreenShake = 0
 SWEP.m_ShakeDirection = 1
 local delta = 0
 function SWEP:CameraShakeAng(angles)
-    delta = math.sin(SysTime() * 100) * self.m_ScreenShake
-    local shakeScale = self.Recoil.Shake * self.m_ShakeDirection
-    angles.r = angles.r + delta * 2 * shakeScale
-    angles.p = angles.p + delta * 1 * shakeScale
-    angles.y = angles.y + delta * 1 * shakeScale
+    local shakeScale = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 0.25)
+    angles.r = angles.r + math.sin(SysTime() * 75) * self.m_ScreenShake * 10 * shakeScale * self.m_ShakeDirection
+  --  angles.p = angles.p + self.m_ScreenShake * -2 * shakeScale
 end
 
 function SWEP:CameraShakeFOV(fov)
-    self.m_ScreenShake = Lerp(RealFrameTime() * 2, self.m_ScreenShake, 0)
+    self.m_ScreenShake = math.max(0, self.m_ScreenShake - RealFrameTime())
+
     return -self.m_ScreenShake * 5 * self.Recoil.Shake
 end
+
+function SWEP:CameraShakeMotionBlur(h, v, f, r)
+    local _delta = self.m_ScreenShake * self.Recoil.Shake
+    f = f + 0.02 * _delta
+    r = r + 0.02 * _delta
+    return h, v, f, r
+end
+
+local cvar_shootingblur = CreateClientConVar("trmbase_cl_shootfx", 1, true, true, "helptext", 0, 1)
+
+hook.Add("GetMotionBlurValues", "TRMBase_Weapon", function(h, v, f, r)
+    if ! cvar_shootingblur:GetBool() then return end
+    local ply = LocalPlayer()
+    if ! IsValid(ply) then return end
+    local wpn = ply:GetActiveWeapon()
+    if ! IsValid(wpn) or ! wpn.IsTRMWeapon then return end
+
+    return wpn:CameraShakeMotionBlur(h, v, f, r)
+end)
