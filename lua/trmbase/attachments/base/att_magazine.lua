@@ -7,6 +7,10 @@ ATTACHMENT.Bonemerge = true
 local small = Vector(0, 0, 0)
 local normal = Vector(1, 1, 1)
 
+function ATTACHMENT:Stats(weapon)
+    weapon.Effects.Mag.Model = self.Model 
+end
+
 function ATTACHMENT:Render(weapon, model)
     BASE_TRM_ATTS[self.Base]:Render(weapon, model)
 
@@ -22,7 +26,7 @@ end
 
 function ATTACHMENT:SetMagFollowerPoseParam(weapon, model, val)
     local ppid = model:LookupPoseParameter(self.BulletPoseParameter)
-    if not ppid or ppid <= 0 then return end
+    if not ppid or ppid < 0 then return end
 
     local min, max = model:GetPoseParameterRange(ppid)
     min = min or 0

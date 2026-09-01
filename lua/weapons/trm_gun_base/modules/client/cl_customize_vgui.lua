@@ -22,6 +22,16 @@ local TRM_SOUNDS = {
     Save = "trmbase/modern/ui_save.wav",
     Deny = "trmbase/modern/ui_deny.wav",
 }
+local sortAttachCategory = {
+    att_sight = 1 ,
+    att_reticle = 2 ,
+
+    att_scope = 3 ,
+    att_base = 4 ,
+}
+
+
+
 surface.CreateFont("TRM_Mod_Title", {
     font = FONT_FAMILY,
     size = 30,
@@ -64,6 +74,8 @@ function SWEP:SendAttachmentToServer(slotKey, attID)
     end
 end
 
+
+
 local function Phrase(text, fallback)
     if not text then return fallback or "" end
     if string.sub(tostring(text), 1, 1) ~= "#" then return text end
@@ -99,6 +111,13 @@ local function GetAttachmentsForSlot(slot)
     table.sort(result, function(a, b)
         local ad = BASE_TRM_ATTS[a]
         local bd = BASE_TRM_ATTS[b]
+        local aBase = ad.Base
+        local bBase = bd.Base
+
+        if aBase and bBase and sortAttachCategory[aBase] and sortAttachCategory[bBase] and sortAttachCategory[aBase] < sortAttachCategory[bBase] then
+            return true
+        end
+
         local an = Phrase(ad and ad.Name, a)
         local bn = Phrase(bd and bd.Name, b)
         return an < bn
@@ -325,7 +344,7 @@ local function BuildStatsFromCopies(base, sim)
         { Phrase("#TRMBase_Stat_RPM", "Fire rate"),             Num(sim.Primary and sim.Primary.RPM),                                 Num(base.Primary and base.Primary.RPM),                                 true,  1500 },
         { Phrase("#TRMBase_Stat_Spread", "Spread"),             Num(sim.Spread and sim.Spread.Base),                                  Num(base.Spread and base.Spread.Base),                                  false, 0.1 },
         { Phrase("#TRMBase_Stat_AimSpeed", "Ergonomics"),       Num(sim.Aim and sim.Aim.Time),                                        Num(base.Aim and base.Aim.Time),                                        false, 1 },
-        { Phrase("#TRMBase_Stat_MoveSpeed", "MoveSpeed"),       Avg(sim.MoveSpeed),                                                   Avg(base.MoveSpeed),                                                    true, 2 },
+        { Phrase("#TRMBase_Stat_MoveSpeed", "MoveSpeed"),       Avg(sim.MoveSpeed),                                                   Avg(base.MoveSpeed),                                                    true,  2 },
         { Phrase("#TRMBase_Stat_Recoil", "Recoil"),             WeaponRecoil(sim),                                                    WeaponRecoil(base),                                                     false, 10 },
     }
 end
@@ -1895,7 +1914,6 @@ function PANEL:RefreshAttList()
 
     local slotKey = tostring(self.m_Slot)
     local currentAtt = CurrentAttachmentClass(self.m_Weapon, self.m_Slot)
-    local slotExcluded = IsValid(self.m_Weapon) and not self.m_Weapon:CanEquip(self.m_Slot, currentAtt)
 
 
     local skipDefault = nil
@@ -1906,10 +1924,13 @@ function PANEL:RefreshAttList()
         self:AddAttButton(Phrase("#TRMBase_None", "None"), nil, currentAtt == nil or currentAtt == "None", slotKey, false,
             false)
     end
+    local allatts = GetAttachmentsForSlot(slot)
 
-    for _, attClass in ipairs(GetAttachmentsForSlot(slot)) do
+
+    for _, attClass in ipairs(allatts) do
         if skipDefault and attClass == skipDefault then continue end
-        self:AddAttButton(AttachmentName(attClass), attClass, currentAtt == attClass, slotKey, slotExcluded, false)
+        self:AddAttButton(AttachmentName(attClass), attClass, currentAtt == attClass, slotKey,
+            ! self.m_Weapon:CanEquip(self.m_Slot, attClass), false)
     end
 
     local totalH = 0
@@ -2055,8 +2076,6 @@ net.Receive("TRMBase_SyncAllAttachments", function()
     if IsValid(TRM_AttachMenu_Instance) then
         TRM_AttachMenu_Instance:RefreshAll()
     end
-
-
 end)
 
 

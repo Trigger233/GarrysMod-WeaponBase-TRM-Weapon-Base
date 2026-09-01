@@ -9,6 +9,7 @@ end)
 
 
 
+
 function SWEP:CanInspect()
     local task = self:GetCurrentTaskName()
     local taskStr = task or ""
@@ -21,9 +22,9 @@ function SWEP:CanInspect()
     end
 
     return (taskStr == "Idle" or taskStr == "Rechamber" or string.find(taskStr, "Sprint")) and
-        (self.Animations.Inspect or self.Animations.Inspect_Empty) 
+        (self.Animations.Inspect or self.Animations.Inspect_Empty)
 end
 
 function SWEP:IsInspecting()
-    return string.find(self:GetPlayingSequence(), "Inspect")
+    return string.find(self:GetStatus(), "Inspect")
 end

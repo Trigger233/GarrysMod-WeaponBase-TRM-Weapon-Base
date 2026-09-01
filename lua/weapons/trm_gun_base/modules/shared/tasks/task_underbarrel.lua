@@ -10,7 +10,7 @@ function task_in:OnSet(weapon)
     weapon:SetUnderbarrel(true)
 
     if weapon.NoIK then
-        weapon:PlayAnimation("UnderBarrel_In")
+        weapon:PlayAnimation("UnderBarrel_In",true)
         return
     end
 
@@ -64,7 +64,7 @@ function task_idle:OnSet(wep)
             return
         end
 
-        wep:PlayIKAnimation("Idle", false)
+        wep:PlayIKAnimation("Idle")
     end
 end
 

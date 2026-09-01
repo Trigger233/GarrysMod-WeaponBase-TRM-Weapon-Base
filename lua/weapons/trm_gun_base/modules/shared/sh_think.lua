@@ -39,22 +39,29 @@ end
 local SprintDelta = 0
 function SWEP:OnPostThink()
     if CLIENT then return end
-    local seq = self:GetPlayingSequence()
     local owner = self:GetOwner()
     if ! IsValid(owner) then return end
-    local task = self:GetCurrentTaskName() or ""
     local sprint = owner:IsSprinting()
+
 
     if owner and owner:KeyPressed(IN_ATTACK) and self:IsReloading() and self.ReloadType == "Single" then
         self:SetNextAnimationTime(0)
         self:TrySetTask("ReloadEnd")
     end
 
-    if owner and (not owner:KeyDown(IN_ATTACK) or self:IsEmpty()) and task ~= "Charge" then
-        self.m_NextFireTime = nil
-        self.s_TriggerSound = false
-    end
 
+    -----------------
+    if owner and (! owner:KeyDown(IN_ATTACK) or self:IsReloading()) and self:HasFlag("TriggerPulled") then
+        self:RemoveFlag("TriggerPulled")
+        if self:GetSprayRound() > 0 then
+            self:SetSprayRound(0)
+        end
+
+        if self.Primary.Trigger and self.Primary.Trigger.ReleaseSound then
+            self:EmitSound(self.Primary.Trigger.ReleaseSound)
+        end
+    end
+    -----------
 
     SprintDelta = sprint and owner:OnGround() and self:CanSprint() and 1 or 0
     self:SetSprintDelta(SprintDelta)

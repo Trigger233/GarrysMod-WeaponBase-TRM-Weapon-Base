@@ -8,7 +8,7 @@ end
 local math = math
 
 function SWEP:CanPrimaryFire()
-	-- local seq =	self:GetPlayingSequence()
+	-- local seq =	self:GetStatus()
 	if self.Primary.BoltAction and self.Animations.Rechamber and self:GetChamberAmmo() <= 0 and not self:IsEmpty() and self:GetNextPrimaryFire() <= CurTime() then
 		return false
 	end
@@ -17,7 +17,7 @@ function SWEP:CanPrimaryFire()
 		return false
 	end
 
-	if string.find(self:GetPlayingSequence(), "Holster") then
+	if string.find(self:GetStatus(), "Holster") then
 		return false
 	end
 
@@ -66,6 +66,8 @@ function SWEP:FirePrimaryBullet()
 				Distance = self.Primary.Range,
 				Spread = spread,
 				Tracer = 0,
+				IgnoreEntity = self:GetShieldEntity(),
+
 				--HullSize = 1 ,
 				Force = self.Primary.Force / self.Primary.NumBullets,
 				Damage = self.Primary.Damage * self.Primary.NumBullets,

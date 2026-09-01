@@ -80,11 +80,14 @@ sound.Add({
 --AddSound
 EFFECT.Sounds = {
     Default = Sound("TRMBase.MagDrop.MetalL"),
-    Poly = Sound("TRMBase.MagDrop.Poly"),
+
+    Poly = Sound("TRMBase.MagDrop.PolyL"),
     Drum = Sound("TRMBase.MagDrop.Drum"),
     MetalSmall = Sound("TRMBase.MagDrop.MetalS"),
     PolySmall = Sound("TRMBase.MagDrop.PolyS"),
 }
+
+
 function EFFECT:Init(data)
     self.m_NextKill = CurTime() + 10
     local wpn = data:GetEntity()
@@ -111,15 +114,15 @@ function EFFECT:Init(data)
     self.m_TimeStep = self:GetDeltaTime()
     --
     local flag = data:GetFlags()
-
+    self.Sound = self.Sounds.Default
     if flag == 1 then
-        self.Sounds.Default = self.Sounds.Drum
+        self.Sound = self.Sounds.Drum
     elseif flag == 2 then
-        self.Sounds.Default = self.Sounds.Poly
+        self.Sound = self.Sounds.Poly
     elseif flag == 3 then
-        self.Sounds.Default = self.Sounds.MetalSmall
+        self.Sound = self.Sounds.MetalSmall
     elseif flag == 4 then
-        self.Sounds.Default = self.Sounds.PolySmall
+        self.Sound = self.Sounds.PolySmall
     end
 end
 
@@ -148,7 +151,8 @@ end
 function EFFECT:DoImpactSound(tr)
     if self.m_Sound then return end
     self.m_Sound = true
-    self:EmitSound(self.Sounds[tr.MatType] || self.Sounds.Default)
+   -- print(self.Sound)
+    self:EmitSound(self.Sound)
 end
 
 function EFFECT:Think()

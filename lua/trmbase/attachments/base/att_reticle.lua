@@ -13,11 +13,22 @@ end
 
 require("trm_utils")
 -- 渲染红点/分划板（使用 Stencil 遮罩）
+--
+local debug = true
+---@param model CSEnt
 function ATTACHMENT:RenderReticle(weapon, model, ret)
     if not ret or not ret.Material then return end
-
     -- 获取红点显示位置（附件点）
     self:ApplyReticleMaterial(weapon, model, ret)
+    if ! ret.Align then
+        model:DrawModel()
+        return
+    end
+
+    local attId = trm_utils.LookupAttachmentCached(model, ret.Align)
+    if !attId or attId == -1 then
+        return
+    end
 
     local att = trm_utils.GetFastAttachment(model, ret.Align)
     if not att then return end
@@ -33,12 +44,13 @@ function ATTACHMENT:RenderReticle(weapon, model, ret)
     render.SetStencilReferenceValue(TRM_BASE_REF + 1)
 
     -- 写入遮罩区域
+    
     model:DrawModel()
     render.SetStencilCompareFunction(STENCIL_LESSEQUAL)
 
     -- 渲染红点
     local size = ret.Size or 5.12
-    local color = ret.Color or Color(255, 0, 0, 255)
+    local color = ret.Color or color_white
     render.SetMaterial(ret.Material)
 
     if ! att.Ang then return end
@@ -54,6 +66,7 @@ function ATTACHMENT:RenderReticle(weapon, model, ret)
 
     local reticlePos = att.Pos + offset
     --size = size *( reticlePos:Distance(EyePos()) / 100)
+
     render.DrawQuadEasy(reticlePos, att.Ang:Forward():GetNegated(), size, size, color, roll)
     render.ClearStencil()
     render.SetStencilEnable(false)

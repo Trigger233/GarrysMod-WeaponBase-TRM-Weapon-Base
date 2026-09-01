@@ -11,7 +11,10 @@ function SWEP:ViewModelDrawn(vm, flag)
     if not IsValid(vm) or self.m_OverDraw then return end
     self:BuildViewmodelAttachmentsData(vm)
 
-    self.m_StoredAngle = self:GetCameraControler()
+    self.m_StoredAngle      = self:GetCameraControler()
+    self.m_CameraAttachment = self:GetCameraAttachmentAngle(vm)
+
+
 end
 
 function SWEP:GetAttachmentData(name)
@@ -23,7 +26,6 @@ function SWEP:PostDrawViewModel(vm, weappon, ply, flag)
 
 
     cam.End3D()
-    
 end
 
 local cvar_blur = CreateClientConVar("trmbase_cl_blur", 1, true, true, "helptext", 0, 1)
@@ -32,6 +34,7 @@ local CycleLerp = 0
 function SWEP:PreDrawViewModel(vm)
     if self.m_OverDraw then return end
 
+    self:DoLHIK()
 
 
     BlurMul = Lerp(RealFrameTime() * 10, BlurMul,
@@ -39,16 +42,12 @@ function SWEP:PreDrawViewModel(vm)
     if BlurMul > 0.1 and cvar_blur:GetBool() then
         DrawBokehDOF(BlurMul * 5, 1, 1)
     end
-
     cam.Start3D(EyePos(), EyeAngles(), self:GetViewmodelFov(), 0, 0, ScrW(), ScrH(), 1, 1024)
-
-
-    render.DepthRange(0.0, 0.0)
-
+ 
     if GetConVar("trmbase_cl_cheapscope"):GetBool() then
         self:RenderScopeView()
     end
-    self:DoLHIK()
+    render.DepthRange(0.0, 0)
 end
 
 -- 调试 ConVar
@@ -113,8 +112,6 @@ function SWEP:BuildViewmodelAttachmentsData(vm)
 
             self.m_Attachment[element.attachment] = att
         end
-        NextUpdate = SysTime() + 1 / 30
+        NextUpdate = SysTime() + 1 / 25
     end
 end
-
-

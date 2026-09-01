@@ -1,4 +1,3 @@
-
 function SWEP:MagzineReload()
 	self:SetNextAnimationTime(0)
 	self:PlayAnimation(self:ChooseAnim("Reload"), true)
@@ -30,16 +29,15 @@ local cvar_debug_reload = CreateConVar("trmbase_debug_reload", 0, FCVAR_ARCHIVE,
 
 function SWEP:CanReload()
 	local reserveAmmo = self:GetOwner():GetAmmoCount(self:GetPrimaryAmmoType())
-	local seq = self:GetPlayingSequence()
+	local seq = self:GetStatus()
 	local task = self:GetCurrentTaskName()
 	if task == "Holster" then
 		return false
 	end
 
-	if self:GetNextPrimaryFire() > CurTime() and not (string.find(seq,"Draw") or string.find(seq,"Sprint")) then return false end
+	if self:GetNextPrimaryFire() > CurTime() and not (string.find(seq, "Draw") or string.find(seq, "Sprint")) then return false end
 
-	local max = cvar_debug_reload:GetBool() and 2 or (self.Primary.ClipSize +
-		(self.Primary.BoltAction and self:GetChamberAmmo() or self.Primary.Chamber))
+	local max =  self.Primary.ClipSize + (self.Primary.BoltAction and self:GetChamberAmmo() or self.Primary.Chamber)
 	if string.find(seq, "Reload") then return false end
 	if not GetConVar("trmbase_allow_sprintreload"):GetBool() and string.find(seq, "Sprint") and not string.find(seq, "Sprint") then return false end
 	if (cvar_infinite_reserve:GetBool()) then
@@ -51,7 +49,7 @@ end
 
 function SWEP:CanReload2()
 	local reserveAmmo = self:GetOwner():GetAmmoCount(self:GetSecondaryAmmoType())
-	local seq = self:GetPlayingSequence()
+	local seq = self:GetStatus()
 
 	if self:GetNextAnimationTime() > CurTime() then return false end
 
@@ -65,12 +63,13 @@ function SWEP:CanReload2()
 		return reserveAmmo > 0 && self:Clip2() < max
 	end
 end
+
 function SWEP:MagzineLoaded()
 	self.m_MagLoad = true
-	
+
 	local owner = self:GetOwner()
 	if not owner or not owner:IsPlayer() then
-		self:SetClip1(self:GetMaxClip1()) 
+		self:SetClip1(self:GetMaxClip1())
 		return
 	end
 	local reserveAmmo = owner:GetAmmoCount(self:GetPrimaryAmmoType())
@@ -133,8 +132,8 @@ function SWEP:SingleLoaded(number)
 end
 
 function SWEP:IsReloading()
-	local seq = self:GetPlayingSequence()
-	if string.find(seq, "Reload") and self:GetNextAnimationTime() > CurTime()  then
+	local seq = self:GetStatus()
+	if string.find(seq, "Reload") and self:GetNextAnimationTime() > CurTime() then
 		return true
 	end
 	return false
@@ -144,13 +143,13 @@ function SWEP:Unload()
 	local owner = self:GetOwner()
 	if not SERVER then return end
 	if owner:IsPlayer() then
-		owner:GiveAmmo(self:Clip1(), self:GetPrimaryAmmoType(),true)
+		owner:GiveAmmo(self:Clip1(), self:GetPrimaryAmmoType(), true)
 		self:SetClip1(0)
-		owner:GiveAmmo(self:Clip1(), self:GetSecondaryAmmoType(),true)
+		owner:GiveAmmo(self:Clip1(), self:GetSecondaryAmmoType(), true)
 		self:SetClip2(0)
 	end
 end
- 
+
 function SWEP:MagzineLoaded2()
 	local owner = self:GetOwner()
 	if not owner or not owner:IsPlayer() then
@@ -203,11 +202,24 @@ function SWEP:SingleLoaded2(num)
 	if owner:GetActiveWeapon() ~= self then
 		return
 	end
-	local max = self:GetMaxClip2() + self:GetSecondaryChamberAmmo	()
+	local max = self:GetMaxClip2() + self:GetSecondaryChamberAmmo()
 	if (cvar_infinite_reserve:GetBool()) then
 		self:SetClip2(math.min(self:Clip1() + num, max))
 	elseif reserveAmmo > 0 then
 		owner:SetAmmo(reserveAmmo - math.min(num, max - self:Clip2()), ammo)
 		self:SetClip2(self:Clip2() + math.min(num, max - self:Clip2()))
+	end
+end
+
+function SWEP:UnloadMagzine(returnAmmo)
+	if ! IsFirstTimePredicted() then return end
+	local CurrentClip = self:Clip1()
+	local Target = math.min(self.Primary.Chamber, CurrentClip)
+
+	local delta = math.max(0, CurrentClip - Target)
+	self:SetClip1(Target)
+
+	if returnAmmo then
+		self:GetOwner():GiveAmmo(delta, self:GetPrimaryAmmoType(), true)
 	end
 end

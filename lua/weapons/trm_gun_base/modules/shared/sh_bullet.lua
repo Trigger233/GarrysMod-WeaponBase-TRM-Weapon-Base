@@ -1,5 +1,5 @@
 local cvar_damage = CreateConVar("trmbase_sv_mod_damage", 1, FCVAR_ARCHIVE, "", 0, 10)
-local cvar_penetration = CreateConVar("trmbase_sv_penetration",1,FCVAR_ARCHIVE, "", 0, 1)
+local cvar_penetration = CreateConVar("trmbase_sv_penetration", 1, FCVAR_ARCHIVE, "", 0, 1)
 function SWEP:BulletCallback(attacker, tr, dmginfo)
     local ent = tr.Entity
 
@@ -7,7 +7,7 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
 
     local tbl = self.Bullet
     -- 只对玩家生效
-    if  ent.TakeDamageInfo then
+    if ent.TakeDamageInfo then
         local baseMulti = cvar_damage:GetFloat()
 
         -- 获取击中部位
@@ -16,7 +16,7 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
         local scale = 1
         if attacker:IsPlayer() then
             if group == HITGROUP_HEAD then
-                scale = tbl.HeadShotMultiplier 
+                scale = tbl.HeadShotMultiplier
             end
         end
 
@@ -30,9 +30,9 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
             end
         end
 
-        if ent:IsPlayer() and ent:Armor() >0 then
+        if ent:IsPlayer() and ent:Armor() > 0 then
             local dmg = dmginfo:GetDamage() * tbl.Penetration.ArmorPenetrateDamage
-            ent:SetArmor(math.max(0,ent:Armor() - dmg))
+            ent:SetArmor(math.max(0, ent:Armor() - dmg))
         end
         --print(ent,"Take Damage",dmginfo:GetDamage())
     end
@@ -44,10 +44,12 @@ function SWEP:BulletInterval(attacker, tr, dmginfo)
         return
     end
 
+    if ! IsValid(self:GetOwner()) then return end
+
     local output = {}
     local dir = tr.Normal
     local start = tr.HitPos
-    
+
 
     local pen = self.Bullet.Penetration
     if not pen then return end
@@ -88,26 +90,26 @@ function SWEP:BulletInterval(attacker, tr, dmginfo)
 
 
         if SERVER then
-        --fire forward
-        self:GetOwner():FireBullets({
-            Attacker = self:GetOwner(),
-            Inflictor =  self,
-            Src = output.HitPos,
-            Dir = tr.Normal,
-            IgnoreEntity = tr.Entity ,
-            Num = 1,
-            Tracer = 0,
-            Damage = damage,
-            Callback = function(attacker, tr, dmgInfo)
-                self:BulletCallback(attacker, tr, dmgInfo)
-            end
-        })
+            --fire forward
+            self:GetOwner():FireBullets({
+                Attacker = self:GetOwner(),
+                Inflictor = self,
+                Src = output.HitPos,
+                Dir = tr.Normal,
+                IgnoreEntity = tr.Entity,
+                Num = 1,
+                Tracer = 0,
+                Damage = damage,
+                Callback = function(attacker, tr, dmgInfo)
+                    self:BulletCallback(attacker, tr, dmgInfo)
+                end
+            })
         end
     end
 end
 
 --for our Alarm mod
-function SWEP:HandlePenetrating(ent,dmginfo)
+function SWEP:HandlePenetrating(ent, dmginfo)
     dmginfo:ScaleDamage(self.Bullet.Penetration.ArmorPenetrateDamage)
 
     local damage = dmginfo:GetDamage()
@@ -118,12 +120,7 @@ function SWEP:HandlePenetrating(ent,dmginfo)
     return dmginfo
 end
 
-
-
-
-
-
-hook.Add("Alarm.ArmorPenetratingDamage", "TRMBase", function(ent,dmginfo)
+hook.Add("Alarm.ArmorPenetratingDamage", "TRMBase", function(ent, dmginfo)
     local weapon = dmginfo:GetInflictor()
-    return weapon.HandlePenetrating and weapon:HandlePenetrating(ent,dmginfo)   
+    return weapon.HandlePenetrating and weapon:HandlePenetrating(ent, dmginfo)
 end)

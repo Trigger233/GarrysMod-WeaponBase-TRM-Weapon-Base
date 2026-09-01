@@ -8,16 +8,16 @@ function SWEP:CanSprint()
 
     local p = self:GetOwner()
     if not IsValid(p) then return false end
-    
+
     if p.GetSliding and p:GetSliding() then
         return false
     end
 
-    if p:KeyDown(IN_ATTACK ) then
+    if p:KeyDown(IN_ATTACK) then
         return false
     end
 
-    local seq = self:GetPlayingSequence() or ""
+    local seq = self:GetStatus() or ""
     local task = self:GetCurrentTaskName() or ""
 
 
@@ -56,7 +56,7 @@ function SWEP:Sprint()
     local speed = self:GetOwner():GetVelocity():Length2D()
     local runSpeed = self:GetOwner():GetRunSpeed()
     local radio = speed / runSpeed
-    local sequence = self:GetPlayingSequence()
+    local sequence = self:GetStatus()
     -- 已经在冲刺相关状态中，不要干扰
     if currentTask == "SprintIn" or currentTask == "Sprint" or currentTask == "SprintOut" or string.find(currentTask, "Reload") then
         return

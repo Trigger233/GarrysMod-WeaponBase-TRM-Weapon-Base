@@ -10,7 +10,7 @@ ENT.ModelScale = 1
 -- 爆炸参数
 ENT.Range = 150  -- 无衰减范围（单位内满伤）
 ENT.Radius = 250 -- 最大影响范围
-ENT.SafeyTimer = 0.2
+ENT.SafeyTimer = 0.1
 --Trail
 ENT.Damage = 200
 ENT.TrailColor = Color(255, 255, 255)

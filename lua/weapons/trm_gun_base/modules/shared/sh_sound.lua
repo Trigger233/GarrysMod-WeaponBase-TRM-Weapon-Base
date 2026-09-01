@@ -98,8 +98,6 @@ local function StartReverbCoroutine(wep)
     end)
 end
 
---每帧驱动协程
-local cv_debug_reverb = CreateConVar("trmbase_debug_reverb", 0, FCVAR_ARCHIVE)
 hook.Add("Think", "TRMBase_ReverbThink", function()
     for id, co in pairs(reverbCoroutines) do
         local ok, err = coroutine.resume(co)
@@ -110,9 +108,7 @@ hook.Add("Think", "TRMBase_ReverbThink", function()
 end)
 
 function SWEP:HandleReverb(tbl)
-    tbl = tbl or self.Reverb
-    if not tbl or not tbl.Sounds then return end
-    if not IsValid(self:GetOwner()) or not IsFirstTimePredicted() then return end
+    if not IsValid(self:GetOwner()) then return end
 
     -- 启动或更新混响检测
     StartReverbCoroutine(self)
@@ -125,11 +121,11 @@ function SWEP:HandleReverb(tbl)
             filter = self:GetOwner()
         })
         local distance = trace.StartPos:Distance(trace.HitPos)
-        isOutside = math.pow(distance, 2) > (tbl.RoomScale or 50000)
+        isOutside = math.pow(distance, 2) > (50000)
     end
 
-    local atmo = self.Primary.Reverb
-    if atmo then
-        self:GetOwner():EmitSound(atmo)
-    end
+    local tbl = self.Reverb
+    local presetName = tbl and tbl.PresetName or "SMG"
+    local soundName = "TRM.Reflection." .. presetName .. (isOutside and ".OutDoor" or ".InDoor")
+    self:EmitSound(soundName)
 end

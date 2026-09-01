@@ -207,9 +207,7 @@ hook.Add("PreRender", "TRMBase_CleanupUnUsedAttModels", function()
             if ent:GetClass() == "class C_BaseFlex" and ent.TRMAttachmentModel then
                 local owner = ent:GetOwner()
                 if (not IsValid(owner) or not cheakModelIsVaildInWeapon(ent, owner)) or ! owner:ShouldRebuild() then
-                    if ! ent.TPIKModel then
                         ent:Remove()
-                    end
                     continue
                 end
             end

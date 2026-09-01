@@ -33,13 +33,14 @@ function task_sprint:OnSet(weapon)
 end
 
 function task_sprint:Think(cycle, weapon)
-    if weapon.Animations.Sprint and weapon:GetNextPrimaryFire() < UnPredictedCurTime() then
-        weapon:PlayAnimation(weapon:ChooseAnim("Sprint"), true)
+    local owner = weapon:GetOwner()
+    if IsValid(owner) and (not owner:KeyDown(IN_SPEED) or ! owner:OnGround()) then
+        weapon:TrySetTask("SprintOut")
+        return
     end
 
-    local owner = weapon:GetOwner()
-    if IsValid(owner) and (not owner:KeyDown(IN_SPEED) or not owner:OnGround()) then
-        weapon:TrySetTask("SprintOut")
+    if weapon.Animations.Sprint  then
+        weapon:PlayAnimation(weapon:ChooseAnim("Sprint"), true)
     end
 end
 
@@ -54,14 +55,14 @@ function task_out:CanBeSet(weapon)
 end
 
 function task_out:OnSet(weapon)
+    weapon:SetNextAnimationTime(0)
     if weapon.Animations.SprintOut then
-        weapon:PlayAnimation(weapon:ChooseAnim("SprintOut"),true)
+        weapon:PlayAnimation(weapon:ChooseAnim("SprintOut"), true)
     end
     weapon:SetNextFireTime(0.1)
 end
 
 function task_out:Think(cycle, weapon)
-    weapon:SetNextAnimationTime(0)
     weapon:TrySetTask("Idle")
 end
 

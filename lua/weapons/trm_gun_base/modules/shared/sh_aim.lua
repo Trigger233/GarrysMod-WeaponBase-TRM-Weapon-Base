@@ -3,7 +3,7 @@ if SERVER then
 
     net.Receive("TRMBase_SwitchHybrid", function(len, ply)
         local weapon = net.ReadEntity()
-        local forceDown =net.ReadBool()
+        local forceDown = net.ReadBool()
         if weapon.Hybrid then
             weapon:Hybrid(forceDown)
         end
@@ -28,8 +28,8 @@ function SWEP:CanAim()
     end
 
 
-    local seq = self:GetPlayingSequence()
-    if  (self.IronsightReload == false and self:IsReloading()) or string.find(seq, "Melee") or string.find(seq, "Holster") or string.find(seq, "Draw") then return false end
+    local seq = self:GetStatus()
+    if (self.IronsightReload == false and self:IsReloading()) or string.find(seq, "Melee") or string.find(seq, "Holster") or string.find(seq, "Draw") then return false end
     return true
 end
 
@@ -46,12 +46,14 @@ function SWEP:AimIn()
     if self.Aim.Type == "Linear" then
         self.m_AimDelta = math.Approach(self.m_AimDelta, 1, self:GetAimSpeed())
     else
-        self.m_AimDelta = Lerp(2.5 * self:GetAimSpeed(), self.m_AimDelta, 1)
+        self.m_AimDelta = Lerp(3 * self:GetAimSpeed(), self.m_AimDelta, 1)
     end
     if not self.m_Aiming then
-        if self:IsAnimFinished() then
-            self:TrySetTask("AdsIn")
+        if self:GetNextPrimaryFire() < CurTime() then
+            self:SetNextAnimationTime(0)
+            self:PlayAnimation(self:ChooseAnim("Ads_In"))
         end
+        self:PlayAnimation(self:ChooseAnim("Ads_In"))
         self.m_Aiming = true
         self:AddFlag("Aiming")
     end
@@ -61,12 +63,10 @@ function SWEP:AimOut()
     if self.Aim.Type == "Linear" then
         self.m_AimDelta = math.Approach(self.m_AimDelta, 0, self:GetAimSpeed())
     else
-        self.m_AimDelta = Lerp(2.5 * self:GetAimSpeed(), self.m_AimDelta, 0)
+        self.m_AimDelta = Lerp(3 * self:GetAimSpeed(), self.m_AimDelta, 0)
     end
     if self.m_Aiming then
-        if self:IsAnimFinished() then
-            self:TrySetTask("AdsOut")
-        end
+        self:PlayAnimation(self:ChooseAnim("Ads_Out"))
         self.m_Aiming = false
         self:RemoveFlag("Aiming")
     end
@@ -117,8 +117,6 @@ function SWEP:CycleTacSight()
         self:RemoveFlag("HybridOn")
     end
 end
-
-
 
 concommand.Add("+trmbase_cycle_tacsight", function(ply)
     local weapon = ply:GetActiveWeapon()

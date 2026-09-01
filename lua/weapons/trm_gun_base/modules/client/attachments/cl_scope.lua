@@ -23,7 +23,7 @@ local RTMaterial = CreateMaterial(matName .. "_scene", "UnlitGeneric", {
     ["$vertexcolor"] = "1",
     ["$vertexalpha"] = "1",
     ["$selfillum"] = "1",
-    ["$color2"] = "[1.2 1.2 1.2]",
+    ["$color2"] = "[1.05 1.05 1.05]",
 })
 local RTMaterial_Cheap = CreateMaterial(matName .. "_cheap", "UnlitGeneric", {
     ["$basetexture"] = rtmat_cheap:GetName(),
@@ -31,15 +31,16 @@ local RTMaterial_Cheap = CreateMaterial(matName .. "_cheap", "UnlitGeneric", {
     ["$vertexalpha"] = "1",
     ["$smooth"] = "1",
     ["$selfillum"] = "0",
-    ["$color2"] = "[1.2 1.2 1.2]",
+    ["$color2"] = "[1.05 1.05 1.05]",
 
 })
 local LenseMaterial = CreateMaterial(matName, "VertexLitGeneric", {
     ["$basetexture"] = rtmat_spare:GetName(),
     ["$model"] = "1",
+    ["$nocull"] = "1",
     ["$selfillum"] = "1",
-    ["$color2"] = "[1.2 1.2 1.2]",
-    ["$vertexcolor"] = "1",
+    ["$color2"] = "[1.05 1.05 1.05]",
+    ["$vertexcolor"] = "0",
     ["$vertexalpha"] = "1",
 
 })
@@ -51,7 +52,6 @@ local inActiveScopeLenMaterial = CreateMaterial(inActiveScopeLenMatName, "Vertex
     ["$model"] = "1",
     ["$selfillum"] = "1",
     ["$color2"] = "[1 1 1]",
-    ["$nocull"] = "1",
     ["$nodecal"] = "1",
 })
 local meterToHu = 52.4934383
@@ -208,13 +208,18 @@ end
 
 local cvar_cheapscope = CreateClientConVar("trmbase_cl_cheapscope", 0, true, true, "", 0, 1)
 function SWEP:RenderScopeView()
-    for _, entry in pairs(self.CurrentAttachments) do
+    for _, entry in pairs(self:GetAllAttachmentsInUse()) do
         local attData = BASE_TRM_ATTS[entry.Class]
-        if entry.m_Model and attData.Scope then
+
+        if ! attData then
+            continue
+        end
+        local model = entry.m_Model
+        if model and attData.Scope then
             if ! cvar_cheapscope:GetBool() then
-                self:DoRTScope(entry.m_Model, attData)
+                self:DoRTScope(model, attData)
             else
-                self:DoCheapScope(entry.m_Model, attData)
+                self:DoCheapScope(model, attData)
             end
         end
     end
@@ -306,11 +311,10 @@ function SWEP:RenderScopeReticle(model, att, stat, rtSize, zoomScale)
     local centerX = rtSize / 2
     local centerY = rtSize / 2
 
-    local sway, _ = self:Sway()
 
     local additive = cvar_cheapscope:GetBool() and
-        (self:GetClientVisualRecoil() * self:GetZoomRecoilFactor() + self:GetScopeZeroAngle()) + sway * 4 or
-        Angle(0, 0, 0) + sway * 4
+        (self:GetClientVisualRecoil() * self:GetZoomRecoilFactor() + self:GetScopeZeroAngle()) or
+        Angle(0, 0, 0)
 
 
     centerX = centerX - AngleToPixel(additive.yaw) * ScrW()
@@ -335,14 +339,10 @@ function SWEP:DrawParallax(model, rtSize, att)
     local centerX = rtSize / 2
     local centerY = rtSize / 2
 
-    local sway, _ = self:Sway()
-
-    local additive = sway
 
 
-    centerX = centerX - AngleToPixel(additive.yaw) * ScrW()
 
-    centerY = centerY + AngleToPixel(additive.p) * ScrH()
+
     local _size = rtSize * (att.Scope.ParallaxSize or 1.4)
     surface.SetMaterial(att.Scope.Parallax or parallaxMat)
     surface.SetDrawColor(Color(255, 255, 255, 100))
@@ -365,7 +365,7 @@ hook.Add("RenderScene", "TRMBASE_ScopeUpdate", function()
 end)
 
 function SWEP:GetZoomRecoilFactor()
-    return math.Clamp(RecoilFactor * self:GetScopeZoom(), 0, 1)
+    return math.Clamp(RecoilFactor * (75 / self:GetScopeZoomFov()), 0, 1)
 end
 
 local function DrawCheapScopeMaterial(wep, w, h, size, Zoom)

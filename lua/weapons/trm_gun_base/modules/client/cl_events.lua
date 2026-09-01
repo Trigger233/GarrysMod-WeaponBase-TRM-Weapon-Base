@@ -29,7 +29,7 @@ function SWEP:DoShell()
     local effect = EffectData()
 
 
-    effect:SetEntity(ent)
+    effect:SetEntity(self)
     effect:SetOrigin(attachment.Pos)
     effect:SetAngles(attachment.Ang)
     effect:SetScale(stats.Scale or 1)
@@ -63,12 +63,11 @@ function SWEP:DoMuzzleFlash(ent)
 
     
 
-    local pcf = CreateParticleSystem(_ent,
-        self.Slienced and self.Effects.Muzzle.ParticleSuppressed or self.Effects.Muzzle.ParticleEffect,
-        PATTACH_POINT_FOLLOW, attId)
-    if IsValid(pcf) then
-        pcf:StartEmission()
-    end
+    -- local pcf = CreateParticleSystem(_ent,
+    --     self.Slienced and self.Effects.Muzzle.ParticleSuppressed or self.Effects.Muzzle.ParticleEffect,
+    --     PATTACH_POINT_FOLLOW, attId)
+    ParticleEffectAttach(self.Slienced and self.Effects.Muzzle.ParticleSuppressed or self.Effects.Muzzle.ParticleEffect, PATTACH_POINT_FOLLOW, _ent, attId)
+
 
 end
 

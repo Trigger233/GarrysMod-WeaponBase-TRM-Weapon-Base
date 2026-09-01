@@ -13,7 +13,7 @@ end
 
 function task_reload:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
-    local seq = weapon:GetPlayingSequence()
+    local seq = weapon:GetStatus()
     if not isReloadSeq(seq) then
         if weapon.ReloadType == "Single" then
             if weapon:Clip1() == 0 and weapon.Animations.Reload_Empty then
@@ -37,6 +37,7 @@ end
 function task_reload:Think(cycle, weapon)
     if weapon.ReloadType == "Single" then
         weapon:TrySetTask("ReloadLoop")
+        return
     elseif weapon:GetNextAnimationTime() > CurTime() then
         weapon:TrySetTask("Idle")
     end
@@ -63,7 +64,7 @@ function task_loop:Think(cycle, weapon)
         weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes["BoltAction"].Reload)
     end
 
-    if weapon:Clip1() < max and reserve > 0 then
+    if weapon:Clip1() < max and (reserve > 0 or GetConVar("trmbase_infinite_ammo"):GetBool()) then
         weapon:PlayAnimation("Reload", true)
         if cvar_firebreakreload:GetBool() then
             weapon:SetNextPrimaryFire(60 / weapon.Primary.RPM)
@@ -89,7 +90,7 @@ end
 
 function task_end:Think(cycle, weapon)
     if weapon:GetNextPrimaryFire() <= CurTime() then
-        if not string.find(weapon:GetPlayingSequence(), "Reload_End") then
+        if not string.find(weapon:GetStatus(), "Reload_End") then
             weapon:SetNextAnimationTime(0) -- Make sure
             weapon:PlayAnimation(weapon:ChooseAnim("Reload_End"), true)
         end

@@ -12,7 +12,7 @@ function task:OnSet(weapon)
 end
 
 function task:Think(cycle, weapon)
-    local seq = weapon:GetPlayingSequence()
+    local seq = weapon:GetStatus()
     if string.find(seq, "Holster") and weapon:GetNextPrimaryFire() < CurTime() or weapon.AltSwitch then
         weapon:SetCanSwitch(true)
         if IsValid(weapon:GetNextWeapon()) then
@@ -29,7 +29,5 @@ function task:Think(cycle, weapon)
         return false
     end
 end
-
-
 
 SWEP:RegisterTask(task)

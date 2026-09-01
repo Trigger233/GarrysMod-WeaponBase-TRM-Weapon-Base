@@ -51,7 +51,7 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration, startAt)
 
     local sequencePlay = seq[math.Round(math.Rand(1, #seq))] -- 修复2：直接用 #seq 获取长度
 
-    self:SetPlayingSequence(sequenceClass)
+    self:SetStatus(sequenceClass)
     local seqId = vm:LookupSequence(sequencePlay)
 
     vm:SendViewModelMatchingSequence(seqId)
@@ -59,7 +59,7 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration, startAt)
     self:SetGrip2(true)
     local duration = vm:SequenceDuration(vm:LookupSequence(sequencePlay))
 
-    vm:SetCycle( 0)
+    vm:SetCycle(0)
 
     resetEvents(self, sequenceClass)
 
@@ -68,28 +68,24 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration, startAt)
     vm:SetPlaybackRate(speed)
 
     self:ApplySpecialAnimationStat(vm, sequenceClass, duration, animData)
+    local nexttime = (1 - (startAt or 0)) * (animData.RealLength or duration) * (animData.Length or 1) / speed
 
     if useInternalDuration and SERVER then
-        local nexttime = (1 - (startAt or 0)) * (animData.RealLength or duration) * (animData.Length or 1) / speed
         self:SetNextAnimationTime(CurTime() + nexttime)
         self:SetNextFireTime(nexttime)
     end
 
-
-    net.Start("trmbase_tpikanim")
-    net.WriteEntity(self)
-    net.WriteUInt(seqId,8)
-    net.Broadcast()
+    return nexttime
 end
 
 function SWEP:DoAnimationEvents()
     local vm = self:GetViewModel()
-    if not vm or not IsValid(vm)  then
+    if not vm or not IsValid(vm) then
         return
     end
 
     local progress = vm:GetCycle()
-    local sequenceClass = self:GetPlayingSequence()
+    local sequenceClass = self:GetStatus()
     self:SetCurrentCycle(progress)
     if not sequenceClass or not self.Animations or not self.Animations[sequenceClass] or not self.Animations[sequenceClass].events then
         return
@@ -137,7 +133,6 @@ function SWEP:IsAnimFinished()
 end
 
 if SERVER then
-    util.AddNetworkString("trmbase_tpikanim")
     util.AddNetworkString("trmbase_tpanim")
     util.AddNetworkString("TRMBase_LHIKAnimation")
     util.AddNetworkString("TRMBase_LHIKEvents")
@@ -199,10 +194,8 @@ if CLIENT then
             return
         end
 
-      --  ply:AnimRestartGesture(slot, anim, true)
+        --  ply:AnimRestartGesture(slot, anim, true)
     end)
-
-
 end
 
 function SWEP:FireAnimationEvent(pos, ang, event, option, source)

@@ -6,6 +6,7 @@ function task:OnSet(weapon)
     weapon:RemoveFlag("MeleeTriggered")
     local tbl = weapon.Primary.Attack[weapon:GetBrustCount()]
     if not tbl then return  end
+    weapon:SetNextAnimationTime(0)
     weapon:PlayAnimation(tbl.Animation, true)
 end
 

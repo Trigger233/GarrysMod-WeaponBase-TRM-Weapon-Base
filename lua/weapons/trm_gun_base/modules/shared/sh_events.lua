@@ -1,7 +1,7 @@
 require("trm_utils")
 if (SERVER) then
     function SWEP:DoShell()
-        if (SERVER and (IsFirstTimePredicted() or not game.SinglePlayer())) then
+        if (IsFirstTimePredicted()) then
             self:CallOnClient("DoShell")
             return
         end
@@ -26,4 +26,10 @@ end)
 function SWEP:SwitchFlashLight()
     self:EmitSound("weapons/zoom.wav")
     self:ToggleFlag("FlashLightOn")
+end
+
+function SWEP:DropMagazine()
+    if ! SERVER then return end
+    self:CallOnClient("DoDropMagzineEffect")
+    return
 end

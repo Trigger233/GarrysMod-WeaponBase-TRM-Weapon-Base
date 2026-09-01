@@ -50,7 +50,6 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
     if attID <= 0 then return end
 
     --model:InvalidateBoneCache()
-    model:SetupBones()
     local att = trm_utils.GetFastAttachment(model, data.Attach)
     if not att then return end
 

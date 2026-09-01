@@ -32,14 +32,21 @@ function trm_utils.LookupAttachmentCached(ent, attName)
 end
 
 local function requireAttachment(ent, attName)
+    if !ent then
+        return
+    end
     ent.m_AttachmentRequests = ent.m_AttachmentRequests || {}
     ent.m_AttachmentDeliveries = ent.m_AttachmentDeliveries || {}
 
     local attId = trm_utils.LookupAttachmentCached(ent, attName)
+    if !attId or attId == -1 then
+        return 
+    end
     if (ent.m_AttachmentRequests[attId] == nil) then
         ent.m_AttachmentRequests[attId] = Matrix()
 
         if (IsValid(ent)) then
+            
             local attData = ent:GetAttachment(attId)
             if not attData then return end
             local computeMatrix = Matrix()
@@ -81,10 +88,11 @@ local function requireAttachment(ent, attName)
             if not ent.m_AttachmentRequests then return end -- 加这行
 
             local matrix = ent:GetBoneMatrix(0)
-            if not matrix then return end
+            if ! matrix then return end
 
             for attId, localMat in pairs(ent.m_AttachmentRequests) do
                 local newMatrix = matrix * localMat
+                if !newMatrix then continue end
                 ent.m_AttachmentDeliveries[attId].Pos = newMatrix:GetTranslation()
                 ent.m_AttachmentDeliveries[attId].Ang = newMatrix:GetAngles()
                 ent:OnBuildFastAttachments()

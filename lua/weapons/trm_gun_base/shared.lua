@@ -56,9 +56,9 @@ end
 -- ==========================================
 local function IncludeClientFiles(path)
     path = path or "weapons/trm_gun_base/modules/client/"
-    local files , folders = file.Find(path.."/*","LUA")
-    for _ , fileName in ipairs(files) do
-        local fullPath = path.."/"..fileName
+    local files, folders = file.Find(path .. "/*", "LUA")
+    for _, fileName in ipairs(files) do
+        local fullPath = path .. "/" .. fileName
         if SERVER then
             AddCSLuaFile(fullPath)
         else
@@ -66,8 +66,8 @@ local function IncludeClientFiles(path)
         end
     end
 
-    for _ , folderName in ipairs(folders) do
-        IncludeClientFiles(path.."/"..folderName)
+    for _, folderName in ipairs(folders) do
+        IncludeClientFiles(path .. "/" .. folderName)
     end
 end
 
@@ -201,14 +201,27 @@ SWEP.Secondary.ClipSize = 0
 SWEP.Secondary.DefaultClip = 0
 SWEP.Secondary.Ammo = -1
 
-SWEP.Secondary.Recoil = Angle(0,0,0)
+SWEP.Secondary.Recoil = Angle(0, 0, 0)
 
 SWEP.HoldType = "shotgun"
 SWEP.ReloadType = "Single"
 
 SWEP.IronsightReload = true
+--
+-------------------------- Shields
 
+SWEP.Shield = {
+   -- Model = Model("models/props_interiors/refrigeratorDoor01a.mdl"),
+    Offset = Vector(20, 0, 0),
+    Ang = Angle(0, 0, 0),
+    Bone = "ValveBiped.Bip01_R_Hand",
+    Scale = 1,
+    --NoDraw = true ,
+}
+
+-------------
 SWEP.Effects = {
+
     Muzzle = {
         effect = "MuzzleEffect",
         ParticleEffect = "trm_muzzleflash",
@@ -221,19 +234,26 @@ SWEP.Effects = {
     },
     Shell = {
         attachment = "shell",  -- Attachment 名称
-        effect = "ShellEject",
+        effect = "trm_shelleject",
         Pos = Vector(0, 0, 0), -- 位置微调
         Ang = Angle(0, 0, 0),  -- 角度微调
         Magnitude = 10,        -- 弹出力度
         Primary = true,
-    }                          -- 是否在开火时弹壳
-
+    },                         -- 是否在开火时弹壳
+    Mag = {
+        -- Model = Model(),
+        Flag = 0,
+        --[[
+            0 -- Metal
+            1 --Drum
+            2 Poly
+            3 SmallMetal
+            4 SmallPoly
+        ]]
+    }
 }
 
-SWEP.Offset = {
-    -- Pos = Vector(1,19,-2),
-    -- Ang = Angle(0,-0,180)
-}
+
 SWEP.WorldModelOffsets = {   --alternative
     Bone = "tag_weapon",     -- 武器模型上的骨骼名
     Pos = Vector(0, 0, 0),   -- 位置偏移
@@ -283,6 +303,7 @@ SWEP.Spread = {
     Delay = 0.3,
     MoveMultiplier = 2.6,
     AirMultiplier = 5,
+    Seed = 534,
 
 
 }
@@ -305,6 +326,7 @@ SWEP.Recoil = {
     Shake = 1,
     Factor = 0.85,
     Recover = 1,
+    Seed = 534,
     Functional = {
         Increase = 0.2,
         Recover = 0.4,
@@ -324,6 +346,7 @@ SWEP.VisualRecoil = {
     Backward = { 5, 5 }, --random 1 and 2 , max 3
     RecoverSpeed = 0.6,
     AdsMultiplier = 0.7,
+    Seed = 534,
     -- Functional = {
     --     Increase = 0.2 ,
     --     Recover = 0.4,
@@ -519,12 +542,11 @@ function SWEP:Initialize()
     self.m_AimTime = self.Aim.Time
     self.m_AimSpread = 0
 
-    self.m_WalkDeltaLerp = 0
+    if CLIENT then
+        self.m_Shells = {}
+    end
 
-    self.m_WalkPose = 0
 
-    self.m_SprintDeltaLerp = 0
-    self.m_SprintPose = 0
 
     self.WeaponFlags = {}
 
@@ -589,17 +611,7 @@ function SWEP:Equip()
     self:BuildCustomizedGun()
 end
 
-function SWEP:Deploy()
-    self:GetOwner():SetSaveValue("m_flNextAttack", 0)
-    self:BuildCustomizedGun()
-    self:GetViewModel().m_CustomDelta = 1
-    self:TrySetTask("Deploy")
-    self:SetCanSwitch(false)
-    self:SetAimDelta(0)
 
-
-    return true
-end
 
 function SWEP:OnDrop(owner)
     --owner:SetActiveWeapon(NULL)
@@ -649,10 +661,9 @@ function SWEP:PrimaryAttack()
     else
         if self:IsEmpty() and cvar:GetInt() == 1 then
             self:Reload()
-
             return false
         end
-        if self.Primary.Trigger then
+        if self.Primary.Trigger and ! self:HasFlag("TriggerPulled") then
             self:TrySetTask("Charge")
         else
             self:TrySetTask("PrimaryFire")
@@ -786,6 +797,10 @@ else
     end)
 end
 
+
+hook.Add("OnReloaded", "Reload_TRM_Atts", function()
+    TRMWeaponBase:UpdateAllAttachment()
+end)
 
 concommand.Add("trmbase_reload_atts", function()
     TRMWeaponBase:UpdateAllAttachment()

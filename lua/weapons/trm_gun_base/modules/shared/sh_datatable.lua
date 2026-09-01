@@ -45,7 +45,8 @@ SWEP.WeaponFlags = {
     ["FlashLightOn"] = 8,
     ['Aiming'] = 16,
     ['MeleeTriggered'] = 32,
-    ['BipodDeployed'] = 64 ,
+    ['BipodDeployed'] = 64,
+    ['TriggerPulled'] = 128,
 }
 function SWEP:SetupDataTables()
     self:NetworkVar("Int", "WeaponFlag")
@@ -57,37 +58,30 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Float", "Spread")
     self:NetworkVar("Float", "SpreadVertical")
     self:NetworkVar("Float", "SpreadHorizonal")
-    self:NetworkVar("Float", "RecoilProgress") -- for custom recoil
     self:NetworkVar("Float", "NextRecoil")
     self:NetworkVar("Float", "RecoilUp")
     self:NetworkVar("Float", "RecoilSide")
     self:NetworkVar("Float", "CurrentCycle")
     self:NetworkVar("Entity", "NextWeapon")
+    self:NetworkVar("Entity", "ShieldEntity")
     self:NetworkVar("Int", "ChamberAmmo")
     self:NetworkVar("Int", "SecondaryChamberAmmo")
 
     self:NetworkVar("Int", "BrustCount")
+    self:NetworkVar("Int", "SprayRound")
     self:NetworkVar("Int", "CurrentTask")
     self:NetworkVar("Bool", "Grip1")
     self:NetworkVar("Bool", "Grip2")
     self:NetworkVar("Bool", "FirstDeployed")
     self:NetworkVar("Bool", "Underbarrel")
-    self:NetworkVar("String", "PlayingSequence")
+    self:NetworkVar("String", "Status")
     self:NetworkVar("Bool", "CanSwitch")
     self:NetworkVar("Angle", "VisualRecoil")
-    self:NetworkVar("Float", "VisualRecoilProgress") -- for custom recoil
-    self:NetworkVar("Float", "VisualRecoilBackward")
 
     self:NetworkVar("Int", "PenetrationCount")
     self:NetworkVar("Int", "FiremodeIndex")
 
     self:NetworkVar("Float", "ReloadProgress")
-
-    for _, task in pairs(self.Tasks) do
-        if task.SetupDataTables then
-            task:SetupDataTables(self)
-        end
-    end
 end
 
 concommand.Add("trm_list_table", function(ply)

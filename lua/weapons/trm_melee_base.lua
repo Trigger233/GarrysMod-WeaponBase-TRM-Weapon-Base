@@ -39,7 +39,7 @@ function SWEP:Initialize()
 end
 
 function SWEP:CanPrimaryAttack()
-    local seq = self:GetPlayingSequence()
+    local seq = self:GetStatus()
 
 
     return self:GetNextPrimaryFire() <= CurTime()
@@ -69,12 +69,23 @@ function SWEP:DoMeleeAttackDamage(tbl)
     local tr = util.TraceHull({
         start = startPos,
         endpos = endPos,
-        filter = owner,
+        filter = { owner, self.ShieldProp , self },
         mins = Vector(-hullSize * 2, -hullSize, -0),
         maxs = Vector(hullSize * 2, hullSize, hullSize),
         mask = MASK_SHOT,
     })
 
+    owner:FireBullets({
+        Damage = 0,
+        Attacker = owner,
+        Inflictor = self,
+        Spread = vector_origin,
+        Dir = self:GetAimVector(),
+        Src = self:GetShootPos(),
+        Distance = range,
+        IgnoreEntity = self.ShieldProp ,
+        Tracer = 0,
+    })
 
     local dmginfo = DamageInfo()
     dmginfo:SetDamage(damage)
@@ -87,6 +98,9 @@ function SWEP:DoMeleeAttackDamage(tbl)
     self:MeleeImpactEffects(tr)
     self:MeleeDoor(tr)
 
+    if tr.HitGroup and tr.HitGroup == 1 then
+        dmginfo:ScaleDamage(4)
+    end
 
 
     local ent = tr.Entity

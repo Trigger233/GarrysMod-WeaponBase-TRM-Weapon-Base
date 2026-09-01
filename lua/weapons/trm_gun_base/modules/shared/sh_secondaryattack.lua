@@ -40,6 +40,7 @@ function SWEP:DoUnderbarrelAttack()
     if self.Secondary.Recoil then
         self:SetRecoilUp(self.Secondary.Recoil.p or 0)
         self:SetRecoilSide(self.Secondary.Recoil.y or 0)
+        self:CallOnClient("DoViewModelShake")
     end
 
     self:SetNextSecondaryFire(CurTime() + 60 / (self.Secondary.RPM or 150))

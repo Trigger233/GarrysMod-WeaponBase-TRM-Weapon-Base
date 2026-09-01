@@ -1,7 +1,7 @@
 function SWEP:CanMelee()
-    local seq = self:GetPlayingSequence()
+    local seq = self:GetStatus()
 
-    if self.Melee.Enabled and not string.find(seq,"Melee") then
+    if self.Melee.Enabled and not string.find(seq, "Melee") then
         return true
     end
 
@@ -34,16 +34,26 @@ function SWEP:DealMeleeDamage()
         filter = owner,
         mins = Vector(-10, -5, -0),
         maxs = Vector(10, 5, 5),
-        -- mask = MASK_SHOT_HULL,
+        mask = MASK_SHOT_HULL,
     })
 
-
+    owner:FireBullets({
+        Damage = 0,
+        Attacker = owner,
+        Inflictor = self,
+        Spread = vector_origin,
+        Dir = self:GetAimVector(),
+        Src = self:GetShootPos(),
+        Distance = range,
+    })
+    
     local dmginfo = DamageInfo()
     dmginfo:SetDamage(damage)
     dmginfo:SetAttacker(owner)
     dmginfo:SetInflictor(self)
     dmginfo:SetDamageForce(forward * (self.Melee.Force or 10))
     dmginfo:SetDamageType(DMG_CLUB)
+    self:SetNextPrimaryFire(0)
 
     if not tr.Hit then return end
     self:MeleeImpactEffects(tr)
@@ -116,4 +126,6 @@ function SWEP:MeleeImpactEffects(tr)
         impact:SetDamageType(DMG_CLUB)
         util.Effect("Impact", impact)
     end
+
+    self:EmitSound("physics/flesh/flesh_impact_bullet" .. math.random(0, 3) .. ".wav")
 end

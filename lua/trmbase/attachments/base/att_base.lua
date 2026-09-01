@@ -10,7 +10,9 @@ ATTACHMENT.Visible = true   -- 第三人称配件模型是否显示
 ATTACHMENT.Bonemerge = nil  -- true(默认) = EF_BONEMERGE跟随动画, false = FollowBone+偏移
 ATTACHMENT.Bone = nil       -- 要绑定的骨骼名（默认用槽位的 Bone）
 
-ATTACHMENT.Pos = Vector(0,0,0)
+
+ATTACHMENT.Pos = Vector(0,0,0) 
+
 ATTACHMENT.Angles = Angle(0,0,0)
 
 function ATTACHMENT:ChangeWeaponStats(weapon)

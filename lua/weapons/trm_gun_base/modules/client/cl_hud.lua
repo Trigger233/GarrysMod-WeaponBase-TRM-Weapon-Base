@@ -107,10 +107,10 @@ function SWEP:GetCrosshairPos(x, y, ply)
 
     return x, y
 end
-
+local gap = 0
 function SWEP:DrawCustomCrosshair(x, y, w, h, ply)
     if ! self:ShouldDrawCrossHair() then return end
-    local gap = self:GetCurrentSpread() * cv_crosshair_scale:GetFloat()
+    gap = Lerp( RealFrameTime() * 10 , gap , self:GetCurrentSpread() * cv_crosshair_scale:GetFloat())
 
     local screenPosX, screenPosY = self:GetCrosshairPos(x, y, ply)
 
@@ -310,6 +310,6 @@ function SWEP:DrawDebugHUD(x, y)
     name = "TaskName:" .. self:GetCurrentTaskName()
     draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     oy   = oy + 40
-    name = "Cycle:" .. vm:GetCycle()
+    name = "Cycle:" .. math.Round(vm:GetCycle(), 2)
     draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end

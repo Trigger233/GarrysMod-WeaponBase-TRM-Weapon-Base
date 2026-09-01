@@ -42,7 +42,7 @@ function SWEP:LocoMotion(deltaTime)
     -- Sprint Pose
     if self.BasePoseParameter and self.BasePoseParameter.Sprint then
         local sprintVal = self:CanSprint() and speed > walkSpeed and self:GetSprintDelta() or 0
-        sprintPose = math.Approach(sprintPose, sprintVal, dt * 2)
+        sprintPose = math.Approach(sprintPose, sprintVal, dt * 1)
         for _, Pose in pairs(self.BasePoseParameter.Sprint) do
             local max = self:LookupRangeCache(Pose) or 1
             vm:SetPoseParameter(Pose, sprintPose * max)
@@ -60,7 +60,7 @@ function SWEP:LocoMotion(deltaTime)
     -- Walk Pose
     if self.BasePoseParameter and self.BasePoseParameter.Walk then
         local walkVal = self:GetAimDelta() < 0.1 and (speed / walkSpeed) * (1 - self:GetSprintDelta()) or 0
-        walkPose = math.Approach(walkPose, walkVal, dt * 2) 
+        walkPose = math.Approach(walkPose, walkVal, dt * 1) 
         for _, Pose in pairs(self.BasePoseParameter.Walk) do
             vm:SetPoseParameter(Pose, walkPose)
         end
@@ -100,4 +100,10 @@ function SWEP:LocoMotion(deltaTime)
             end
         end
     end
+    --bullets offset
+    if !self:IsReloading() then
+        vm:SetPoseParameter("bullets_offset", self:GetMaxClip1() - self:Clip1())
+    end
+
+
 end

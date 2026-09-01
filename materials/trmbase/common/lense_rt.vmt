@@ -1,7 +1,6 @@
 "UnlitGeneric"
 {
 	"$basetexture"	"trmbase/common/lense_rt"
-	$model 1
 	$selfillum 1
 	
 }

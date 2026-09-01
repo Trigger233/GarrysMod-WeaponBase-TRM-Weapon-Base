@@ -51,12 +51,12 @@ function TRMBase:StartCmdRecoil(ply, cmd, wpn)
     local wpnUp = wpn:GetRecoilUp() 
     local wpnSide = wpn:GetRecoilSide()
     local clientShake = wpn.m_ScreenShake
-    self.ClientRecoil.p = wpnUp * ( 1 + clientShake) * 0.5
+    self.ClientRecoil.p = wpnUp 
     self.ClientRecoil.y = wpnSide
     self.RecoilRise = self.RecoilRise + self.ClientRecoil
 
-    if (math.abs(wpnUp) < 0.01  ) then
-        local recoverScale = wpn.Recoil.Recover * 0.2
+    if (math.abs(wpnUp) < 0.1  ) then
+        local recoverScale = wpn.Recoil.Recover * 0.2 * (1 - clientShake)
         self.RecoilReset.p = math.Approach(0, self.RecoilRise.p, recoverScale)
         self.RecoilReset.y = math.Approach(0, self.RecoilRise.y, recoverScale * 0.5)
         self.ClientRecoil:Sub(self.RecoilReset)

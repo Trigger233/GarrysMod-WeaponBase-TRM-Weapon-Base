@@ -19,20 +19,15 @@ function SWEP:DoVisualRecoil()
 	-- ==========================================
 	local progPitch, progYaw, progBack = 0, 0, 0
 	if self.VisualRecoil.Functional and self.VisualRecoil.Functional.Func then
+		local maxclip = self:GetMaxClip1()
 		-- 获取当前进度
-		progress = self:GetVisualRecoilProgress() or 0
+		progress = self:GetSprayRound() / (maxclip > 0 and maxclip or 30) or 0
 		-- 调用自定义函数
 		progPitch, progYaw, progBack = self.VisualRecoil.Functional.Func(
 			self,
 			progress
 		)
 
-		-- 累加进度（每次开火增加）
-		progress = math.Clamp(
-			progress + self.VisualRecoil.Functional.Increase,
-			0, 1
-		)
-		self:SetVisualRecoilProgress(progress)
 		-- 应用倍率
 		progPitch = progPitch * AdsScale
 		progYaw = progYaw * AdsScale
@@ -53,16 +48,6 @@ function SWEP:DoVisualRecoil()
 	-- ==========================================
 	-- 视觉后坐力后退（Backward）
 	-- ==========================================
-
-
-	local baseBack = math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2]) * AdsScale
-	backforward = backforward + (baseBack + progBack) * cvar_VisualRecoil:GetFloat()
-	-- 限制最大值
-	if self.VisualRecoil.Backward[3] and backforward > self.VisualRecoil.Backward[3] then
-		backforward = self.VisualRecoil.Backward[3]
-	end
-
-	self:SetVisualRecoilBackward(self:GetVisualRecoilBackward() + backforward)
 end
 
 function SWEP:Recover()
@@ -80,25 +65,11 @@ function SWEP:Recover()
 		Vrecoil = LerpAngle(ft * self.VisualRecoil.RecoverSpeed * 10, Vrecoil, Angle(0, 0, 0))
 		self:SetVisualRecoil(Vrecoil)
 		--VRecoil(Vector)
-		backforward = self:GetVisualRecoilBackward()
-		backforward = math.Approach(backforward, 0, 1 / delay)
-		self:SetVisualRecoilBackward(backforward)
 	end
 
-	--func vrecoil
-	if self.VisualRecoil.Functional then
-		progress = self:GetVisualRecoilProgress() or 0
-		local recover = self.VisualRecoil.Functional.Recover or 0.3
-		progress = math.max(0, progress - recover * ft)
-		self:SetVisualRecoilProgress(progress)
-	end
 
-	--functional recoil
-	local current = self:GetRecoilProgress()
-	if Curtime - last > self.Recoil.Functional.RecoverDelay then
-		current = math.Clamp(current - self.Recoil.Functional.Recover, 0, 1)
-		self:SetRecoilProgress(current)
-	end
+
+
 
 	--spread
 	if Curtime - last > (self.Spread.Delay or 0) then
@@ -112,53 +83,50 @@ function SWEP:Recover()
 	end
 
 	---Recoil Spray
-	local factor = math.Clamp( self.Recoil.Factor /( ft * 70),0.01,0.99)
-	self:SetRecoilUp(self:GetRecoilUp() * factor  )
-	self:SetRecoilSide(self:GetRecoilSide() * factor )
+	local factor = math.Clamp(self.Recoil.Factor / (ft * 70), 0.01, 0.99)
+	self:SetRecoilUp(self:GetRecoilUp() * factor)
+	self:SetRecoilSide(self:GetRecoilSide() * factor)
+	--
 end
 
 local cvar_recoil    = CreateConVar("trmbase_sv_mod_recoil", 1, FCVAR_ARCHIVE, "", 0, 10)
 local ShakeDirection = 1
-local RecoilUp         = 0
-local RecoilSide = 0
+local RecoilUp       = 0
+local RecoilSide     = 0
 local ShakeAngle     = Angle()
 
 function SWEP:DoRecoil()
 	local owner = self:GetOwner()
 	if not IsFirstTimePredicted() then return end
+	math.randomseed(self.Recoil.Seed + self:GetSprayRound())
 	local stats    = self.Recoil
 	local aimdelta = self:GetAimDelta()
-	local AdsScale  = Lerp(aimdelta, 1, stats.AdsMultiplier)
+	local AdsScale = Lerp(aimdelta, 1, stats.AdsMultiplier)
 
-	RecoilUp  = math.Rand(stats.Vertical[1], stats.Vertical[2]) * AdsScale
-	RecoilSide  = math.Rand(stats.Horizonal[1], stats.Horizonal[2]) * AdsScale
-	
+	RecoilUp       = math.Rand(stats.Vertical[1], stats.Vertical[2]) * AdsScale
+	RecoilSide     = math.Rand(stats.Horizonal[1], stats.Horizonal[2]) * AdsScale
+
 	--functional
 	if self.Recoil.Functional then
-		local progress = self:GetRecoilProgress()
+		local maxclip = self:GetMaxClip1()
+		-- 获取当前进度
+		progress = self:GetSprayRound() / (maxclip > 0 and maxclip or 30) or 0
 
 		-- 修复：用 Functional.Func
 		local func = stats.Functional.Func
 		if func then
 			local pitch, yaw = func(self, progress)
-			progress = math.Clamp(
-				progress + self.Recoil.Functional.Increase,
-				0, 1
-			)
 			RecoilUp = RecoilUp + pitch
 			RecoilSide = RecoilSide + yaw
-			self:SetRecoilProgress(progress)
 		end
 	end
 
 	local Shake = math.Rand(-1, 1) * self.Recoil.Shake
-	RecoilUp = RecoilUp + Shake * 1
+	RecoilUp = RecoilUp + Shake
 	local mul = self:GetRecoilMultiplier()
-	RecoilUp = RecoilUp *	mul
+	RecoilUp = RecoilUp * mul
 	RecoilSide = RecoilSide * mul
 
-	RecoilSide = Lerp(0.5, RecoilSide, self:GetRecoilSide())
-	RecoilUp = Lerp(0.5, RecoilUp, self:GetRecoilUp())
 	self:SetRecoilUp(RecoilUp)
 	self:SetRecoilSide(RecoilSide)
 	-- ----
@@ -185,8 +153,13 @@ function SWEP:DoSpread()
 	self:SetSpread(base)
 end
 
+local cvar_spread = CreateConVar("trmbase_sv_spread", 1, FCVAR_ARCHIVE, "", 0, 10)
+
 function SWEP:GetCurrentSpread()
 	local baseSpread = self:GetSpread()
+
+	baseSpread = baseSpread * cvar_spread:GetFloat()
+
 	local aimDelta = self:GetAimDelta()
 	local owner = self:GetOwner()
 	local tac = self:HasFlag("Tacsight")

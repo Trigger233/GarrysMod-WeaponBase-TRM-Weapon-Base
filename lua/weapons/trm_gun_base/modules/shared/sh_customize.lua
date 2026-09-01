@@ -36,51 +36,58 @@ local function DrawCustomHighlight(model, att, weapon)
 end
 
 function SWEP:SetupViewmodel()
+    if SERVER then return end
     local vm = self:GetViewModel()
     if not (vm and IsValid(vm)) then return end
 
     vm.RenderOverride = function(v, flag)
-        if not self or not util.IsTRMBase(self) then
-            v.RenderOverride = nil
-        end
-
-
-        local wep = IsValid(self) and IsValid(self:GetOwner()) and self:GetOwner().GetActiveWeapon and
-            self:GetOwner():GetActiveWeapon()
-        if not wep or not util.IsTRMBase(wep) then
+        if ! self or ! self.IsTRMWeapon then
             v.RenderOverride = nil
             return
         end
 
-        if ! wep.IsCustomizing then
-        end
-
-        if not IsValid(v) then
+        if ! IsValid(LocalPlayer()) then
             v.RenderOverride = nil
             return
         end
 
-        self.m_OverDraw = true
+
+        local wpn = LocalPlayer():GetActiveWeapon()
+        if not wpn or not wpn.IsTRMWeapon then
+            v.RenderOverride = nil
+            return
+        end
+
+
+
+
+
+        wpn.m_OverDraw = true
+
         v:DrawModel(flag)
+        ----------------
 
+        --------------
         if CLIENT then
-            DrawCustomHighlight(v, self, wep)
+            DrawCustomHighlight(v, self, wpn)
         end
-        if self.GetAllAttachmentsInUse then
-            for _, att in pairs(self:GetAllAttachmentsInUse()) do
+        if wpn.GetAllAttachmentsInUse then
+            for _, att in pairs(wpn:GetAllAttachmentsInUse()) do
                 local tbl = BASE_TRM_ATTS[att.Class]
                 if IsValid(att.m_Model) and tbl.Render then
-                    att.m_Model:SetupBones()
-                    tbl:Render(self, att.m_Model)
+
+                    model = att.m_Model
+                    model:SetupBones()
+                    tbl:Render(wpn, model)
                     if CLIENT then
-                        DrawCustomHighlight(att.m_Model, tbl, wep)
+                        DrawCustomHighlight(model, tbl, wpn)
                     end
                 elseif tbl and tbl.Model and ! v:GetNoDraw() then
-                    self:BuildCustomizedGun()
+                    wpn:BuildCustomizedGun()
                 end
             end
         end
-        self.m_OverDraw = false
+        wpn.m_OverDraw = false
     end
 end
 
@@ -107,7 +114,7 @@ function SWEP:CanEquip(slotIndex, attClass)
     local attData = BASE_TRM_ATTS[attClass]
     if not attData then return true end
 
-    if slot.Category and ! table.HasValue(slot.Category, attData.Category) then
+    if slot.Category and attData.Category and ! table.HasValue(slot.Category, attData.Category) then
         return false
     end
 
@@ -148,10 +155,14 @@ function SWEP:CanEquip(slotIndex, attClass)
     return true
 end
 
--- 兼容旧接口
-function SWEP:CanAttach(slotIndex)
-    local entry = self.CurrentAttachments[tostring(slotIndex)]
-    return self:CanEquip(slotIndex, entry and entry.Class or nil)
+function SWEP:RefreshAttachmentList()
+    for slot, entry in pairs(self:GetAllAttachmentsInUse()) do
+        if ! self:CanEquip(slot, entry.Class) then
+            self:Attach(slot, nil)
+        end
+    end
+
+    return true
 end
 
 function SWEP:Attach(slot, attClass, NoSave)
@@ -168,6 +179,7 @@ end
 
 function SWEP:OnAttachmentChanged(shouldntsave)
     self:BuildCustomizedGun()
+    self:RefreshAttachmentList()
     if not shouldntsave then
         self:SaveAttachmentPreset()
     end
@@ -271,9 +283,9 @@ function SWEP:ApplyWeaponModelChange()
     for bodygroup, sub in pairs(self.m_BodyGroupCache) do
         if self:IsPlyCarry() then
             changeBodyGroup(vm, bodygroup, sub)
-            changeBodyGroup(self, bodygroup, sub)
             -- print( "change bodygroup", bodygroup, sub)
         end
+        changeBodyGroup(self, bodygroup, sub)
         for _, entry in pairs(self.CurrentAttachments or {}) do
             if IsValid(entry.m_Model) then
                 local _att = BASE_TRM_ATTS[entry.Class]
@@ -320,7 +332,15 @@ function SWEP:ChangeWeaponStats()
         Anim.Speed = Anim.Speed or 1
     end
 
-    for _, entry in pairs(self.CurrentAttachments or {}) do
+    local allAtt = self:GetAllAttachmentsInUse()
+
+    table.sort(allAtt, function(a, b)
+        if BASE_TRM_ATTS[a.Class] and BASE_TRM_ATTS[a.Class].IsPerk then
+            return true
+        end
+    end)
+
+    for _, entry in SortedPairs(allAtt) do
         if not entry or not entry.Class or not BASE_TRM_ATTS[entry.Class] then continue end
         if BASE_TRM_ATTS[entry.Class].ChangeWeaponStats then
             BASE_TRM_ATTS[entry.Class]:ChangeWeaponStats(self)
@@ -376,8 +396,6 @@ function SWEP:SpreadInit()
     self:SetSpread(val.Base)
     self:SetSpreadVertical(val.Vertical)
     self:SetSpreadHorizonal(val.Horizontal)
-    self:SetRecoilProgress(0)
-    self:SetVisualRecoilProgress(0)
 end
 
 
@@ -663,8 +681,8 @@ function SWEP:CreatSingleAttModelForUse(att)
     model:SetNotSolid(true)
     model:SetNoDraw(true)
     model:AddEffects(EF_PARENT_ANIMATES)
+    model:SetMoveType(MOVETYPE_NONE)
     model.TRMAttachmentModel = true
-    model:InvalidateBoneCache()
     model:SetupBones()
     model.m_CustomDelta = 1
     model._IsAttachment = true
@@ -806,8 +824,11 @@ function SWEP:BuildCustomizedGun()
     --self:SetupViewmodel()
     if isActive then
         self:TrySetTask("Idle", true)
-    end
 
+        if SERVER then
+            self:CreateShield()
+        end
+    end
 
 end
 
