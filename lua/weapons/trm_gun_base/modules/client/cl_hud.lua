@@ -14,6 +14,7 @@ local cv_crosshair_width = CreateClientConVar("trmbase_crosshair_width", 20, tru
 local cv_crosshair_height = CreateClientConVar("trmbase_crosshair_height", 1, true, false)
 local cv_crosshair_outline = CreateClientConVar("trmbase_crosshair_outline", 3, true, false)
 local cv_crosshair_scale = CreateClientConVar("trmbase_crosshair_scale", 1, true, false)
+local cvar_hint_enabled = CreateClientConVar("trmbase_cl_hud_hint", 1, true, false)
 ---------------------
 local MAT_TRM_MARK = Material("trmbase/ui/trm_mark.png", "smooth mips")
 local MAT_AMMO = Material("trmbase/ui/symbols/ammo.png", "smooth mips")
@@ -27,8 +28,10 @@ local rft = RealFrameTime
 local Phrase = language.GetPhrase
 local rndx = include("include/rndx.lua")
 local w, h = ScrW(), ScrH()
+local scale = ScreenScale(0.25)
 hook.Add("OnScreenSizeChanged", "TRMBase_HUD", function(oldWidth, oldHeight, newWidth, newHeight)
     w, h = ScrW(), ScrH()
+    scale = ScreenScale(0.25)
 end)
 local SwayX = 0
 local SwayY = 0
@@ -113,10 +116,14 @@ function SWEP:DrawCustomCrosshair(x, y, w, h, ply)
 
     local X, Y = screenPosX, screenPosY
     local color = self:GetCrossHairColor()
-    local width, height = cv_crosshair_width:GetInt(), cv_crosshair_height:GetInt()
+    local width, height = cv_crosshair_width:GetInt() * scale, cv_crosshair_height:GetInt() * scale
 
     if self.Primary and self.Primary.NumBullets > 1 then
         width, height = height, width
+    end
+    if cv_crosshair_dot:GetBool() then
+        local dotSize = math.min(height, width)
+        DrawCenterRoundBox(X, Y, dotSize, dotSize, color)
     end
 
     DrawCenterRoundBox(X + (width * 0.5 + gap * h), Y, width, height, color)
@@ -135,10 +142,6 @@ function SWEP:DrawCustomCrosshair(x, y, w, h, ply)
     if self.Primary.Automatic then
         DrawCenterRoundBox(X, Y - (width * 0.5 + gap * h), height, width, color)
     end
-    if cv_crosshair_dot:GetBool() then
-        local dotSize = math.min(height, width)
-        DrawCenterRoundBox(X, Y, dotSize, dotSize, color)
-    end
     return false
 end
 
@@ -155,7 +158,7 @@ function SWEP:ShouldDrawCrossHair()
         return false
     end
 
-    local seqClass = self:GetPlayingSequence()
+    local seqClass = self:GetStatus()
 
 
 
@@ -196,6 +199,9 @@ function SWEP:DrawFiremodeHint(x, y)
 end
 
 function SWEP:DrawHUDHint(x, y)
+    if ! cvar_hint_enabled:GetBool() then
+        return
+    end
     self:DrawFiremodeHint(x, y)
     self:DrawZoomHint(x, y + 50)
     self:HUDControlHint(x - w * 0.25, y + h * 0.32)
@@ -297,10 +303,13 @@ function SWEP:DrawDebugHUD(x, y)
         draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     end
 
-    oy         = oy + 40
-    local name = math.Round(self:GetVisualRecoilBackward(), 2)
+    oy   = oy + 40
+    name = self:GetStatus()
     draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    oy         = oy + 40
-    name = self:GetPlayingSequence()
+    oy   = oy + 40
+    name = "TaskName:" .. self:GetCurrentTaskName()
+    draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    oy   = oy + 40
+    name = "Cycle:" .. vm:GetCycle()
     draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end

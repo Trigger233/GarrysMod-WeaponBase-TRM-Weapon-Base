@@ -21,7 +21,7 @@
             "need-check-nil"
         ],
 
-        "diagnosticInterval": 500
+        "diagnosticInterval": 1000
     },
 
     "completion": {
@@ -31,7 +31,6 @@
 
     "runtime": {
         "nonstandardSymbol": [
-            "continue"
         ],
         "requireLikeFunction": [
             "include"
