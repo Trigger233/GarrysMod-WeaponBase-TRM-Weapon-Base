@@ -2,7 +2,6 @@ if CLIENT then return end
 
 function SWEP:CreateShield()
     self:RemoveShield()
-    print("TryCreateShield" , self )
     local model = self.Shield.Model
 
     if ! model then return end
@@ -35,6 +34,8 @@ function SWEP:CreateShield()
     shield:SetSolid(SOLID_NONE)
     shield:SetCollisionGroup(COLLISION_GROUP_WORLD)
 
+    ---
+    shield:AddEFlags(EFL_DONTBLOCKLOS)
     if self.Shield.NoDraw then
         shield:SetNoDraw(true)
     end
@@ -50,8 +51,16 @@ function SWEP:CreateShield()
 end
 
 function SWEP:RemoveShield()
-    print("Remove Entity", self.ShieldProp)
     SafeRemoveEntity(self.ShieldProp)
     SafeRemoveEntity(self:GetOwner().TRMShieidEntity)
     SafeRemoveEntity(self:GetShieldEntity())
 end
+
+hook.Add("PostEntityTakeDamage", "TRM.Shield", function(shield, dmginfo, wasDamageTaken)
+    if !shield.TRMIsShield then return end
+    local wep = shield.TRMWeapon
+    if IsValid(wep) then
+        wep:PlayAnimation(wep:ChooseAnim("BlowBack"))
+        wep:CallOnClient("DoViewModelRecoil")
+    end
+end)

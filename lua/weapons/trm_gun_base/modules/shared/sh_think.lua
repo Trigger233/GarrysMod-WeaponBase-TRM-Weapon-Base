@@ -2,6 +2,7 @@ local cvar_holster = CreateConVar("trmbase_sv_holster_on_ladder", 1, { FCVAR_ARC
 local Tick = engine.TickInterval
 function SWEP:Think()
     local dt = Tick()
+
     local owner = self:GetOwner()
     self:SetWeaponHoldType(self.HoldType)
     self:TaskTick()
@@ -31,8 +32,6 @@ function SWEP:Think()
         self:LocoMotion(dt)
         self:SetNextClientThink(CurTime())
     end
-
-
     return true
 end
 

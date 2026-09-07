@@ -135,7 +135,7 @@ function SWEP:RenderOverride(flags)
             local att = BASE_TRM_ATTS[entry.Class]
             if ! att then continue end
             if IsValid(entry.m_TpModel) and att.Render then
-                --    entry.m_TpModel:SetupBones()
+                entry.m_TpModel:SetupBones()
                 att:Render(self, entry.m_TpModel)
             elseif att.Model and self:ShouldRebuild() then
                 self:BuildCustomizedGun()
@@ -171,7 +171,7 @@ function SWEP:ShouldRebuild()
     --     return false
     -- end
 
-
+    if self.NoWorldModelAttachment then return  false end
 
     if self:WorldSpaceCenter():DistToSqr(EyePos()) > (262144) then
         return false
@@ -207,7 +207,7 @@ hook.Add("PreRender", "TRMBase_CleanupUnUsedAttModels", function()
             if ent:GetClass() == "class C_BaseFlex" and ent.TRMAttachmentModel then
                 local owner = ent:GetOwner()
                 if (not IsValid(owner) or not cheakModelIsVaildInWeapon(ent, owner)) or ! owner:ShouldRebuild() then
-                        ent:Remove()
+                    ent:Remove()
                     continue
                 end
             end

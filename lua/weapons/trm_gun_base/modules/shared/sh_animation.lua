@@ -194,7 +194,7 @@ if CLIENT then
             return
         end
 
-        --  ply:AnimRestartGesture(slot, anim, true)
+          ply:AnimRestartGesture(slot, anim, true)
     end)
 end
 

@@ -1948,7 +1948,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
     btn:SetTall(64)
     btn:DockMargin(0, 0, 0, 6)
     local DataTbl = BASE_TRM_ATTS[attClass]
-    local BaseColor = BASE_TRM_ATTS[attClass] and BASE_TRM_ATTS[attClass].UIColor or Color(8, 15, 16, 226)
+    local BaseColor =  Color(8, 15, 16, 226)
     local weapon = self.m_Weapon
 
     btn.OnCursorEntered = function(button)
@@ -1973,8 +1973,8 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
         end
         surface.DrawRect(0, 0, w, h)
 
-        surface.SetDrawColor(isActive and ACTIVE or PANEL_LINE)
-        surface.DrawOutlinedRect(0, 0, w, h, 1)
+        surface.SetDrawColor(isActive and ACTIVE or (DataTbl and DataTbl.UIColor) or PANEL_LINE)
+        surface.DrawOutlinedRect(0, 0, w, h, 2)
         surface.SetDrawColor(isActive and ORANGE or Color(ACCENT.r, ACCENT.g, ACCENT.b, 42))
         surface.DrawRect(0, 0, 4, h)
         if button:IsHovered() or isActive then
@@ -1993,7 +1993,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
         ------------------
         local statusReserve = (isActive or blocked) and 110 or 18
         local title = TrimText("TRM_Mod_Subtitle", name, w - textX - statusReserve)
-        draw.SimpleText(title, "TRM_Mod_Subtitle", textX, 20, blocked and Color(190, 112, 112) or TEXT_MAIN,
+        draw.SimpleText(title, "TRM_Mod_Subtitle", textX, 20, blocked and Color(190, 112, 112) or( DataTbl and  DataTbl.UIColor )or TEXT_MAIN,
             TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
         local sub = DataTbl and DataTbl.ClassName or attClass or "None"
@@ -2068,7 +2068,8 @@ net.Receive("TRMBase_SyncAllAttachments", function()
     for i = 1, count do
         local slot = net.ReadString()
         local attClass = net.ReadString()
-        wep.CurrentAttachments[slot] = { Class = attClass }
+        wep.CurrentAttachments[slot] = wep.CurrentAttachments[slot] or {}
+        wep.CurrentAttachments[slot].Class = attClass 
     end
     if wep.BuildCustomizedGun then
         wep:BuildCustomizedGun()

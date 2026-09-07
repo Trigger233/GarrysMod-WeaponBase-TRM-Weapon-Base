@@ -18,16 +18,14 @@ SWEP.Attachments = {}
 
 DEFINE_BASECLASS(SWEP.Base)
 
-function SWEP:SetupDataTables()
-    BaseClass.SetupDataTables(self)
-end
+
 
 function SWEP:GetFiremodeName()
     return "Melee"
 end
 
 function SWEP:Recover()
-    local Index = self:GetBrustCount()
+    local Index = self:GetSprayRound()
     if Index ~= 1 and CurTime() > self:GetNextPrimaryFire() + self.Primary.Delay then
         self:ResetCombo()
     end
@@ -144,12 +142,12 @@ end
 
 function SWEP:CycleComboIndex()
     local Max = #self.Primary.Attack
-    local current = self:GetBrustCount()
-    self:SetBrustCount(current >= Max and 1 or current + 1)
+    local current = self:GetSprayRound()
+    self:SetSprayRound(current >= Max and 1 or current + 1)
 end
 
 function SWEP:ResetCombo()
-    self:SetBrustCount(1)
+    self:SetSprayRound(1)
 end
 
 function SWEP:CanInspect()

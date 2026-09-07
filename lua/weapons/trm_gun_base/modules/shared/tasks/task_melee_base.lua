@@ -4,15 +4,14 @@ task.Name = "Melee_Attack"
 
 function task:OnSet(weapon)
     weapon:RemoveFlag("MeleeTriggered")
-    local tbl = weapon.Primary.Attack[weapon:GetBrustCount()]
-    if not tbl then return  end
+    local tbl = weapon.Primary.Attack[weapon:GetSprayRound()]
+    if not tbl then return end
     weapon:SetNextAnimationTime(0)
     weapon:PlayAnimation(tbl.Animation, true)
 end
 
 function task:Think(cycle, weapon)
-    local tbl = weapon.Primary.Attack[weapon:GetBrustCount()]
-
+    local tbl = weapon.Primary.Attack[weapon:GetSprayRound()]
     if tbl and ! weapon:HasFlag("MeleeTriggered") and cycle > ( tbl and tbl.Cycle or 0.2) then
         weapon:DoMeleeAttackDamage(tbl)
         weapon:AddFlag("MeleeTriggered")

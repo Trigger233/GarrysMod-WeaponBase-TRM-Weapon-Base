@@ -355,7 +355,7 @@ function SWEP:DrawParallax(model, rtSize, att)
     )
 end
 
-hook.Add("RenderScene", "TRMBASE_ScopeUpdate", function()
+hook.Add("PreRender", "TRMBASE_ScopeUpdate", function()
     if cvar_cheapscope:GetBool() then return end
     local ply = LocalPlayer()
     local _self = ply:GetActiveWeapon()

@@ -51,7 +51,10 @@ function SWEP:DoVisualRecoil()
 end
 
 function SWEP:Recover()
-	if CLIENT then return end
+	if CLIENT then
+		
+		return
+	end
 	local owner = self:GetOwner()
 
 

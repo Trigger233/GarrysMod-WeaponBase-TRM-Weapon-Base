@@ -74,8 +74,7 @@ function SWEP:SetupViewmodel()
         if wpn.GetAllAttachmentsInUse then
             for _, att in pairs(wpn:GetAllAttachmentsInUse()) do
                 local tbl = BASE_TRM_ATTS[att.Class]
-                if IsValid(att.m_Model) and tbl.Render then
-
+                if tbl and IsValid(att.m_Model) and tbl.Render then
                     model = att.m_Model
                     model:SetupBones()
                     tbl:Render(wpn, model)
@@ -156,9 +155,10 @@ function SWEP:CanEquip(slotIndex, attClass)
 end
 
 function SWEP:RefreshAttachmentList()
-    for slot, entry in pairs(self:GetAllAttachmentsInUse()) do
-        if ! self:CanEquip(slot, entry.Class) then
+    for slot, entry in SortedPairs(self:GetAllAttachmentsInUse()) do
+        if ! self:CanEquip(tonumber(slot), entry.Class) then
             self:Attach(slot, nil)
+        else
         end
     end
 
@@ -289,7 +289,7 @@ function SWEP:ApplyWeaponModelChange()
         for _, entry in pairs(self.CurrentAttachments or {}) do
             if IsValid(entry.m_Model) then
                 local _att = BASE_TRM_ATTS[entry.Class]
-
+                if ! _att then continue end
                 changeBodyGroup(entry.m_Model, bodygroup, sub)
                 if _att.AttBodyGroup then
                     for groupName, pose in pairs(_att.AttBodyGroup) do
@@ -708,13 +708,15 @@ function SWEP:CreateAttachmentModel(entry, slot)
 
     local model, vBones = self:CreatSingleAttModelForUse(Att)
     entry.m_Model = model
-    local tpModel, tpBones = self:CreatSingleAttModelForUse(Att)
-    entry.m_TpModel = tpModel
+    if ! self.NoWorldModelAttachment then
+        local tpModel, tpBones = self:CreatSingleAttModelForUse(Att)
+        entry.m_TpModel = tpModel
+    end
     if Att.Bonemerge then
         if vBones then
             table.Merge(self.m_Bone, vBones)
         end
-        if tpBones then
+        if tpBones and ! self.NoWorldModelAttachment then
             table.Merge(self.wm_Bone, tpBones)
         end
     end
@@ -829,7 +831,6 @@ function SWEP:BuildCustomizedGun()
             self:CreateShield()
         end
     end
-
 end
 
 function SWEP:FindBone(name)

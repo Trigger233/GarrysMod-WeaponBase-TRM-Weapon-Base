@@ -8,10 +8,9 @@ local utilf = util.Effect
 
 net.Receive("TRMBase_TracerEffect", function(len)
     local weapon = net.ReadEntity()
-    local startPos = net.ReadVector()
     local endPos = net.ReadVector()
     if IsValid(weapon) then
-        weapon:DoTracer(startPos, endPos)
+        weapon:DoTracer(endPos)
     end
 end)
 
@@ -21,10 +20,16 @@ function SWEP:MuzzleEffects()
     self:DoMuzzleFlash(ent)
 end
 
+local attachment = {}
 function SWEP:DoShell()
     local stats = self.Effects.Shell
-    local ent, Id = self:FindAttachment(self:IsFirstPerson() and self:GetViewModel() or self, stats.attachment)
-    local attachment = self:GetAttachmentData(stats.attachment)
+    if self:IsFirstPerson() then
+        attachment = self:GetAttachmentData(stats.attachment)
+    else
+        local ent, attId = self:FindAttachment(self, stats.attachment)
+        if ! ent or ! attId or attId <= 0 then return end
+        attachment = ent:GetAttachment(attId)
+    end
     if not attachment then return end
     local effect = EffectData()
 
@@ -42,13 +47,11 @@ function SWEP:DoShell()
     if (IsValid(owner)) then
         effect:SetNormal(owner:GetVelocity():GetNormalized())
         effect:SetMagnitude(owner:GetVelocity():Length())
-            
     end
 
     utilf(stats.effect, effect)
 end
 
- 
 function SWEP:IsFirstPerson()
     local owner = self:GetOwner()
     local localPly = LocalPlayer()
@@ -61,27 +64,29 @@ end
 function SWEP:DoMuzzleFlash(ent)
     local _ent, attId = self:FindAttachment(ent, self.Effects.Muzzle.attachment)
 
-    
+
 
     -- local pcf = CreateParticleSystem(_ent,
     --     self.Slienced and self.Effects.Muzzle.ParticleSuppressed or self.Effects.Muzzle.ParticleEffect,
     --     PATTACH_POINT_FOLLOW, attId)
-    ParticleEffectAttach(self.Slienced and self.Effects.Muzzle.ParticleSuppressed or self.Effects.Muzzle.ParticleEffect, PATTACH_POINT_FOLLOW, _ent, attId)
-
-
+    ParticleEffectAttach(self.Slienced and self.Effects.Muzzle.ParticleSuppressed or self.Effects.Muzzle.ParticleEffect,
+        PATTACH_POINT_FOLLOW, _ent, attId or -1)
 end
 
-
-function SWEP:DoTracer(startpos, endpos)
+local startpos = Vector()
+function SWEP:DoTracer(endpos)
     if self:IsFirstPerson() then
-        
         local att = self:GetAttachmentData(self.Effects.Muzzle.attachment)
-        startpos = att and att.Pos or startpos 
+        startpos = att and att.Pos or startpos
+    else
+        local ent, attId = self:FindAttachment(self, self.Effects.Muzzle.attachment)
+        if ! attId or attId <= 0 then return end
+        startpos = ent:GetAttachment(attId).Pos or startpos
     end
-    
+
     local stats = self.Effects.Muzzle.Tracer
-    
-    util.ParticleTracerEx(  stats.Name or "trm_tracer", startpos, endpos, true ,self:EntIndex() , -1 )
+
+    util.ParticleTracerEx(stats.Name or "trm_tracer", startpos, endpos, true, self:EntIndex(), -1)
 end
 
 local function findAttachmentInChildren(ent, attName, weapon)
@@ -105,7 +110,7 @@ local function findAttachmentInChildren(ent, attName, weapon)
         if (child_att != nil) then
             attId = child_att
             ent = child_ent
-        end 
+        end
     end
 
     return ent, attId
@@ -114,4 +119,3 @@ end
 function SWEP:FindAttachment(owner, attName)
     return findAttachmentInChildren(owner, attName, self)
 end
-

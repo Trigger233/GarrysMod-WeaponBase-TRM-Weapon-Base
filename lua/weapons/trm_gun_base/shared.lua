@@ -211,14 +211,13 @@ SWEP.IronsightReload = true
 -------------------------- Shields
 
 SWEP.Shield = {
-   -- Model = Model("models/props_interiors/refrigeratorDoor01a.mdl"),
+    -- Model = Model("models/props_interiors/refrigeratorDoor01a.mdl"),
     Offset = Vector(20, 0, 0),
     Ang = Angle(0, 0, 0),
     Bone = "ValveBiped.Bip01_R_Hand",
     Scale = 1,
     --NoDraw = true ,
 }
-
 -------------
 SWEP.Effects = {
 

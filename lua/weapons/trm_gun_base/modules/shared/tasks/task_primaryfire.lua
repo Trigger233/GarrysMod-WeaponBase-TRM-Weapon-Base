@@ -10,8 +10,13 @@ end
 
 function task_fire:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
-    weapon:PlayAnimation(weapon:ChooseAnim("Fire"))
 
+    local anim = "Fire"
+    if weapon.Animations.Fire_Last and weapon:Clip1() == 1 then
+        anim = "Fire_Last"
+    end
+
+    weapon:PlayAnimation(weapon:ChooseAnim(anim))
     weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes[weapon:GetCurrentHoldType()].Attack)
 
 

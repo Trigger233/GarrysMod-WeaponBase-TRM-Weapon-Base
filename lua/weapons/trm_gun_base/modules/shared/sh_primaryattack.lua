@@ -82,7 +82,6 @@ function SWEP:FirePrimaryBullet()
 						-- 服务器广播给所有玩家（包括自己）
 						net.Start("TRMBase_TracerEffect")
 						net.WriteEntity(self)
-						net.WriteVector(owner:GetShootPos())
 						net.WriteVector(tr.HitPos)
 						net.Broadcast()
 					end

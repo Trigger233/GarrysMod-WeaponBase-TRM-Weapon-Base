@@ -44,6 +44,7 @@ function SWEP:DealMeleeDamage()
         Spread = vector_origin,
         Dir = self:GetAimVector(),
         Src = self:GetShootPos(),
+        Tracer = 0 ,
         Distance = range,
     })
     

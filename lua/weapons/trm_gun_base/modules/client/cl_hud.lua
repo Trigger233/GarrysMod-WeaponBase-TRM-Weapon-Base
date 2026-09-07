@@ -1,5 +1,5 @@
 if not CLIENT then return end
-
+require("trm_math")
 local math = math
 
 local cv_debug = GetConVar("developer")
@@ -110,7 +110,7 @@ end
 local gap = 0
 function SWEP:DrawCustomCrosshair(x, y, w, h, ply)
     if ! self:ShouldDrawCrossHair() then return end
-    gap = Lerp( RealFrameTime() * 10 , gap , self:GetCurrentSpread() * cv_crosshair_scale:GetFloat())
+    gap = trm_math.SafeLerp( RealFrameTime() * 50 , gap , self:GetCurrentSpread() * cv_crosshair_scale:GetFloat())
 
     local screenPosX, screenPosY = self:GetCrosshairPos(x, y, ply)
 
@@ -118,7 +118,9 @@ function SWEP:DrawCustomCrosshair(x, y, w, h, ply)
     local color = self:GetCrossHairColor()
     local width, height = cv_crosshair_width:GetInt() * scale, cv_crosshair_height:GetInt() * scale
 
-    if self.Primary and self.Primary.NumBullets > 1 then
+    local bShotgun = self.Primary and self.Primary.NumBullets > 1
+
+    if bShotgun and ! self:GetUnderbarrel() then
         width, height = height, width
     end
     if cv_crosshair_dot:GetBool() then
