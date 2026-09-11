@@ -67,6 +67,7 @@ hook.Add("PopulateToolMenu", "TRM_weapon_base_q_menu", function()
         panel:CheckBox("冻结 VM (Freeze VM)", "trmbase_freeze_vm")
         panel:CheckBox("Debug HUD", "trmbase_debug_hud")
         panel:CheckBox("Debug Reload", "trmbase_debug_reload")
+        panel:Button("Reload Atts", "trmbase_reload_atts")
     end)
     spawnmenu.AddToolMenuOption("TriggerMiku_Work", "TRM Gun Base", "trmbase_viewmodel", "ViewModel", "", "",
         function(panel)

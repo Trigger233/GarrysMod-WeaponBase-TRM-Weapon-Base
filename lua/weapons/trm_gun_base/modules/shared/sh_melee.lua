@@ -46,6 +46,10 @@ function SWEP:DealMeleeDamage()
         Src = self:GetShootPos(),
         Tracer = 0 ,
         Distance = range,
+        Callback = function(attacker, trace, dmgInfo)
+            
+            return { effects = false , damage = false }
+        end
     })
     
     local dmginfo = DamageInfo()

@@ -37,7 +37,8 @@ function SWEP:CanReload()
 
 	if self:GetNextPrimaryFire() > CurTime() and not (string.find(seq, "Draw") or string.find(seq, "Sprint")) then return false end
 
-	local max =  self.Primary.ClipSize + (self.Primary.BoltAction and self:GetChamberAmmo() or self.Primary.Chamber)
+	local max = self.Primary.ClipSize +
+	(self.Primary.BoltAction and self:GetChamberAmmo() or self.Primary.Chamber) * (self.Akimbo and 2 or 1)
 	if string.find(seq, "Reload") then return false end
 	if not GetConVar("trmbase_allow_sprintreload"):GetBool() and string.find(seq, "Sprint") and not string.find(seq, "Sprint") then return false end
 	if (cvar_infinite_reserve:GetBool()) then
@@ -75,8 +76,11 @@ function SWEP:MagzineLoaded()
 	local reserveAmmo = owner:GetAmmoCount(self:GetPrimaryAmmoType())
 	local max = self:GetMaxClip1()
 	if not self:IsEmpty() then
-		max = max + (self.Primary.BoltAction and self:GetChamberAmmo() or self.Primary.Chamber)
+		max = max + (self.Primary.BoltAction and self:GetChamberAmmo() or self.Primary.Chamber) * (self.Akimbo and 2 or 1 )
 	end
+
+
+
 	if cvar_debug_reload:GetBool() then
 		max = 2
 	end

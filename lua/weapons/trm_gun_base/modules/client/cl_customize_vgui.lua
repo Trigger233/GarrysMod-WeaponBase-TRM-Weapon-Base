@@ -23,11 +23,11 @@ local TRM_SOUNDS = {
     Deny = "trmbase/modern/ui_deny.wav",
 }
 local sortAttachCategory = {
-    att_sight = 1 ,
-    att_reticle = 2 ,
+    att_sight = 1,
+    att_reticle = 2,
 
-    att_scope = 3 ,
-    att_base = 4 ,
+    att_scope = 3,
+    att_base = 4,
 }
 
 
@@ -74,8 +74,6 @@ function SWEP:SendAttachmentToServer(slotKey, attID)
     end
 end
 
-
-
 local function Phrase(text, fallback)
     if not text then return fallback or "" end
     if string.sub(tostring(text), 1, 1) ~= "#" then return text end
@@ -107,21 +105,22 @@ local function GetAttachmentsForSlot(slot)
             end
         end
     end
+    -- table.sort(result, function(a, b)
+    --     if ! b then return false end
+    --     local ad = BASE_TRM_ATTS[a]
+    --     local bd = BASE_TRM_ATTS[b]
+    --     if ! ad or ! bd then return false end
+    --     local aBase = ad.Base
+    --     local bBase = bd.Base
 
-    table.sort(result, function(a, b)
-        local ad = BASE_TRM_ATTS[a]
-        local bd = BASE_TRM_ATTS[b]
-        local aBase = ad.Base
-        local bBase = bd.Base
+    --     if aBase and bBase and sortAttachCategory[aBase] and sortAttachCategory[bBase] and sortAttachCategory[aBase] < sortAttachCategory[bBase] then
+    --         return true
+    --     end
 
-        if aBase and bBase and sortAttachCategory[aBase] and sortAttachCategory[bBase] and sortAttachCategory[aBase] < sortAttachCategory[bBase] then
-            return true
-        end
-
-        local an = Phrase(ad and ad.Name, a)
-        local bn = Phrase(bd and bd.Name, b)
-        return an < bn
-    end)
+    --     local an = Phrase(ad and ad.Name, a)
+    --     local bn = Phrase(bd and bd.Name, b)
+    --     return (an < bn) or false
+    -- end)
 
     return result
 end
@@ -1948,7 +1947,7 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
     btn:SetTall(64)
     btn:DockMargin(0, 0, 0, 6)
     local DataTbl = BASE_TRM_ATTS[attClass]
-    local BaseColor =  Color(8, 15, 16, 226)
+    local BaseColor = Color(8, 15, 16, 226)
     local weapon = self.m_Weapon
 
     btn.OnCursorEntered = function(button)
@@ -1993,7 +1992,8 @@ function PANEL:AddAttButton(name, attClass, isActive, slotKey, slotExcluded, isD
         ------------------
         local statusReserve = (isActive or blocked) and 110 or 18
         local title = TrimText("TRM_Mod_Subtitle", name, w - textX - statusReserve)
-        draw.SimpleText(title, "TRM_Mod_Subtitle", textX, 20, blocked and Color(190, 112, 112) or( DataTbl and  DataTbl.UIColor )or TEXT_MAIN,
+        draw.SimpleText(title, "TRM_Mod_Subtitle", textX, 20,
+            blocked and Color(190, 112, 112) or (DataTbl and DataTbl.UIColor) or TEXT_MAIN,
             TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
         local sub = DataTbl and DataTbl.ClassName or attClass or "None"
@@ -2069,7 +2069,7 @@ net.Receive("TRMBase_SyncAllAttachments", function()
         local slot = net.ReadString()
         local attClass = net.ReadString()
         wep.CurrentAttachments[slot] = wep.CurrentAttachments[slot] or {}
-        wep.CurrentAttachments[slot].Class = attClass 
+        wep.CurrentAttachments[slot].Class = attClass
     end
     if wep.BuildCustomizedGun then
         wep:BuildCustomizedGun()

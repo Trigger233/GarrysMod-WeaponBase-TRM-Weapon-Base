@@ -52,12 +52,11 @@ function SWEP:PlayAnimation(sequenceClass, useInternalDuration, startAt)
     local sequencePlay = seq[math.Round(math.Rand(1, #seq))] -- 修复2：直接用 #seq 获取长度
 
     self:SetStatus(sequenceClass)
-    local seqId = vm:LookupSequence(sequencePlay)
+    local seqId, duration = vm:LookupSequence(sequencePlay)
 
     vm:SendViewModelMatchingSequence(seqId)
     self:SetGrip1(true)
     self:SetGrip2(true)
-    local duration = vm:SequenceDuration(vm:LookupSequence(sequencePlay))
 
     vm:SetCycle(0)
 
@@ -106,7 +105,7 @@ end
 
 function SWEP:ChooseAnim(animationClass)
     if not SERVER then return end
-
+    local clip = self:Clip1()
     local empty = self:IsEmpty()
     local aim = self:HasFlag("Aiming")
     local function hasAnim(Class)
@@ -125,6 +124,14 @@ function SWEP:ChooseAnim(animationClass)
         AnimName = "Iron_" .. AnimName
     end
 
+    if self.Akimbo then
+        if clip == 1 and hasAnim(AnimName .. "_Empty2") then
+            AnimName = AnimName .. "_Empty2"
+        elseif self:HasFlag("AkimboFired") and hasAnim(AnimName .. "2") and clip != 0 then
+            AnimName = AnimName .. "2"
+        end
+    end
+    --print(AnimName)
     return AnimName
 end
 
@@ -194,7 +201,7 @@ if CLIENT then
             return
         end
 
-          ply:AnimRestartGesture(slot, anim, true)
+        ply:AnimRestartGesture(slot, anim, true)
     end)
 end
 

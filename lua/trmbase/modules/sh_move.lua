@@ -10,7 +10,7 @@ TRMBase.RecoilReset = Angle()
 TRMBase.LastEyeAnglePitch = 0
 TRMBase.ClientRecoilTime = 0
 TRMBase.ClientRecoilTimeStep = 0.01
-
+TRMBase.RecoilProgress = 0
 hook.Add("StartCommand", "TRMBase", function(ply, cmd)
     TRMBase:StartCommand(ply, cmd)
 end)
@@ -56,20 +56,22 @@ function TRMBase:StartCmdRecoil(ply, cmd, wpn)
     local wpnSide = wpn:GetRecoilSide()
     local clientShake = wpn.m_ScreenShake
 
+    self.RecoilProgress = math.max(0 ,self.RecoilProgress - dt * 5)
+
     if CurTime() > self.ClientRecoilTime then
-        self.ClientRecoil.p = wpnUp 
-        self.ClientRecoil.y = wpnSide 
+        self.ClientRecoil.p = wpnUp
+        self.ClientRecoil.y = wpnSide
         self.ClientRecoilTime = CurTime() + dt
+
+        if math.abs(wpnUp) > 0.001 or math.abs(wpnSide) > 0.001 and self.RecoilProgress < 1 then
+            self.RecoilProgress = math.Clamp(self.RecoilProgress + dt * 25, 0, 1)
+        end
     end
 
     self.RecoilRise = self.RecoilRise + self.ClientRecoil
-    local recoverScale = wpn.Recoil.Recover * 0.2 * (1 - clientShake)
-
-    if (math.abs(self.ClientRecoil.p) < 0.1) then
+    local recoverScale = wpn.Recoil.Recover * 0.4 * (1 - self.RecoilProgress)
+    if (self.RecoilProgress < 1) then
         self.RecoilReset.p = math.Approach(0, self.RecoilRise.p, recoverScale)
-        if (math.abs(self.ClientRecoil.y) < 0.1) then
-            self.RecoilReset.y = math.Approach(0, self.RecoilRise.y, recoverScale * 0.2)
-        end
         self.ClientRecoil:Sub(self.RecoilReset)
         self.RecoilRise = self.RecoilRise - self.RecoilReset
     end

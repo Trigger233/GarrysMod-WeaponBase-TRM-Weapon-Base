@@ -3,8 +3,8 @@ ATTACHMENT.Name = "Blue Tracer"
 ATTACHMENT.Category = "att_ammo"
 function ATTACHMENT:Stats(weapon)
     weapon.HUDElement.Bullet = Color(98, 239, 255, 255)
-    weapon.Effects.Muzzle.Tracer.Name = "trm_tracer_b"
-    
+    weapon.Effects.Muzzle.Tracer.Name = "TRM_Tracer_Matin_Blue"
+    weapon.Effects.Muzzle.ParticleEffect = "TRM_MuzzleFlash_Blue"
 end
 
 function ATTACHMENT:BulletCallback(attacker, tr, dmginfo)

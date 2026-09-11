@@ -47,6 +47,7 @@ SWEP.WeaponFlags = {
     ['MeleeTriggered'] = 32,
     ['BipodDeployed'] = 64,
     ['TriggerPulled'] = 128,
+    ['AkimboFired'] = 256,
 }
 function SWEP:SetupDataTables()
     self:NetworkVar("Int", "WeaponFlag")

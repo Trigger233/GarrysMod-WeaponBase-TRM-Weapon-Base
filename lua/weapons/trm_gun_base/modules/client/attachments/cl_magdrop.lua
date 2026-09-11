@@ -2,13 +2,19 @@ if ! CLIENT then
     return
 end
 local uf = util.Effect
+local Origin = Vector()
 function SWEP:DoDropMagzineEffect()
     local owner = self:GetOwner()
     if ! IsValid(owner) then return end
-    if !self.Effects.Mag then return end
+    if ! self.Effects.Mag then return end
+    Origin = self:GetPos()
+    if self.Effects.Mag.attachment then
+        Origin = self:GetAttachmentData(self.Effects.Mag.attachment).Pos or Origin
+    end
+
     local mag = EffectData()
     mag:SetEntity(self)
-    mag:SetOrigin(self:GetPos())
+    mag:SetOrigin(Origin)
     mag:SetAngles(self:GetAngles())
     mag:SetScale(1)
 

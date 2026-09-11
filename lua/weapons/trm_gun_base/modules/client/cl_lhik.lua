@@ -100,12 +100,10 @@ function SWEP:PlayIKAnimation(seqClass, useInternal)
     if (animData == nil) then
         return
     end
-    local sequence = GetAnimation(animData.sequence)
-
+    local sequence, SequenceDuration = model:LookupSequence(GetAnimation(animData.sequence))
     model:ResetSequence(sequence)
     model:SetCycle(0)
     model:SetPlaybackRate(animData.Speed or 1)
-    local SequenceDuration = model:SequenceDuration(model:GetSequence())
     self.m_IKSeqClass = seqClass
 
     if model.Animations[seqClass].events then

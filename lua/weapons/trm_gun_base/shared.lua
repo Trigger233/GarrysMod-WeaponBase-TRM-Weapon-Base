@@ -53,9 +53,9 @@ end
 
 -- ==========================================
 -- 包含所有 client 文件（只在客户端执行，但需要发送给客户端）
--- ==========================================
+-- ============================ ==============
 local function IncludeClientFiles(path)
-    path = path or "weapons/trm_gun_base/modules/client/"
+    path = path or "weapons/trm_gun_base/modules/client"
     local files, folders = file.Find(path .. "/*", "LUA")
     for _, fileName in ipairs(files) do
         local fullPath = path .. "/" .. fileName
@@ -223,12 +223,12 @@ SWEP.Effects = {
 
     Muzzle = {
         effect = "MuzzleEffect",
-        ParticleEffect = "trm_muzzleflash",
-        ParticleSuppressed = "trm_suppressor",
+        ParticleEffect = "TRM_MuzzleFlash_Matin",
+        ParticleSuppressed = "TRM_MuzzleFlash_Matin_Sup",
         attachment = "muzzle",
         Tracer = {
             IsParticle = true,
-            Name = "trm_tracer"
+            Name = "TRM_Tracer_Base"
         }
     },
     Shell = {
@@ -252,6 +252,7 @@ SWEP.Effects = {
     }
 }
 
+SWEP.Akimbo = false
 
 SWEP.WorldModelOffsets = {   --alternative
     Bone = "tag_weapon",     -- 武器模型上的骨骼名
@@ -609,8 +610,6 @@ function SWEP:Equip()
     end
     self:BuildCustomizedGun()
 end
-
-
 
 function SWEP:OnDrop(owner)
     --owner:SetActiveWeapon(NULL)

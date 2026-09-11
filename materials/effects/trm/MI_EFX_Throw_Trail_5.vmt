@@ -1,0 +1,8 @@
+"UnlitGeneric"
+{
+	"$basetexture" "effects/trm/MI_EFX_Throw_Trail_5"
+	"$translucent" 1
+	"$vertexalpha" 1
+	"$vertexcolor" 1
+	"$additive" 1
+}

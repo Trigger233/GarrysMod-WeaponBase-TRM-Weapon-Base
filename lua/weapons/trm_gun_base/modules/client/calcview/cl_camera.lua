@@ -147,9 +147,15 @@ function SWEP:GetCameraAttachmentRaw(vm)
 end
 
 function SWEP:GetCameraAttachmentAngle(vm)
+    if ! self.CameraAttachment then
+        return nil
+    end
+
     if self.RawCameraAttachment then
         return self:GetCameraAttachmentRaw(vm)
     end
+
+
 
     if ! self.vm_CameraAttachment_Bone then
         local attId = trm_utils.LookupAttachmentCached(vm, self.CameraAttachment)
@@ -168,7 +174,7 @@ function SWEP:GetCameraAttachmentAngle(vm)
     if (matrix != nil) then
         worldMatrix:SetTranslation(vm:GetPos())
         worldMatrix:SetAngles(vm:GetAngles())
-        
+
         local CamMatrix = matrix:GetInverse() * worldMatrix
 
 

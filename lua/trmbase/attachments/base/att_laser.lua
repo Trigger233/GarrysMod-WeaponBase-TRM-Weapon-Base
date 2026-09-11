@@ -6,7 +6,7 @@ ATTACHMENT.Selectable = true
 ATTACHMENT.Laser = {
     Attach = "Laser",
     Color = Color(255, 0, 0, 80),
-    Width = 1,
+    Width = 0.001,
     DotSize = 4,
 }
 
@@ -20,7 +20,7 @@ local dotMat = nil
 
 function ATTACHMENT:GetLineMat()
     if not lineMat then
-        lineMat = Material("sprites/physbeam")
+        lineMat = Material("trmbase/common/laser_line")
     end
     return lineMat
 end
@@ -74,9 +74,9 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
     local color = data.Color
 
     if distance < 100 then return end
-    local scale = math.random(0.5, 1)
+    local scale = math.random(0.8, 1) * 0.5
     render.SetMaterial(self:GetLineMat())
-    render.DrawBeam(att.Pos, tr.HitPos or tr.endpos, data.Width * scale, 0, 1, color)
+    render.DrawBeam(att.Pos, tr.HitPos or tr.endpos, data.Width * scale , 0, 1, color)
     if tr.Hit then
         render.SetMaterial(self:GetDotMat())
         render.DrawSprite(tr.HitPos, data.DotSize, data.DotSize, color)
@@ -97,8 +97,8 @@ function ATTACHMENT:Stats(w)
 end
 
 function ATTACHMENT:DoFlashLight(weapon, model, data)
-    if not weapon.flashlight then return end
-
+    if not weapon.flashlight or !data then return end
+    if !data.Attach then return end
     local attId = model:LookupAttachment(data.Attach)
     if attId <= 0 then return end
     local att = model:GetAttachment(attId)

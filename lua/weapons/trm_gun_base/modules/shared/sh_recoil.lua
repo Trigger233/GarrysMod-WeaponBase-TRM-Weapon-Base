@@ -170,7 +170,7 @@ function SWEP:GetCurrentSpread()
 	if not owner.GetWalkSpeed then return baseSpread end
 	local walkSpeed = owner:GetWalkSpeed()
 	-- 移动扩散
-	local vel = math.max(owner:GetVelocity():Length2DSqr() / 20000, 0)
+	local vel = math.max( owner:GetVelocity():Length2DSqr() / 20000, 0)
 	local moveMult = 1.0
 
 	moveMult = math.max(self.Spread.MoveMultiplier * vel or 1.0, 1)

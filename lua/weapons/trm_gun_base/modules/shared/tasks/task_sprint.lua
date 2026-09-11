@@ -56,7 +56,7 @@ end
 
 function task_out:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
-    if weapon.Animations.SprintOut then
+    if weapon.Animations.SprintOut and weapon:GetAimDelta() <= 0  then
         weapon:PlayAnimation(weapon:ChooseAnim("SprintOut"), true)
     end
     weapon:SetNextFireTime(0.1)

@@ -117,7 +117,7 @@ function TRMWeaponBase.GetRNDX()
 end
 
 
-local _path = "trmbase/assets"
+local _path = "trmbase/modules"
 
 local function LoadAssetFiles(path)
     local files, folders = file.Find(path .. "/*", "LUA")

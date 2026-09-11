@@ -1,5 +1,3 @@
-
-
 local task_fire = {}
 task_fire.Name = "PrimaryFire"
 task_fire.Priority = 255
@@ -10,10 +8,14 @@ end
 
 function task_fire:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
-
     local anim = "Fire"
-    if weapon.Animations.Fire_Last and weapon:Clip1() == 1 then
-        anim = "Fire_Last"
+    
+    if weapon.Animations.Fire_Last then
+        if weapon.Akimbo and weapon:HasFlag("AkimboFired") and weapon:Clip1() == 2 then
+            anim = "Fire_Last"
+        elseif weapon:Clip1() == 1 then
+            anim = "Fire_Last"
+        end
     end
 
     weapon:PlayAnimation(weapon:ChooseAnim(anim))
@@ -26,6 +28,11 @@ function task_fire:OnSet(weapon)
         weapon:FireProjectile()
     end
     weapon:SetSprayRound(weapon:GetSprayRound() + 1)
+
+    if weapon.Akimbo then
+        weapon:ToggleFlag("AkimboFired")
+    end
+
     weapon:HandleReverb()
     weapon:DoFireSound()
 

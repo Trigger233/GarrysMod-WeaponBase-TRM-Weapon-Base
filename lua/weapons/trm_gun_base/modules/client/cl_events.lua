@@ -4,6 +4,7 @@ local tracerName = "Tracer"
 local Tracerscale = 10000
 local tracerStart
 local utilf = util.Effect
+local particleTracer = util.ParticleTracerEx
 
 
 net.Receive("TRMBase_TracerEffect", function(len)
@@ -23,10 +24,12 @@ end
 local attachment = {}
 function SWEP:DoShell()
     local stats = self.Effects.Shell
+    local attName = self.Akimbo and !self:HasFlag("AkimboFired") and self.Effects.Shell2 and
+        self.Effects.Shell2.attachment or stats.attachment
     if self:IsFirstPerson() then
-        attachment = self:GetAttachmentData(stats.attachment)
+        attachment = self:GetAttachmentData(attName)
     else
-        local ent, attId = self:FindAttachment(self, stats.attachment)
+        local ent, attId = self:FindAttachment(self, attName)
         if ! ent or ! attId or attId <= 0 then return end
         attachment = ent:GetAttachment(attId)
     end
@@ -62,31 +65,27 @@ function SWEP:IsFirstPerson()
 end
 
 function SWEP:DoMuzzleFlash(ent)
-    local _ent, attId = self:FindAttachment(ent, self.Effects.Muzzle.attachment)
+    local _ent, attId = self:FindAttachment(ent, self.Akimbo and !self:HasFlag("AkimboFired") and self.Effects.Muzzle2 and self.Effects.Muzzle2.attachment or self.Effects.Muzzle.attachment)
 
-
-
-    -- local pcf = CreateParticleSystem(_ent,
-    --     self.Slienced and self.Effects.Muzzle.ParticleSuppressed or self.Effects.Muzzle.ParticleEffect,
-    --     PATTACH_POINT_FOLLOW, attId)
     ParticleEffectAttach(self.Slienced and self.Effects.Muzzle.ParticleSuppressed or self.Effects.Muzzle.ParticleEffect,
         PATTACH_POINT_FOLLOW, _ent, attId or -1)
 end
 
 local startpos = Vector()
 function SWEP:DoTracer(endpos)
+    local attName = self.Akimbo and !self:HasFlag("AkimboFired") and self.Effects.Muzzle2 and self.Effects.Muzzle2.attachment or self.Effects.Muzzle.attachment
     if self:IsFirstPerson() then
-        local att = self:GetAttachmentData(self.Effects.Muzzle.attachment)
+        local att = self:GetAttachmentData(attName)
         startpos = att and att.Pos or startpos
     else
-        local ent, attId = self:FindAttachment(self, self.Effects.Muzzle.attachment)
+        local ent, attId = self:FindAttachment(self, attName)
         if ! attId or attId <= 0 then return end
         startpos = ent:GetAttachment(attId).Pos or startpos
     end
 
     local stats = self.Effects.Muzzle.Tracer
 
-    util.ParticleTracerEx(stats.Name or "trm_tracer", startpos, endpos, true, self:EntIndex(), -1)
+    particleTracer(stats.Name or "trm_tracer", startpos, endpos, true, self:EntIndex(), -1)
 end
 
 local function findAttachmentInChildren(ent, attName, weapon)
