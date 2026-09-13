@@ -115,8 +115,8 @@ end
 
 function SWEP:CameraShakeMotionBlur(h, v, f, r)
     local _delta = self.m_ScreenShake * self.Recoil.Shake
-    f = f + 0.02 * _delta
-    r = r + 0.02 * _delta
+    f = f + 0.01 * _delta
+    r = r + 0.01 * _delta
     return h, v, f, r
 end
 

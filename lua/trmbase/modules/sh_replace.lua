@@ -3,7 +3,7 @@
 -- 只替换地图生成的 HL2/HL1 武器 + 弹药箱
 -- =============================================
 
-CreateConVar("trmbase_replace_weapon", 1, FCVAR_ARCHIVE)
+local cvar_enabled = CreateConVar("trmbase_replace_weapon", 1, FCVAR_ARCHIVE)
 
 local refresh = 0.5
 
@@ -70,6 +70,8 @@ local function ShouldReplaceWeapon(ent)
 end
 
 local function ShouldReplaceAmmoBox(ent)
+    if !cvar_enabled:GetBool() then return end
+
     if not IsValid(ent) then return false end
     return AmmoBoxMap[ent:GetClass()] ~= nil
 end

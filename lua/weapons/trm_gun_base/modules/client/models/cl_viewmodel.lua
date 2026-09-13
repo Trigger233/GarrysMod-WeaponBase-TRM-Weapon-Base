@@ -13,8 +13,6 @@ function SWEP:ViewModelDrawn(vm, flag)
 
     self.m_StoredAngle      = self:GetCameraControler()
     self.m_CameraAttachment = self:GetCameraAttachmentAngle(vm)
-
-
 end
 
 function SWEP:GetAttachmentData(name)
@@ -43,7 +41,7 @@ function SWEP:PreDrawViewModel(vm)
         DrawBokehDOF(BlurMul * 5, 1, 1)
     end
     cam.Start3D(EyePos(), EyeAngles(), self:GetViewmodelFov(), 0, 0, ScrW(), ScrH(), 1, 1024)
- 
+
     if GetConVar("trmbase_cl_cheapscope"):GetBool() then
         self:RenderScopeView()
     end
@@ -84,34 +82,46 @@ end)
 
 
 local NextUpdate = 0
+local UpdateTime = 1 / 120
+local stack = {}
+SWEP.m_Attachment = {}
+
+local function IsEmpty(_table) return #_table > 0 end
+
 function SWEP:BuildViewmodelAttachmentsData(vm)
     if not IsValid(vm) then return end
-    if SysTime() - NextUpdate > 0 then
-        self.m_Attachment = self.m_Attachment or {}
-        local stats = self.Effects
-        if not stats then return end
+    local stats = self.Effects
+    if not stats then return end
 
+    if #stack < 1 then
         for _, element in pairs(stats) do
-            if not element or not element.attachment then
-                continue
+            if element.attachment then
+                stack[#stack + 1] = element.attachment
             end
-            local attName = element.attachment
-
-            local ent, attId = self:FindAttachment(self:IsFirstPerson() and vm or self, attName)
-            if not IsValid(ent) or not attId or attId == -1 then
-                -- 可选：用默认值或跳过
-                self.m_Attachment[element.attachment] = false
-                continue
-            end
-
-            local att = ent:GetAttachment(attId)
-            if not att then
-                self.m_Attachment[element.attachment] = false
-                continue
-            end
-
-            self.m_Attachment[element.attachment] = att
         end
-        NextUpdate = SysTime() + 1 / 25
+    end
+
+    local handle = 1
+   --PrintTable(stack)
+
+    while (#stack > 0) do
+        if handle > 1 then break end
+        if SysTime() < NextUpdate then break end
+
+        local attName = table.remove(stack, 1)
+
+        if ! attName then
+            continue
+        end
+        local ent, attId = self:FindAttachment(vm, attName)
+        if ! IsValid(ent) or ! attId or attId == -1 then
+            continue
+        end
+
+        self.m_Attachment[attName] = ent:GetAttachment(attId)
+        --PrintTable(self.m_Attachment)
+        handle = handle + 1
+
+        NextUpdate = SysTime() + UpdateTime
     end
 end

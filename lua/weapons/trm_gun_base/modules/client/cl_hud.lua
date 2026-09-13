@@ -107,6 +107,7 @@ function SWEP:GetCrosshairPos(x, y, ply)
 
     return x, y
 end
+local max = math.max
 local gap = 0
 function SWEP:DrawCustomCrosshair(x, y, w, h, ply)
     if ! self:ShouldDrawCrossHair() then return end
@@ -116,8 +117,8 @@ function SWEP:DrawCustomCrosshair(x, y, w, h, ply)
 
     local X, Y = screenPosX, screenPosY
     local color = self:GetCrossHairColor()
-    local width, height = cv_crosshair_width:GetInt() * scale, cv_crosshair_height:GetInt() * scale
-
+    local width, height = max( 1 ,cv_crosshair_width:GetInt() * scale), max( 1 , cv_crosshair_height:GetInt() * scale
+)
     local bShotgun = self.Primary and self.Primary.NumBullets > 1
 
     if bShotgun and ! self:GetUnderbarrel() then

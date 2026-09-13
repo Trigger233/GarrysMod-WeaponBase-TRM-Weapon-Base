@@ -117,7 +117,7 @@ function SWEP:GetClientAimDelta()
 
     self.ClientState["aim"] = self.ClientState["aim"] or 0
     local target            = self:GetAimDelta() or 0
-    local smoothSpeed       = self.Aim.Type == "Linear" and 20 or 1 -- 平滑速度，越大越快
+    local smoothSpeed       = self.Aim.Type == "Linear" and 20 or 5 -- 平滑速度，越大越快
 
     self.ClientState["aim"] = trm_math.SafeLerp(RealFrameTime() * smoothSpeed, self.ClientState["aim"], target) or 0
     return self.ClientState["aim"] or 0

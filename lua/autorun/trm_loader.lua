@@ -15,21 +15,17 @@ local function LoadAttachmentStats(path, fileName)
         AddCSLuaFile(fullPath)  
     end
 
-    local func = CompileFile(fullPath)
-    if not func then
-        print("[TRMAtt] Failed to load:", fullPath)
-        return
-    end
+  
 
     ATTACHMENT = {}
     ATTACHMENT.ClassName = name
     ATTACHMENT.Folder = path
     ATTACHMENT.Path = fullPath
-
-    func()
+    include(fullPath)
 
     BASE_TRM_ATTS[name] = BASE_TRM_ATTS[name] or {}
     table.Merge(BASE_TRM_ATTS[name], table.Copy(ATTACHMENT))
+    ATTACHMENT = nil
 end
 
 
@@ -134,3 +130,4 @@ local function LoadAssetFiles(path)
 end
 
 LoadAssetFiles(_path)
+
