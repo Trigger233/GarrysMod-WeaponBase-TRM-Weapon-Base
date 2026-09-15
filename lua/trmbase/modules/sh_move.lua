@@ -41,11 +41,11 @@ function TRMBase:StartCmdRecoil(ply, cmd, wpn)
 
     local recrise = self.RecoilRise
 
-    if not approxEqualsZero(recrise[1]) then
-        if recrise[1] > 0 and diff > 0 then
-            recrise[1] = Max(0, recrise[1] - diff)
-        elseif recrise[1] < 0 and diff < 0 then
-            recrise[1] = Min(0, recrise[1] - diff)
+    if ! approxEqualsZero(recrise[1]) then
+        if recrise[1] > 0 and diff < 0 then
+            recrise[1] = Max(0, recrise[1] + diff)
+        elseif recrise[1] < 0 and diff > 0 then
+            recrise[1] = Min(0, recrise[1] + diff)
         end
     end
     self.RecoilRise = recrise
@@ -58,7 +58,7 @@ function TRMBase:StartCmdRecoil(ply, cmd, wpn)
 
     self.RecoilProgress = Max(0, self.RecoilProgress - dt * 5)
     if CurTime() > self.ClientRecoilTime then
-        self.ClientRecoil:SetUnpacked(-wpnUp * rft * Mass, wpnSide * rft * Mass, 0)
+        self.ClientRecoil:SetUnpacked(-wpnUp , wpnSide , 0)
         self.ClientRecoilTime = CurTime() + dt
 
         if math.abs(wpnUp) > 0.001 or math.abs(wpnSide) > 0.001 and self.RecoilProgress < 1 then

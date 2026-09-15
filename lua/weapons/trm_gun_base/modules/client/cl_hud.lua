@@ -107,18 +107,19 @@ function SWEP:GetCrosshairPos(x, y, ply)
 
     return x, y
 end
+
 local max = math.max
 local gap = 0
 function SWEP:DrawCustomCrosshair(x, y, w, h, ply)
     if ! self:ShouldDrawCrossHair() then return end
-    gap = trm_math.SafeLerp( RealFrameTime() * 50 , gap , self:GetCurrentSpread() * cv_crosshair_scale:GetFloat())
+    gap = trm_math.SafeLerp(RealFrameTime() * 50, gap, self:GetCurrentSpread() * cv_crosshair_scale:GetFloat())
 
     local screenPosX, screenPosY = self:GetCrosshairPos(x, y, ply)
 
     local X, Y = screenPosX, screenPosY
     local color = self:GetCrossHairColor()
-    local width, height = max( 1 ,cv_crosshair_width:GetInt() * scale), max( 1 , cv_crosshair_height:GetInt() * scale
-)
+    local width, height = max(1, cv_crosshair_width:GetInt() * scale), max(1, cv_crosshair_height:GetInt() * scale
+    )
     local bShotgun = self.Primary and self.Primary.NumBullets > 1
 
     if bShotgun and ! self:GetUnderbarrel() then
@@ -131,20 +132,22 @@ function SWEP:DrawCustomCrosshair(x, y, w, h, ply)
 
     DrawCenterRoundBox(X + (width * 0.5 + gap * h), Y, width, height, color)
     DrawCenterRoundBox(X - (width * 0.5 + gap * h), Y, width, height, color)
-
+    if self.Primary.Automatic then
+        DrawCenterRoundBox(X, Y - (width * 0.5 + gap * h), height, width, color)
+    end
     if self:GetUnderbarrel() then
-        DrawCenterRoundBox(X + (width * 0.5), Y + 50, width * 0.5, height, color)
-        DrawCenterRoundBox(X - (width * 0.5), Y + 50, width * 0.5, height, color)
+        Y = Y + 50 * scale
+        DrawCenterRoundBox(X + (width * 0.5), Y, width * 0.5, height, color)
+        DrawCenterRoundBox(X - (width * 0.5), Y, width * 0.5, height, color)
+        Y = Y + 50 * scale
 
-        DrawCenterRoundBox(X + (width * 0.5), Y + 100, width * 0.25, height, color)
-        DrawCenterRoundBox(X - (width * 0.5), Y + 100, width * 0.25, height, color)
+        DrawCenterRoundBox(X + (width * 0.5), Y, width * 0.25, height, color)
+        DrawCenterRoundBox(X - (width * 0.5), Y, width * 0.25, height, color)
     else
         DrawCenterRoundBox(X, Y + (width * 0.5 + gap * h), height, width, color)
     end
 
-    if self.Primary.Automatic then
-        DrawCenterRoundBox(X, Y - (width * 0.5 + gap * h), height, width, color)
-    end
+
     return false
 end
 
@@ -317,6 +320,6 @@ function SWEP:DrawDebugHUD(x, y)
     draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
     oy   = oy + 40
-    name = "Akimboed:" ..( self:HasFlag("AkimboFired") and 1 or 0)
+    name = "Akimboed:" .. (self:HasFlag("AkimboFired") and 1 or 0)
     draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
