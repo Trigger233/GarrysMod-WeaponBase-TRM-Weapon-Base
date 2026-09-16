@@ -220,10 +220,15 @@ function SWEP:DoImpactEffect(tr, dmgType)
 end
 
 function SWEP:ImpactEffects(tr, type)
-	for slot, entry in pairs(self.CurrentAttachments or {}) do
+	if SERVER then return end
+	for slot, entry in pairs(self:GetAllAttachmentsInUse()) do
 		if entry and entry.Class and BASE_TRM_ATTS[entry.Class] and BASE_TRM_ATTS[entry.Class].DoImpactEffect then
 			BASE_TRM_ATTS[entry.Class]:DoImpactEffect(tr, type)
 		end
+	end
+
+	if self.Effects.Muzzle.ImpactEffect then
+		ParticleEffect(self.Effects.Muzzle.ImpactEffect, tr.HitPos, EyeAngles())
 	end
 end
 

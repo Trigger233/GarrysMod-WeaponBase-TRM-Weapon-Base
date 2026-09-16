@@ -320,6 +320,5 @@ function SWEP:DrawDebugHUD(x, y)
     draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
     oy   = oy + 40
-    name = "Akimboed:" .. (self:HasFlag("AkimboFired") and 1 or 0)
     draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end

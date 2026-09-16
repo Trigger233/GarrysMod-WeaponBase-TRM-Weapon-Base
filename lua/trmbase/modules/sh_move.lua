@@ -32,6 +32,7 @@ end
 local diff = 0
 local Max = math.max
 local Min = math.min
+local Clamp = math.Clamp
 local Mass = 200
 function TRMBase:StartCmdRecoil(ply, cmd, wpn)
     if SERVER then return end
@@ -54,15 +55,14 @@ function TRMBase:StartCmdRecoil(ply, cmd, wpn)
 
     local wpnUp = wpn:GetRecoilUp()
     local wpnSide = wpn:GetRecoilSide()
-    local clientShake = wpn.m_ScreenShake
 
     self.RecoilProgress = Max(0, self.RecoilProgress - dt * 5)
     if CurTime() > self.ClientRecoilTime then
         self.ClientRecoil:SetUnpacked(-wpnUp , wpnSide , 0)
         self.ClientRecoilTime = CurTime() + dt
 
-        if math.abs(wpnUp) > 0.001 or math.abs(wpnSide) > 0.001 and self.RecoilProgress < 1 then
-            self.RecoilProgress = math.Clamp(self.RecoilProgress + dt * 25, 0, 1)
+        if math.abs(wpnUp) > 0.1 or math.abs(wpnSide) > 0.1 and self.RecoilProgress < 1 then
+            self.RecoilProgress = Clamp(self.RecoilProgress + dt * 25, 0, 1)
         end
     end
 

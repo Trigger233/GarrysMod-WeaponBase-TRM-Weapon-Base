@@ -122,3 +122,17 @@ function trm_utils.InvalidateCache(ent)
         ent:RemoveCallback("BuildBonePositions", ent._BoneCallBack)
     end
 end
+
+--BodyGroups 
+local cachedBodyGroups = {}
+function trm_utils.LookupBodygroup(ent , groupName)
+    local modelName = ent:GetModel()
+    cachedBodyGroups[modelName] = cachedBodyGroups[modelName] or {}
+    cachedBodyGroups[modelName][groupName] = cachedBodyGroups[modelName][groupName] or ent:FindBodygroupByName(groupName)
+    return cachedBodyGroups[modelName][groupName] 
+end
+
+function trm_utils.SetModelBodyGroup(ent , groupName , subModelId )
+    local Id = trm_utils.LookupBodygroup(ent, groupName)
+    ent:SetBodygroup(Id, subModelId )
+end

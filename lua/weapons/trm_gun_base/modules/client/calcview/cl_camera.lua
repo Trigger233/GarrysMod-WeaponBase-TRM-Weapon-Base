@@ -1,6 +1,7 @@
 if ! CLIENT then return end
 require("trm_utils")
 require("trm_math")
+local Lerp = trm_math.SafeLerp
 local cvar_camera    = CreateClientConVar("trmbase_camera_animation_scale", 1.0)
 
 local ZERO_ANGLE     = Angle(0, 0, 0)

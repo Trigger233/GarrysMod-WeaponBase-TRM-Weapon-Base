@@ -383,7 +383,7 @@ end
 
 SWEP.ViewModelRecoilPos = Vector()
 SWEP.ViewModelRecoilAng = Angle()
-
+--Shake ViewModel
 function SWEP:DoViewModelRecoil()
     local tbl = self.ViewmodelRecoil
     --Add
@@ -418,6 +418,8 @@ function SWEP:DoViewModelRecoil()
         math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2]) *
         trm_math.SafeLerp(aim, 1, self.VisualRecoil.AdsMultiplier or 1)
     ---
+
+
     self.ViewModelRecoilPos = currentPos
     self.ViewModelRecoilAng = currentAng
 end

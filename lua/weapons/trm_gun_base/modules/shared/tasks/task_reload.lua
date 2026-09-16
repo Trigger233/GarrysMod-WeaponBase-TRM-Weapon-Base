@@ -15,6 +15,8 @@ function task_reload:OnSet(weapon)
     weapon:SetNextAnimationTime(0)
     local seq = weapon:GetStatus()
     if not isReloadSeq(seq) then
+
+        weapon:SetSaveValue("m_bInReload", true)
         if weapon.ReloadType == "Single" then
             if weapon:Clip1() == 0 and weapon.Animations.Reload_Empty then
                 weapon:PlayAnimation(weapon:ChooseAnim("Reload_Empty"), true)
@@ -38,8 +40,9 @@ function task_reload:Think(cycle, weapon)
     if weapon.ReloadType == "Single" then
         weapon:TrySetTask("ReloadLoop")
         return
-    elseif weapon:GetNextAnimationTime() > CurTime() then
+    elseif weapon:GetNextPrimaryFire() > CurTime() then
         weapon:TrySetTask("Idle")
+        weapon:SetSaveValue("m_bInReload", false)
     end
 end
 

@@ -16,11 +16,32 @@ local ZERO_VECTOR = Vector(0, 0, 0)
 local ZERO_ANGLE = Angle(0, 0, 0)
 local FONT_FAMILY = "Hitmarker Text"
 local TRM_MARK = Material("trmbase/ui/trm_mark.png", "smooth")
+
+sound.Add({name = "VGUI.TRM_CUSTOMIZION.Select" , 
+    channel =  4 ,
+    level = 100 , 
+    sound = {
+        "trmbase/vgui/customize/load1.wav",
+        "trmbase/vgui/customize/load2.wav",
+        "trmbase/vgui/customize/load3.wav",
+        "trmbase/vgui/customize/load4.wav",
+        "trmbase/vgui/customize/load5.wav",
+        "trmbase/vgui/customize/unload1.wav",
+        "trmbase/vgui/customize/unload2.wav",
+        "trmbase/vgui/customize/unload3.wav",
+        "trmbase/vgui/customize/unload4.wav",
+        "trmbase/vgui/customize/unload5.wav",
+    }
+})
+
+
+
+
 local TRM_SOUNDS = {
-    Menu = "trmbase/modern/ui_open.wav",
-    Select = "trmbase/modern/ui_select.wav",
-    Save = "trmbase/modern/ui_save.wav",
-    Deny = "trmbase/modern/ui_deny.wav",
+    Menu = Sound("trmbase/modern/ui_open.wav"),
+    Select = Sound("VGUI.TRM_CUSTOMIZION.Select"),
+    Save = Sound("trmbase/modern/ui_save.wav"),
+    Deny = Sound("trmbase/modern/ui_deny.wav"),
 }
 local sortAttachCategory = {
     att_sight = 1,
@@ -1353,7 +1374,7 @@ function PANEL:RebuildSlotCards()
             self:RememberSlot(i)
             self:RefreshAttList()
             self:EnsureSlotVisible(i)
-            surface.PlaySound(TRM_SOUNDS.Select)
+            surface.PlaySound(TRM_SOUNDS.Save)
         end
         card.Paint = function(button, w, h)
             self:PaintSlotCard(button, w, h)
@@ -1472,7 +1493,7 @@ function PANEL:PaintSlotCard(card, w, h)
     elseif hovered then
         surface.SetDrawColor(20, 35, 35, 212)
         if not card.m_SlotHoverSoundPlayed then
-            surface.PlaySound(TRM_SOUNDS.Select)
+            surface.PlaySound(TRM_SOUNDS.Save)
         end
         card.m_SlotHoverSoundPlayed = true
     else

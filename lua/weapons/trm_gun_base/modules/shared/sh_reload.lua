@@ -109,6 +109,8 @@ function SWEP:MagzineLoaded()
 
 	self:SetClip1(math.Clamp(FinalClip1, 0, max))
 
+	--PrintTable(self:GetSaveTable())
+
 	self:ResetBrustCount()
 end
 
@@ -227,3 +229,4 @@ function SWEP:UnloadMagzine(returnAmmo)
 		self:GetOwner():GiveAmmo(delta, self:GetPrimaryAmmoType(), true)
 	end
 end
+

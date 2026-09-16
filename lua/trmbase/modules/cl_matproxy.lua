@@ -1,4 +1,3 @@
---Deal With MWB Mat
 
 AddCSLuaFile()
 
@@ -22,7 +21,7 @@ matproxy.Add({
         self.color = Vector(color[1], color[2], color[3])
 
         if (values.envmap != "env_cubemap") then
-            mat:SetTexture("$envmap", values.envmap || "viper/shared/envmaps/specularity_50")
+            mat:SetTexture("$envmap", values.envmap || "envmaps/specularity_50")
         else
             mat:SetString("$envmap", "env_cubemap")
         end

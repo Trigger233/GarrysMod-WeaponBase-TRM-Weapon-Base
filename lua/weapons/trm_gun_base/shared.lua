@@ -369,7 +369,6 @@ SWEP.ViewmodelRecoil = {
     AdsMultiplier = 0.25,
     YawMultiplier = 1,
     PitchMultiplier = 1,
-
 }
 
 SWEP.CameraAttachment = "Camera"
