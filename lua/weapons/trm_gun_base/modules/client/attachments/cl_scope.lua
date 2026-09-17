@@ -1,11 +1,11 @@
 if not CLIENT then return end
 local render = render
+require("trm_utils")
 
 local RecoilFactor = 0.1
 local Basefov = GetConVar("fov_desired"):GetInt()
-local zoomscale = 1.5
+local zoomscale = 1
 local globalzoom = 1
-local CheapzoomMulti = 4
 
 local oldRenderResolutionCache = 0
 local rtsize = 1024
@@ -154,12 +154,7 @@ function SWEP:RenderScopeSight(model, att)
 
     local ply = LocalPlayer()
 
-    if self:GetClientAimDelta() > 0.4 and IsValid(ply) and self:ShouldZoom() then
-        self:ApplyActiveScopeMaterial(model, att)
-    else
-        self:ApplyInActiveScopeMaterial(model, att)
-    end
-    --PrintTable(isModelApplyActiveScope)
+    self:ApplyInActiveScopeMaterial(model, att)
 end
 
 local CacheScopeLenMaterialIndex = {}
@@ -229,19 +224,15 @@ local additiveZero = Angle(0, 0, 0)
 local nextRTUpdate = 0
 
 function SWEP:DoRTScope(model, att)
-    if not isModelApplyActiveScope[model] then
-        return
-    end
+    if self:GetAimDelta() < 0.1 then return end
 
     local size = self:GetScopeResolution(att)
 
     local owner = self:GetOwner()
     additiveZero = LerpAngle(RealFrameTime() * 10, additiveZero, self:GetScopeZeroAngle())
-    local recoil = Angle(self:GetVisualRecoil())
 
-    local origin, angles = owner:EyePos(),
-        self:GetOwner():EyeAngles() + recoil + additiveZero
-    local zoomfov = self:GetScopeZoomFov() / CheapzoomMulti
+    local origin, angles = owner:EyePos(), self:GetOwner():EyeAngles() + additiveZero
+    local zoomfov = self:GetScopeZoomFov()
     local reticleStats = att.Sight
 
     local fps = math.min(144, 1 / RealFrameTime())
@@ -287,7 +278,6 @@ function SWEP:DoRTScope(model, att)
     surface.SetMaterial(RTMaterial)
     surface.DrawTexturedRect(0, 0, rtsize, rtsize)
 
-    self:RenderScopeReticle(model, att, reticleStats, size, self:GetScopeZoom())
     self:DrawParallax(model, size, att)
 
     cam.End2D()
@@ -305,35 +295,10 @@ end
 
 
 
-function SWEP:RenderScopeReticle(model, att, stat, rtSize, zoomScale)
-    if not stat or not stat.Material then return end
 
-    local centerX = rtSize / 2
-    local centerY = rtSize / 2
-
-
-    local additive = cvar_cheapscope:GetBool() and
-        (self:GetClientVisualRecoil() * self:GetZoomRecoilFactor() + self:GetScopeZeroAngle()) or
-        Angle(0, 0, 0)
-
-
-    centerX = centerX - AngleToPixel(additive.yaw) * ScrW()
-
-    centerY = centerY + AngleToPixel(additive.p) * ScrH()
-
-    local _size = (att.Scope and att.Scope.Size or stat.Size) * 5 * (att.Scope.DynamicCrosshair and zoomScale or 1)
-    surface.SetMaterial(att.Scope.Material or stat.Material)
-    surface.SetDrawColor(att.Scope.Color or stat.Color or Color(255, 255, 255))
-
-    surface.DrawTexturedRect(
-        centerX - _size / 2,
-        centerY - _size / 2,
-        _size,
-        _size
-    )
-end
 
 local parallaxMat = Material("trmbase/common/parallax_mask", "smooth")
+local ParallaxColor = Color(255, 255, 255, 100)
 function SWEP:DrawParallax(model, rtSize, att)
     if att.Scope.DisableParallax then return end
     local centerX = rtSize / 2
@@ -345,7 +310,7 @@ function SWEP:DrawParallax(model, rtSize, att)
 
     local _size = rtSize * (att.Scope.ParallaxSize or 1.4)
     surface.SetMaterial(att.Scope.Parallax or parallaxMat)
-    surface.SetDrawColor(Color(255, 255, 255, 100))
+    surface.SetDrawColor(ParallaxColor)
 
     surface.DrawTexturedRect(
         centerX - _size / 2,
@@ -371,20 +336,11 @@ end
 local function DrawCheapScopeMaterial(wep, w, h, size, Zoom)
     local offset = wep:GetClientVisualRecoil()
     local factor = (1 - wep:GetZoomRecoilFactor()) * Zoom
-    local sw = w * CheapzoomMulti
-    local sh = h * CheapzoomMulti
-    local sx = (w - sw) / 2 + AngleToPixel(offset.yaw) * ScrW() * CheapzoomMulti * factor
-    local sy = (h - sh) / 2 - AngleToPixel(offset.pitch) * ScrH() * CheapzoomMulti * factor
-    local a = (size) * CheapzoomMulti
     surface.SetDrawColor(255, 255, 255, 255)
     surface.SetMaterial(RTMaterial_Cheap)
-    surface.DrawTexturedRect(sx - a * 0.5, sy, sw + a, sh)
+    surface.DrawTexturedRect(0, 0, ScrW(), ScrH())
 end
 function SWEP:DoCheapScope(model, att)
-    if not isModelApplyActiveScope[model] then
-        return
-    end
-
     local screen = render.GetRenderTarget()
     if screen and screen:GetName() == "_rt_resolvedfullframedepth" then return end
 
@@ -414,9 +370,10 @@ function SWEP:DoCheapScope(model, att)
     local w, h = ScrW(), ScrH()
     DrawCheapScopeMaterial(self, w, h, size, self:GetScopeZoom())
 
-    self:RenderScopeReticle(model, att, reticleStats, size, self:GetScopeZoom())
     self:DrawParallax(model, size, att)
     cam.End2D()
+
+
     render.PopRenderTarget()
 end
 
@@ -483,4 +440,88 @@ function SWEP:DrawThermal(tx, att)
     cam.End3D()
 
     render.PopRenderTarget()
+end
+
+local Pos, Ang
+---@param model CSEnt
+function SWEP:DrawHoloSight(model, attTable, HideSightModel, IsScope)
+    local screen = render.GetRenderTarget()
+    if screen and screen:GetName() == "_rt_resolvedfullframedepth" then return end
+
+    model:DrawModel()
+    if self:GetAimDelta() < 0.1 then
+        return
+    end
+    if ! attTable.Sight then return end
+    local ret = attTable.Sight
+    local ret2 = attTable.Scope
+    local w, h = ScrW(), ScrH()
+    if ret.Align then
+        att = trm_utils.GetFastAttachment(model, ret.Align)
+        if ! att then return end
+        Pos = att.Pos
+        Ang = att.Ang
+    else
+        Pos = EyePos()
+        Ang = EyeAngles()
+    end
+
+    render.UpdateScreenEffectTexture()
+
+    render.ClearStencil()
+    render.SetStencilWriteMask(0xFF)
+    render.SetStencilTestMask(0xFF)
+    render.SetStencilReferenceValue(0)
+    render.SetStencilCompareFunction(STENCIL_ALWAYS)
+    render.SetStencilPassOperation(STENCIL_REPLACE)
+    render.SetStencilEnable(true)
+    render.SetStencilReferenceValue(TRM_BASE_REF + 1)
+
+
+
+    if HideSightModel then
+        model:SetBodygroup(0, 1)
+        model:DrawModel()
+        model:SetBodygroup(0, 0)
+    else
+        model:DrawModel()
+    end
+    render.SetStencilCompareFunction(STENCIL_LESSEQUAL)
+
+    if IsScope then
+        render.DrawTextureToScreen(rtmat_spare)
+    end
+    local size = ret.Size or 5.12
+
+    if ret2 and ret2.DynamicCrosshair then
+        size = size * self:GetScopeZoom()
+    end
+
+    local color = ret.Color or color_white
+
+    if ! Ang then return end
+    local offset = Ang:Forward() * 100
+    if ret.Offset then
+        offset = offset + Ang:Right() * ret.Offset.x
+        offset = offset + Ang:Up() * ret.Offset.y
+    end
+    local roll = -Ang.r + 180
+    if ret.Rotate then
+        roll = roll + ret.Rotate
+    end
+
+    local reticlePos = Pos + offset
+    --size = size *( reticlePos:Distance(EyePos()) / 100)
+
+    --debugoverlay.Sphere(reticlePos,4, 0, color_white, true)
+    render.SetMaterial(ret.Material)
+    render.DrawQuadEasy(reticlePos, Ang:Forward():GetNegated(), size, size, color, roll)
+
+    render.ClearStencil()
+
+
+
+    render.SetStencilEnable(false)
+
+    render.SetBlend(1)
 end
