@@ -46,6 +46,17 @@ function ATTACHMENT:Init(weapon,model)
     
 end
 
+function ATTACHMENT:FindAttachmentTableByName(Name , weapon)
+    if !weapon.Attachments then return false end
+    for _ , v in ipairs(weapon.Attachments) do
+        if v.Name and v.Name == Name then
+            return v
+        end
+    end
+
+
+    return false
+end
 
 function ATTACHMENT:Remove(weapon,model)
     SafeRemoveEntity(model)

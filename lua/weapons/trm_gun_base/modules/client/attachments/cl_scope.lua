@@ -8,7 +8,7 @@ local zoomscale = 1
 local globalzoom = 1
 
 local oldRenderResolutionCache = 0
-local rtsize = 1024
+local rtsize = 2048
 function SWEP:GetScopeResolution(att)
     return rtsize
 end
@@ -106,8 +106,7 @@ function SWEP:Scroll(dir)
 
     if (self.sight.HybridSight != nil or self:HasFlag("HybridOn")) and (SysTime() - self:GetBindState("scroll") > 0.25) then
         self:SwitchHybrid()
-        surface.PlaySound("Weapon_AR2.Empty")
-
+        surface.PlaySound("TRM_Weapon.SwitchSight")
         self:SetBindState("scroll", SysTime())
         return
     end
@@ -118,7 +117,7 @@ function SWEP:Scroll(dir)
             self.ZeroDistance = math.Clamp(shouldzero, 0, 500)
             --print(self.ZeroDistance)
             if shouldzero == self.ZeroDistance then
-                surface.PlaySound("Weapon_Pistol.Empty")
+                surface.PlaySound("TRM_Weapon.SwitchSight")
             end
 
             return
@@ -129,7 +128,7 @@ function SWEP:Scroll(dir)
         self.sight.zoom = math.Clamp(self.sight.zoom - dir * 0.5, min, max)
 
         if self.sight.zoom == shouldzoom then
-            surface.PlaySound("Weapon_AR2.Empty")
+            surface.PlaySound("TRM_Weapon.SwitchSight")
         end
     end
 end
@@ -231,18 +230,24 @@ function SWEP:DoRTScope(model, att)
     local owner = self:GetOwner()
     additiveZero = LerpAngle(RealFrameTime() * 10, additiveZero, self:GetScopeZeroAngle())
 
-    local origin, angles = owner:EyePos(), self:GetOwner():EyeAngles() + additiveZero
+    local origin, angles = owner:EyePos(),
+        self:GetOwner():EyeAngles() + additiveZero + self:GetClientVisualRecoil() * (1 * self:GetZoomRecoilFactor())
     local zoomfov = self:GetScopeZoomFov()
     local reticleStats = att.Sight
 
-    local fps = math.min(144, 1 / RealFrameTime())
     if CurTime() - nextRTUpdate < 0 then return end
-    nextRTUpdate = CurTime() + (1 / fps) * 1
+    if att.Scope and att.Scope.UpdateFps then
+        local fps = math.min(att.Scope.UpdateFps or 144, 1 / RealFrameTime())
+        nextRTUpdate = CurTime() + (1 / fps)
+    end
+
+    local W ,H = ScrW() ,ScrH()
     -------------------------------------
     render.PushRenderTarget(rtmat)
     render.Clear(0, 0, 0, 0, true, true)
     render.SetAmbientLight(0, 0, 0)
 
+    
 
     render.RenderView({
         x = 0,
@@ -252,7 +257,7 @@ function SWEP:DoRTScope(model, att)
         origin = origin,
         angles = angles,
         fov = zoomfov,
-        aspectratio = 1,
+        aspectratio = W / H  ,
         drawviewmodel = false,
         viewmodelfov = zoomfov,
         drawhud = false,
@@ -277,7 +282,6 @@ function SWEP:DoRTScope(model, att)
     surface.SetDrawColor(255, 255, 255, 255)
     surface.SetMaterial(RTMaterial)
     surface.DrawTexturedRect(0, 0, rtsize, rtsize)
-
     self:DrawParallax(model, size, att)
 
     cam.End2D()
@@ -336,9 +340,13 @@ end
 local function DrawCheapScopeMaterial(wep, w, h, size, Zoom)
     local offset = wep:GetClientVisualRecoil()
     local factor = (1 - wep:GetZoomRecoilFactor()) * Zoom
+
+    local x, y = 0, 0
+    x = x + AngleToPixel(offset.y) * factor * (w / size)
+    y = y - AngleToPixel(offset.p) * factor * (h / size)
     surface.SetDrawColor(255, 255, 255, 255)
     surface.SetMaterial(RTMaterial_Cheap)
-    surface.DrawTexturedRect(0, 0, ScrW(), ScrH())
+    surface.DrawTexturedRect(x, y, ScrW(), ScrH())
 end
 function SWEP:DoCheapScope(model, att)
     local screen = render.GetRenderTarget()
@@ -448,8 +456,7 @@ function SWEP:DrawHoloSight(model, attTable, HideSightModel, IsScope)
     local screen = render.GetRenderTarget()
     if screen and screen:GetName() == "_rt_resolvedfullframedepth" then return end
 
-    model:DrawModel()
-    if self:GetAimDelta() < 0.1 then
+    if self:GetAimDelta() < 0.5 then
         return
     end
     if ! attTable.Sight then return end
@@ -488,6 +495,7 @@ function SWEP:DrawHoloSight(model, attTable, HideSightModel, IsScope)
     end
     render.SetStencilCompareFunction(STENCIL_LESSEQUAL)
 
+    cam.IgnoreZ(true)
     if IsScope then
         render.DrawTextureToScreen(rtmat_spare)
     end
@@ -500,6 +508,13 @@ function SWEP:DrawHoloSight(model, attTable, HideSightModel, IsScope)
     local color = ret.Color or color_white
 
     if ! Ang then return end
+
+    if IsScope then
+        local offset = self:GetClientVisualRecoil()
+        local factor = self:GetZoomRecoilFactor()
+        Ang = Ang + offset * factor
+    end
+
     local offset = Ang:Forward() * 100
     if ret.Offset then
         offset = offset + Ang:Right() * ret.Offset.x
@@ -516,6 +531,7 @@ function SWEP:DrawHoloSight(model, attTable, HideSightModel, IsScope)
     --debugoverlay.Sphere(reticlePos,4, 0, color_white, true)
     render.SetMaterial(ret.Material)
     render.DrawQuadEasy(reticlePos, Ang:Forward():GetNegated(), size, size, color, roll)
+    cam.IgnoreZ(false)
 
     render.ClearStencil()
 

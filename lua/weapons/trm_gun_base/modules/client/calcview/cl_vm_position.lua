@@ -78,7 +78,7 @@ function SWEP:Sway(aimDelta)
     if ! IsValid(p) then
         return sway.ang, sway.pos
     end
-    local mul = Lerp(aimDelta, 1, 0.1)
+    local mul = Lerp(aimDelta, 1, 0.25)
 
     local Currentvelocity = p:GetVelocity()
     local CurrentEyeAngle = p:EyeAngles()
@@ -91,7 +91,7 @@ function SWEP:Sway(aimDelta)
     local veloForward = Currentvelocity:Dot(CurrentEyeAngle:Forward()) * (1 - self:GetSprintDelta())
     sway.ang:Add(diffAng * 0.1 * mul)
     ---
-    sway.pos.x = math.Clamp(sway.pos.x - diffAng.y * 0.05 * mul, -5, 5)
+    sway.pos.x = math.Clamp(sway.pos.x - diffAng.y * 0.1 * mul, -45, 45)
     sway.pos.z = sway.pos.z - diffAng.p * 0.05
     ----------------
     sway.ang.r = sway.ang.r + veloRight * 0.001
@@ -127,7 +127,7 @@ local r = Angle(0, 0, 0)
 function SWEP:GetClientVisualRecoil()
     if SERVER then return end
     local source = self:GetVisualRecoil()
-    r = trm_math.SafeLerpAngle(RealFrameTime() * 30, r, source)
+    r = trm_math.SafeLerpAngle(RealFrameTime() * 30 , r, source)
     return r
 end
 
@@ -224,90 +224,90 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
 
     --     -- ==================================================
 
-        -- ========== Idle Offset ==========
-        idledelta      = (1 - aimdelta)
-        currentIdlePos = self.VMOffset.Idle.Pos
-        currentIdleAng = self.VMOffset.Idle.Ang
-        cvar_AdditivePos:SetUnpacked(GetConVar("trmbase_vm_offsetX"):GetFloat(), GetConVar("trmbase_vm_offsetY"):GetFloat(),
-            GetConVar("trmbase_vm_offsetZ"):GetFloat())
-        if self:IsInspecting() and self.VMOffset.Inspect then
-            currentIdlePos = self.VMOffset.Inspect.Pos or currentIdlePos
-            currentIdleAng = self.VMOffset.Inspect.Ang or currentIdleAng
-        end
+    -- ========== Idle Offset ==========
+    idledelta      = (1 - aimdelta)
+    currentIdlePos = self.VMOffset.Idle.Pos
+    currentIdleAng = self.VMOffset.Idle.Ang
+    cvar_AdditivePos:SetUnpacked(GetConVar("trmbase_vm_offsetX"):GetFloat(), GetConVar("trmbase_vm_offsetY"):GetFloat(),
+        GetConVar("trmbase_vm_offsetZ"):GetFloat())
+    if self:IsInspecting() and self.VMOffset.Inspect then
+        currentIdlePos = self.VMOffset.Inspect.Pos or currentIdlePos
+        currentIdleAng = self.VMOffset.Inspect.Ang or currentIdleAng
+    end
 
-        CachePos:Set(currentIdlePos * idledelta)
-        CacheAngle:Set(currentIdleAng * idledelta)
+    CachePos:Set(currentIdlePos * idledelta)
+    CacheAngle:Set(currentIdleAng * idledelta)
 
     --     CachePos:Add(cvar_AdditivePos* idledelta)
 
     --     -- ========== Sway ==========
-        local swayAng, swayPos = self:Sway(aimdelta)
-        local applySwayPos = -swayPos
-        CachePos:Add(applySwayPos)
-        CacheAngle:Add(swayAng)
+    local swayAng, swayPos = self:Sway(aimdelta)
+    local applySwayPos = -swayPos
+    CachePos:Add(applySwayPos)
+    CacheAngle:Add(swayAng)
     --     -- ========== Bob ==========
-        local bobPos, bobAng = self:CustomBob()
-        local bobMul = (1 - aimdelta)
-        local applyBobPos = bobPos * bobMul
-        bobAng:Mul(bobMul * 0.9)
-        CachePos:Add(applyBobPos)
-        CacheAngle:Add(bobAng)
+    local bobPos, bobAng = self:CustomBob()
+    local bobMul = (1 - aimdelta)
+    local applyBobPos = bobPos * bobMul
+    bobAng:Mul(bobMul * 0.9)
+    CachePos:Add(applyBobPos)
+    CacheAngle:Add(bobAng)
     --     -- ========== Duck ==========
-        local DuckingDelta = self:GetDucking()
-        local duckMul = (1 - aimdelta) * DuckingDelta
-        local duckPosOffset = self.VMOffset.Crouch.Pos
-        local applyDuckPos = duckPosOffset * duckMul
-        CachePos:Add(applyDuckPos)
-        CacheAngle:Add(self.VMOffset.Crouch.Ang * duckMul)
+    local DuckingDelta = self:GetDucking()
+    local duckMul = (1 - aimdelta) * DuckingDelta
+    local duckPosOffset = self.VMOffset.Crouch.Pos
+    local applyDuckPos = duckPosOffset * duckMul
+    CachePos:Add(applyDuckPos)
+    CacheAngle:Add(self.VMOffset.Crouch.Ang * duckMul)
     --     -- ========== Sprint ==========
-        if self.VMOffset.Sprint then
-            sprintDelta = trm_math.SafeLerp(rft * 2, sprintDelta, self:GetSprintDelta() > 0 and 1 or 0)
-            sprintPosOffset:Set(self.VMOffset.Sprint.Pos)
-            sprintAngOffset:Set(self.VMOffset.Sprint.Ang)
-            sprintPosOffset:Mul(sprintDelta)
-            sprintAngOffset:Mul(sprintDelta)
+    if self.VMOffset.Sprint then
+        sprintDelta = trm_math.SafeLerp(rft * 2, sprintDelta, self:GetSprintDelta() > 0 and 1 or 0)
+        sprintPosOffset:Set(self.VMOffset.Sprint.Pos)
+        sprintAngOffset:Set(self.VMOffset.Sprint.Ang)
+        sprintPosOffset:Mul(sprintDelta)
+        sprintAngOffset:Mul(sprintDelta)
 
-            CachePos:Add(sprintPosOffset)
-            CacheAngle:Add(sprintAngOffset)
-        end
+        CachePos:Add(sprintPosOffset)
+        CacheAngle:Add(sprintAngOffset)
+    end
     --     -- ========== Aim Offset ==========
-        AimOffset = Vector(self.Sight.Pos)
-        AimOffsetAngle = Angle(self.Sight.Ang)
-        if self:HasFlag("Tacsight") then
-            AimOffset:Add(self.TacSight.Pos)
-            AimOffsetAngle:Add(self.TacSight.Ang)
-        end
+    AimOffset = Vector(self.Sight.Pos)
+    AimOffsetAngle = Angle(self.Sight.Ang)
+    if self:HasFlag("Tacsight") then
+        AimOffset:Add(self.TacSight.Pos)
+        AimOffsetAngle:Add(self.TacSight.Ang)
+    end
 
-        aimOffset = trm_math.SafeLerpVector(dt * 10, aimOffset, AimOffset)
-        aimAngle = trm_math.SafeLerpAngle(dt * 10, aimAngle, AimOffsetAngle)
+    aimOffset = trm_math.SafeLerpVector(dt * 10, aimOffset, AimOffset)
+    aimAngle = trm_math.SafeLerpAngle(dt * 10, aimAngle, AimOffsetAngle)
 
-        local applyAimPos = aimOffset * aimdelta
-        CachePos:Add(applyAimPos)
-        CacheAngle:Add(aimAngle * aimdelta)
+    local applyAimPos = aimOffset * aimdelta
+    CachePos:Add(applyAimPos)
+    CacheAngle:Add(aimAngle * aimdelta)
     --     -- ========== 配件瞄具偏移 ==========
-        if self:GetSight() and not self:HasFlag("Tacsight") then
-            local sight = self:GetSight()
-            local sightPos = sight.AimPos
-            if self:HasFlag("HybridOn") and sight.HybridSight and sight.HybridSight.AimPos then
-                sightPos = sight.HybridSight.AimPos
-            end
-
-            local applySightPos = sightPos * aimdelta
-            CachePos:Add(applySightPos)
-            CacheAngle:Add(sight.AimAng * aimdelta)
+    if self:GetSight() and not self:HasFlag("Tacsight") then
+        local sight = self:GetSight()
+        local sightPos = sight.AimPos
+        if self:HasFlag("HybridOn") and sight.HybridSight and sight.HybridSight.AimPos then
+            sightPos = sight.HybridSight.AimPos
         end
+
+        local applySightPos = sightPos * aimdelta
+        CachePos:Add(applySightPos)
+        CacheAngle:Add(sight.AimAng * aimdelta)
+    end
 
 
     --     -- ========== 视觉后坐力 ==========
-        visAng = self:GetClientVisualRecoil()
-        local tacRoll = self:HasFlag("Tacsight") and (self.TacSight.Ang and self.TacSight.Ang.r or 0) or 0
-        visAng = dealTacsight(visAng, tacRoll)
+    visAng = self:GetClientVisualRecoil()
+    local tacRoll = self:HasFlag("Tacsight") and (self.TacSight.Ang and self.TacSight.Ang.r or 0) or 0
+    visAng = dealTacsight(visAng, tacRoll)
 
-        CachePos.z = CachePos.z + visAng.pitch * 0.005
-        CachePos.x = CachePos.x + visAng.yaw * 0.005
+    CachePos.z = CachePos.z + visAng.pitch * 0.005
+    CachePos.x = CachePos.x + visAng.yaw * 0.005
 
-        angles:RotateAroundAxis(right, -visAng.p * const_vrec)
-        angles:RotateAroundAxis(up, visAng.y * const_vrec)
+    angles:RotateAroundAxis(right, -visAng.p * const_vrec)
+    angles:RotateAroundAxis(up, visAng.y * const_vrec)
     --     -- ========== VManip ==========
     if VManip then
         if self.VMOffset.VManip then
@@ -328,7 +328,7 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
         angles:RotateAroundAxis(up, vmanipAng.y)
         angles:RotateAroundAxis(right, vmanipAng.p)
     end
- 
+
 
     VMRecoilPos = self.ViewModelRecoilPos
     VMRecoilAng = self.ViewModelRecoilAng
@@ -399,12 +399,6 @@ function SWEP:DoViewModelRecoil()
     local PitchDelta = math.Rand(-1, 0) * tbl.PitchMultiplier
     currentPos.z = currentPos.z + PitchDelta
     currentAng.p = currentAng.p + PitchDelta
-
-    local aim = self:GetAimDelta()
-    local mul = trm_math.SafeLerp(aim, 1, tbl.AdsMultiplier or 0.25)
-    currentPos:Mul(mul)
-    currentAng:Mul(mul)
-    --
     local VeloUp = self:GetRecoilUp()
     local VeloSide = self:GetRecoilSide()
 
@@ -413,6 +407,12 @@ function SWEP:DoViewModelRecoil()
 
     currentPos.z = currentPos.z - VeloUp * 1 * tbl.PitchMultiplier
     currentPos.x = currentPos.x - VeloSide * 0.2 * tbl.YawMultiplier
+
+    local aim = self:GetAimDelta()
+    local mul = trm_math.SafeLerp(aim, 1, tbl.AdsMultiplier or 0.25)
+    currentPos:Mul(mul)
+    currentAng:Mul(mul)
+    --
 
     currentPos.y = currentPos.y -
         math.Rand(self.VisualRecoil.Backward[1], self.VisualRecoil.Backward[2]) *

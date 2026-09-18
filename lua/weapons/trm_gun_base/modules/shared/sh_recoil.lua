@@ -99,9 +99,10 @@ local RecoilSide     = 0
 local ShakeAngle     = Angle()
 
 function SWEP:DoRecoil()
-	local owner = self:GetOwner()
 	if not IsFirstTimePredicted() then return end
-	math.randomseed(self.Recoil.Seed + self:GetSprayRound())
+	local owner = self:GetOwner()
+	local Shake = math.Rand(-1, 1) * self.Recoil.Shake
+	math.randomseed(self.Recoil.Seed + self:GetSprayRound() + Shake)
 	local stats    = self.Recoil
 	local aimdelta = self:GetAimDelta()
 	local AdsScale = Lerp(aimdelta, 1, stats.AdsMultiplier)
@@ -124,7 +125,6 @@ function SWEP:DoRecoil()
 		end
 	end
 
-	local Shake = math.Rand(-1, 1) * self.Recoil.Shake
 	RecoilUp = RecoilUp + Shake
 	local mul = self:GetRecoilMultiplier()
 	RecoilUp = RecoilUp * mul

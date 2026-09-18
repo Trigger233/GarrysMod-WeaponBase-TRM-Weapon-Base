@@ -83,6 +83,7 @@ function SWEP:SetupViewmodel()
                     end
                 elseif tbl and tbl.Model and ! v:GetNoDraw() then
                     wpn:BuildCustomizedGun()
+                    
                 end
             end
         end

@@ -1,9 +1,7 @@
 concommand.Add("trmbase_weaponinspect", function(ply)
     local wep = ply:GetActiveWeapon()
     if IsValid(wep) and wep.IsTRMWeapon then
-        if wep:CanInspect() then
-            wep:TrySetTask("Inspect")
-        end
+        wep:TrySetTask("Inspect")
     end
 end)
 
@@ -20,6 +18,8 @@ function SWEP:CanInspect()
     if self:HasFlag("Aiming") then
         return false
     end
+
+    if string.find(self:GetStatus() , "Inspect" ) then return false end
 
     return (taskStr == "Idle" or taskStr == "Rechamber" or string.find(taskStr, "Sprint")) and
         (self.Animations.Inspect or self.Animations.Inspect_Empty)

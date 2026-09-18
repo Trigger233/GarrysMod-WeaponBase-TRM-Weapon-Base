@@ -28,7 +28,7 @@ function trm_math.RotateAxis(ang,add)
 end
 
 function trm_math.SafeLerp(fraction , origin ,  target )
-    return Lerp(trm_math.Clamp(fraction), origin, target)
+    return Lerp(clamp(fraction ,0 , 1), origin, target)
 end
 
 function trm_math.SafeLerpAngle(fraction , origin , target)

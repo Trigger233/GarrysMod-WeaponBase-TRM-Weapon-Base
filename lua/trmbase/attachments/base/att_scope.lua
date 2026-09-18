@@ -10,15 +10,11 @@ function ATTACHMENT:Render(wep, model)
     end
     self:ApplyReticleMaterial(wep, model, self.Sight)
 
-    
+    model:DrawModel()
+
     wep:DrawHoloSight(model, self, true, true)
-
-
 end
-
-
 
 function ATTACHMENT:RTCode(weapon, size)
 
 end
-

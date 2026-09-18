@@ -80,7 +80,8 @@ function SWEP:DoTracer(endpos)
     else
         local ent, attId = self:FindAttachment(self, attName)
         if ! attId or attId <= 0 then return end
-        startpos = ent:GetAttachment(attId).Pos or startpos
+        local att = ent:GetAttachment(attId)
+        startpos = att and att.Pos or startpos
     end
 
     local stats = self.Effects.Muzzle.Tracer
