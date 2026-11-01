@@ -55,7 +55,7 @@ function ENT:Initialize()
 
         if IsValid(phys) then
             phys:Wake()
-            phys:SetVelocityInstantaneous(self:GetAngles():Forward() * 10000 * meterToHu)
+            phys:SetVelocityInstantaneous(self:GetAngles():Forward() * 20000 * meterToHu)
         end
         -- 记录武器和发射者
         self.Weapon = self:GetOwner() -- 注意：SetOwner 需要在 Spawn 前调用
@@ -70,14 +70,14 @@ function ENT:Initialize()
         end)
     end
 
-    if SERVER then
-        for _ , v in pairs(self.Trail) do
-            util.SpriteTrail(self, 1, v.color or Color(255, 187, 0), true, v.width1 or 20, v.width2 or 1, v.lifetime or 0.1 ,
-                2 / (v.width1 or 20 + v.width2 or 1),
-                v.mat or "trails/laser")
-        end
+    -- if SERVER then
+    --     for _ , v in pairs(self.Trail) do
+    --         util.SpriteTrail(self, 1, v.color or Color(255, 187, 0), true, v.width1 or 20, v.width2 or 1, v.lifetime or 0.1 ,
+    --             2 / (v.width1 or 20 + v.width2 or 1),
+    --             v.mat or "trails/laser")
+    --     end
  
-    end
+    -- end
 end
 
 local g = GetConVar("sv_gravity"):GetInt() or 600 -- Hu/s²
@@ -163,4 +163,16 @@ function ENT:Think()
             self.bWhizz = true
         end
     end
+end
+
+local mat = Material("effects/trm/MI_EFX_Throw_Trail_5.vmt")
+function ENT:Draw(flag)
+
+    local ang = self:GetAngles()
+    local pos = self:WorldSpaceCenter()
+    local startPos = pos 
+    startPos.z = startPos.z - 3
+
+    render.SetMaterial(mat)
+    render.DrawBeam(startPos, pos + ang:Forward() * 100, 1, 0, 1, color_white)
 end

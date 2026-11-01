@@ -1,7 +1,6 @@
 local function isReloadSeq(seq)
     return seq and (string.find(seq, "Reload") or string.find(seq, "reload"))
 end
-local cvar_firebreakreload = CreateConVar("trmbase_fire_interupt_reload", 0, FCVAR_ARCHIVE)
 
 local task_reload = {}
 task_reload.Name = "Reload"
@@ -16,7 +15,6 @@ function task_reload:OnSet(weapon)
     local seq = weapon:GetStatus()
     if not isReloadSeq(seq) then
 
-        weapon:SetSaveValue("m_bInReload", true)
         if weapon.ReloadType == "Single" then
             if weapon:Clip1() == 0 and weapon.Animations.Reload_Empty then
                 weapon:PlayAnimation(weapon:ChooseAnim("Reload_Empty"), true)
@@ -29,9 +27,6 @@ function task_reload:OnSet(weapon)
             weapon:PlayerGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, weapon.HoldTypes[weapon:GetCurrentHoldType()].Reload)
 
             weapon:PlayAnimation(weapon:ChooseAnim("Reload"), true)
-            if cvar_firebreakreload:GetBool() then
-                weapon:SetNextPrimaryFire(60 / weapon.Primary.RPM)
-            end
         end
     end
 end
@@ -40,9 +35,8 @@ function task_reload:Think(cycle, weapon)
     if weapon.ReloadType == "Single" then
         weapon:TrySetTask("ReloadLoop")
         return
-    elseif weapon:GetNextPrimaryFire() > CurTime() then
+    else
         weapon:TrySetTask("Idle")
-        weapon:SetSaveValue("m_bInReload", false)
     end
 end
 
@@ -69,9 +63,6 @@ function task_loop:Think(cycle, weapon)
 
     if weapon:Clip1() < max and (reserve > 0 or GetConVar("trmbase_infinite_ammo"):GetBool()) then
         weapon:PlayAnimation("Reload", true)
-        if cvar_firebreakreload:GetBool() then
-            weapon:SetNextPrimaryFire(60 / weapon.Primary.RPM)
-        end
     else
         weapon:TrySetTask("ReloadEnd")
     end

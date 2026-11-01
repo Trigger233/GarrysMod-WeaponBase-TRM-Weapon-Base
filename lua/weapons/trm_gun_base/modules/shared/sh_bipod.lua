@@ -18,7 +18,7 @@ function SWEP:BipodLogic()
                 endpos = pos - Vector(0, 0, 32),
                 mins = Vector(-16, -16, 0),
                 maxs = Vector(16, 16, 2),
-                filter = player.GetAll(),
+                filter = ply.GetAll(),
                 mask = MASK_PLAYERSOLID
             })
 

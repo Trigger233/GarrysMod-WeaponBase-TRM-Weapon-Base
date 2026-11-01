@@ -28,3 +28,4 @@ end
 function SWEP:IsInspecting()
     return string.find(self:GetStatus(), "Inspect")
 end
+

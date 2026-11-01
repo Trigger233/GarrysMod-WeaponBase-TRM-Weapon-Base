@@ -14,6 +14,8 @@ ATTACHMENT.FlashLight = {
     Attach = "Laser",
 }
 
+if SERVER then return end
+
 -- 材质缓存（放在配件表上，不是 self）
 local lineMat = nil
 local dotMat = nil
@@ -55,7 +57,7 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
 
 
     -- 缓存射线结果
-    if not model._nextTrace or SysTime() > model._nextTrace then
+    -- if not model._nextTrace or SysTime() > model._nextTrace then
         model._lastTrace = util.TraceLine({
             start = att.Pos + att.Ang:Forward() * -10,
             endpos = LerpVector(weapon:HasFlag("Tacsight") and not weapon:IsReloading() and weapon:GetAimDelta() or 0,
@@ -64,9 +66,9 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
             filter = { weapon, weapon:GetOwner() },
             mask = MASK_SHOT
         })
-        local updateFps = 120
-        model._nextTrace = SysTime() + math.min(1 / updateFps, RealFrameTime())
-    end
+    --     local updateFps = 120
+    --     model._nextTrace = SysTime() + math.min(1 / updateFps, RealFrameTime())
+    -- end
 
     local tr = model._lastTrace
     if not tr then return end
@@ -74,7 +76,7 @@ function ATTACHMENT:DoLaserRender(weapon, model, data)
     local color = data.Color
 
     if distance < 100 then return end
-    local scale = math.random(0.8, 1) * 0.5
+    local scale = math.random(0.1, 1) * 0.2
     render.SetMaterial(self:GetLineMat())
     render.DrawBeam(att.Pos, tr.HitPos or tr.endpos, data.Width * scale , 0, 1, color)
     if tr.Hit then
@@ -91,10 +93,6 @@ function ATTACHMENT:Render(weapon, model)
     end
 end
 
--- att_laser.lua
-function ATTACHMENT:Stats(w)
-
-end
 
 function ATTACHMENT:DoFlashLight(weapon, model, data)
     if not weapon.flashlight or !data then return end

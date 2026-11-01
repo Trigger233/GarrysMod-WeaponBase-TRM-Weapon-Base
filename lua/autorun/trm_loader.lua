@@ -84,9 +84,19 @@ local function finishAttachments()
     end 
 end
 local function Load()
+
+    function GetBaseClass(className)
+        return BASE_TRM_ATTS and BASE_TRM_ATTS[className] 
+    end
+
+
+    LoadAttachments("trmbase/att/base")
+    LoadAttachments("trmbase/attachments/base")
     LoadAttachments("trmbase/attachments")
     LoadAttachments("trmbase/att")
     finishAttachments()
+
+    GetBaseClass = nil
     
     for _ , ent in ents.Iterator() do
         if ent:IsWeapon() and ent.BuildCustomizedGun then

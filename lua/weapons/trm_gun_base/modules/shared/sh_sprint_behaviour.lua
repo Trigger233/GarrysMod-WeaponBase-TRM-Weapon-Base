@@ -9,13 +9,8 @@ function SWEP:CanSprint()
     local p = self:GetOwner()
     if not IsValid(p) then return false end
 
-    if p.GetSliding and p:GetSliding() then
-        return false
-    end
 
-    if p:KeyDown(IN_ATTACK) then
-        return false
-    end
+    
 
     local seq = self:GetStatus() or ""
     local task = self:GetCurrentTaskName() or ""
@@ -29,7 +24,11 @@ function SWEP:CanSprint()
     if not animFinished then
         -- 换弹动画未完成时，根据 cvar 决定
         if string.find(seq, "Reload") or string.find(task, "Reload") then
-            return not cvar_sprint_reload:GetBool()
+
+            if cvar_sprint_reload:GetBool() then return true end
+
+            return false 
+
         end
 
         -- 这些动画未完成时绝对不能冲刺
@@ -41,12 +40,13 @@ function SWEP:CanSprint()
         end
     end
 
-    local blacklist = { "Inspect", "Holster", "Rechamber" }
+    local blacklist = {  "Holster", "Rechamber" }
     for _, v in ipairs(blacklist) do
         if string.find(task, v) or string.find(seq, v) then
             return false
         end
     end
+
 
     return true
 end

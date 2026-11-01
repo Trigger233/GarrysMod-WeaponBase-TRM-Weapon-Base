@@ -8,7 +8,7 @@ end
 
 require("trm_utils")
 function SWEP:ViewModelDrawn(vm, flag)
-    if not IsValid(vm) or self.m_OverDraw then return end
+    if not IsValid(vm) or self.TRMViewModelOverDraw then return end
     self:BuildViewmodelAttachmentsData(vm)
 
     self.m_StoredAngle      = self:GetCameraControler()
@@ -20,7 +20,7 @@ function SWEP:GetAttachmentData(name)
 end
 
 function SWEP:PostDrawViewModel(vm, weappon, ply, flag)
-    if self.m_OverDraw then return end
+    if self.TRMViewModelOverDraw then return end
 
 
     cam.End3D()
@@ -30,9 +30,9 @@ local cvar_blur = CreateClientConVar("trmbase_cl_blur", 1, true, true, "helptext
 local BlurMul = 0
 local CycleLerp = 0
 function SWEP:PreDrawViewModel(vm)
-    if self.m_OverDraw then return end
+    if self.TRMViewModelOverDraw then return end
 
-    self:DoLHIK()
+    -- self:DoLHIK()
 
 
     BlurMul = Lerp(RealFrameTime() * 10, BlurMul,
@@ -86,6 +86,8 @@ local UpdateTime = 1 / 120
 local stack = {}
 SWEP.m_Attachment = {}
 
+
+
 local function IsEmpty(_table) return #_table > 0 end
 
 function SWEP:BuildViewmodelAttachmentsData(vm)
@@ -102,7 +104,7 @@ function SWEP:BuildViewmodelAttachmentsData(vm)
     end
 
     local handle = 1
-   --PrintTable(stack)
+    --PrintTable(stack)
 
     while (#stack > 0) do
         if handle > 1 then break end

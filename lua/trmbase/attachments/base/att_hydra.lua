@@ -21,6 +21,9 @@ function ATTACHMENT:GetDotMat()
     return dotMat
 end
 function ATTACHMENT:Render(wpn, model)
+
+    model:DrawModel()
+
     if self.Sight and self.Sight.Material then
         BASE_TRM_ATTS["att_reticle"].RenderReticle(self,wpn, model, self.Sight)
     end   

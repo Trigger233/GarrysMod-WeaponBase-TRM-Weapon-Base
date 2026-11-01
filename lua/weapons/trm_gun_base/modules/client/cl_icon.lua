@@ -13,7 +13,7 @@ function SWEP:DrawWeaponSelection(x, y, w, h, alpha)
         material = Material(material)
     end
 
-    if material:IsError() then return end
+    if !material or isnumber(material) or material:IsError()  then return end
 
     surface.SetMaterial(material)
     drawColor.a = alpha

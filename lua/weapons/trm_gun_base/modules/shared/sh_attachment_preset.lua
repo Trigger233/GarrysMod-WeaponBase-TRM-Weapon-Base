@@ -126,7 +126,7 @@ if SERVER then
 
     net.Receive("TRMBase_LoadLoadout", function(_, ply)
         local weapon = net.ReadEntity()
-        local slot = net.ReadUInt(3)
+        local slot = net.ReadUInt(8)
 
         if not IsValid(ply) or not IsValid(weapon) or weapon:GetOwner() ~= ply then return end
         if not weapon.LoadAttachmentLoadout then return end

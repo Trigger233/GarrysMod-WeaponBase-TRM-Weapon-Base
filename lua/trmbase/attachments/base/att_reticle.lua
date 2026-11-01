@@ -6,6 +6,8 @@ ATTACHMENT.Description = "The Base for Sight Attachments"
 
 function ATTACHMENT:Render(weapon, model)
     -- 如果有分划板配置，渲染红点/分划板
+    model:DrawModel()
+
     if self.Sight and self.Sight.Material then
         self:RenderReticle(weapon, model, self.Sight)
     end
@@ -24,7 +26,6 @@ function ATTACHMENT:RenderReticle(weapon, model, ret)
         model:DrawModel()
         return
     end
-
     local attId = trm_utils.LookupAttachmentCached(model, ret.Align)
     if !attId or attId == -1 then
         return
@@ -44,8 +45,10 @@ function ATTACHMENT:RenderReticle(weapon, model, ret)
     render.SetStencilReferenceValue(TRM_BASE_REF + 1)
 
     -- 写入遮罩区域
-    
+    render.SetBlend(0)
     model:DrawModel()
+    render.SetBlend(1)
+
     render.SetStencilCompareFunction(STENCIL_LESSEQUAL)
 
     -- 渲染红点

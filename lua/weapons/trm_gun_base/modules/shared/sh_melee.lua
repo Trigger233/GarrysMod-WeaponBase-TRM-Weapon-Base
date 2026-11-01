@@ -65,7 +65,7 @@ function SWEP:DealMeleeDamage()
     self:MeleeDoor(tr)
     local ent = tr.Entity
     if not (game.SinglePlayer() and CLIENT) then
-        self:EmitSound(self.Melee.Sound)
+        self:EmitSound("TRM.ViewModel.Medium")
     end
     if CLIENT then return end
 

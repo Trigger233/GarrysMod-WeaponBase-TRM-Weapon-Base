@@ -22,6 +22,7 @@ local cachedAttachments = {}
 function trm_utils.LookupAttachmentCached(ent, attName)
     local model = ent:GetModel()
     if (model == nil) then
+        print("Try get nil Model Name")
         return nil
     end
 

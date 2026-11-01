@@ -111,8 +111,8 @@ end
 local max = math.max
 local gap = 0
 function SWEP:DrawCustomCrosshair(x, y, w, h, ply)
-    if ! self:ShouldDrawCrossHair() then return end
     gap = trm_math.SafeLerp(RealFrameTime() * 50, gap, self:GetCurrentSpread() * cv_crosshair_scale:GetFloat())
+    if ! self:ShouldDrawCrossHair() then return end
 
     local screenPosX, screenPosY = self:GetCrosshairPos(x, y, ply)
 
@@ -318,7 +318,7 @@ function SWEP:DrawDebugHUD(x, y)
     oy   = oy + 40
     name = "Cycle:" .. math.Round(vm:GetCycle(), 2)
     draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-
+    name = "RealFrameTIme:" .. RealFrameTime()
     oy   = oy + 40
     draw.SimpleText(name, "TRM_HUD_Hint", x, oy, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end

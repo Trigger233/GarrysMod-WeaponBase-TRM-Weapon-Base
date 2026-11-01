@@ -5,20 +5,19 @@ require("trm_math")
 local offsetX = CreateClientConVar("trmbase_vm_offsetX", 0, true, true, "ViewModel X Offset", -10, 10)
 local offsetY = CreateClientConVar("trmbase_vm_offsetY", 0, true, true, "ViewModel Y Offset", -10, 10)
 local offsetZ = CreateClientConVar("trmbase_vm_offsetZ", 0, true, true, "ViewModel Z Offset", -10, 10)
-local rft = RealFrameTime()
 
 local bobt = 0
-local airDelta = 0
-local airTargetDelta = 0
-local hasJumped = false
+local JumpDelta = 1
 local math = math
 local clamp = math.Clamp
 
+SWEP.PlayerJumpDelta = 0
 
-function SWEP:CustomBob()
-    if not CLIENT then
-        return
-    end
+local currentJumpedDelta = 0
+
+function SWEP:CustomBob(AimDelta)
+
+    local rft = RealFrameTime()
 
     local owner = self:GetOwner()
     if not IsValid(owner) then
@@ -34,7 +33,7 @@ function SWEP:CustomBob()
     elseif speed < 10 then
         bobt = (bobt or 0) * 0.95 -- 停止时归零
     end
-    local mult = math.min(speed / 300, 1)
+    local mult = math.min(speed / 300, 1) * Lerp(AimDelta, 1, 0.2)
     -- 位置偏移
     local pos = Vector(
         math.sin(bobt) * -0.9 * mult,          -- 左右
@@ -48,17 +47,12 @@ function SWEP:CustomBob()
         math.sin(bobt) * 1 * mult,       -- Yaw
         math.sin(bobt * 1.5) * 2 * mult  -- Roll
     )
-    -- local ground = owner:IsOnGround()
-    -- if ground then
-    --     hasJumped = false
-    -- elseif not hasJumped then
-    --     airTargetDelta = 1
-    --     hasJumped = true
-    -- end
-    -- airTargetDelta = Lerp(RealFrameTime() * 2, airTargetDelta, 0)
-    -- airDelta = Lerp(RealFrameTime() * 10, airDelta, airTargetDelta)
-    -- ang.p = ang.p - 15 * airDelta
-    -- pos.z = pos.z - 2 * airDelta
+
+    -- self.PlayerJumpDelta = math.max(0, self.PlayerJumpDelta - rft * 2)
+    -- currentJumpedDelta = trm_math.SafeLerp(rft * 10, currentJumpedDelta, self.PlayerJumpDelta)
+ 
+    -- ang.p = ang.p + 5 * currentJumpedDelta
+    -- pos.z = pos.z + 1 * currentJumpedDelta
     return pos, ang
 end
 
@@ -67,19 +61,20 @@ local sway = {
     ang = Angle(),
     lastEyeAng = Angle(),
 }
+local cvar_swaymultiplier = CreateClientConVar("trmbase_cl_sway", 1, true, true, "", 0, 10)
+local cvar_swaymultiplier_Recover = CreateClientConVar("trmbase_cl_sway_recover", 1, true, true, "", 0, 10)
 
 function SWEP:Sway(aimDelta)
     if game.SinglePlayer() and gui.IsGameUIVisible() then
         return sway.ang, sway.pos
     end
-
+    local multiplier = cvar_swaymultiplier:GetFloat()
     local rft = RealFrameTime()
     local p = LocalPlayer()
     if ! IsValid(p) then
         return sway.ang, sway.pos
     end
-    local mul = Lerp(aimDelta, 1, 0.25)
-
+    local mul = Lerp(aimDelta, 1, 0.25) * multiplier
     local Currentvelocity = p:GetVelocity()
     local CurrentEyeAngle = p:EyeAngles()
 
@@ -104,7 +99,7 @@ function SWEP:Sway(aimDelta)
     sway.ang.r = math.Clamp(sway.ang.r, -15, 15)
     sway.ang.y = math.Clamp(sway.ang.y, -45, 45)
     ---------
-    local recoverSpeed = rft * 10 / mul
+    local recoverSpeed = cvar_swaymultiplier_Recover:GetFloat() *  rft * 10 / mul
     sway.ang:Set(trm_math.SafeLerpAngle(recoverSpeed, sway.ang, angle_zero))
     sway.pos:Set(trm_math.SafeLerpVector(recoverSpeed, sway.pos, vector_origin))
     return sway.ang, sway.pos
@@ -127,7 +122,7 @@ local r = Angle(0, 0, 0)
 function SWEP:GetClientVisualRecoil()
     if SERVER then return end
     local source = self:GetVisualRecoil()
-    r = trm_math.SafeLerpAngle(RealFrameTime() * 30 , r, source)
+    r = trm_math.SafeLerpAngle(RealFrameTime() * 10 , r, source)
     return r
 end
 
@@ -146,7 +141,7 @@ end
 local CachePos = Vector(0, 0, 0)
 local CacheAngle = Angle(0, 0, 0)
 
-local AimOffset, AimOffsetAngle
+local AimOffset, AimOffsetAngle = Vector() , Angle()
 local aimOffset = Vector()
 local aimAngle = Angle()
 
@@ -199,6 +194,9 @@ local VMRecoilAng = Angle()
 
 local cvar_AdditivePos = Vector()
 
+
+
+
 function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     --冻结 VM
     if GetConVar("trmbase_freeze_vm"):GetInt() ~= 0 then
@@ -228,8 +226,9 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     idledelta      = (1 - aimdelta)
     currentIdlePos = self.VMOffset.Idle.Pos
     currentIdleAng = self.VMOffset.Idle.Ang
-    cvar_AdditivePos:SetUnpacked(GetConVar("trmbase_vm_offsetX"):GetFloat(), GetConVar("trmbase_vm_offsetY"):GetFloat(),
-        GetConVar("trmbase_vm_offsetZ"):GetFloat())
+    cvar_AdditivePos:SetUnpacked(offsetX:GetFloat(), offsetY:GetFloat(),
+        offsetZ:GetFloat())
+
     if self:IsInspecting() and self.VMOffset.Inspect then
         currentIdlePos = self.VMOffset.Inspect.Pos or currentIdlePos
         currentIdleAng = self.VMOffset.Inspect.Ang or currentIdleAng
@@ -238,7 +237,7 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     CachePos:Set(currentIdlePos * idledelta)
     CacheAngle:Set(currentIdleAng * idledelta)
 
-    --     CachePos:Add(cvar_AdditivePos* idledelta)
+    CachePos:Add(cvar_AdditivePos* idledelta)
 
     --     -- ========== Sway ==========
     local swayAng, swayPos = self:Sway(aimdelta)
@@ -246,11 +245,8 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     CachePos:Add(applySwayPos)
     CacheAngle:Add(swayAng)
     --     -- ========== Bob ==========
-    local bobPos, bobAng = self:CustomBob()
-    local bobMul = (1 - aimdelta)
-    local applyBobPos = bobPos * bobMul
-    bobAng:Mul(bobMul * 0.9)
-    CachePos:Add(applyBobPos)
+    local bobPos, bobAng = self:CustomBob(aimdelta)
+    CachePos:Add(bobPos)
     CacheAngle:Add(bobAng)
     --     -- ========== Duck ==========
     local DuckingDelta = self:GetDucking()
@@ -261,7 +257,7 @@ function SWEP:CalcViewModelView(vm, pos, angles, poss, angless)
     CacheAngle:Add(self.VMOffset.Crouch.Ang * duckMul)
     --     -- ========== Sprint ==========
     if self.VMOffset.Sprint then
-        sprintDelta = trm_math.SafeLerp(rft * 2, sprintDelta, self:GetSprintDelta() > 0 and 1 or 0)
+        sprintDelta = trm_math.SafeLerp(dt * 8, sprintDelta, self:GetSprintDelta() > 0 and 1 or 0)
         sprintPosOffset:Set(self.VMOffset.Sprint.Pos)
         sprintAngOffset:Set(self.VMOffset.Sprint.Ang)
         sprintPosOffset:Mul(sprintDelta)

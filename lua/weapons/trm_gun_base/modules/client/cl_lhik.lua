@@ -194,3 +194,10 @@ function SWEP:GetCameraControler()
 end
 
 local BodyMatrix = Matrix()
+
+hook.Add("PreDrawPlayerHands", "TRMBase", function(hands, vm, ply, weapon, flags)
+    if !IsValid(weapon) or !weapon.IsTRMWeapon then return end
+
+      weapon:DoLHIK()
+      
+end)

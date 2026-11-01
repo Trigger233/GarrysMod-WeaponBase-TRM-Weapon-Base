@@ -33,3 +33,8 @@ function SWEP:DropMagazine()
     self:CallOnClient("DoDropMagzineEffect")
     return
 end
+
+
+function SWEP:effect(Name)
+    self:CallOnClient(Name) 
+end

@@ -230,3 +230,18 @@ function SWEP:UnloadMagzine(returnAmmo)
 	end
 end
 
+
+
+function SWEP:Reload()
+	if self:GetUnderbarrel() then
+		self:TrySetTask("UnderBarrel_Reload")
+		return true
+	end
+	self:TrySetTask("Reload")
+
+	if self:GetNextPrimaryFire() < CurTime() and self:Ammo1() > 0 then
+		self:TrySetTask("Inspect")
+	end
+
+	return true
+end

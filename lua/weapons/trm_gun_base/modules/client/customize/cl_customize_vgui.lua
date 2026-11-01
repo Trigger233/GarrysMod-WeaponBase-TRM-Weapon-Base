@@ -17,9 +17,10 @@ local ZERO_ANGLE = Angle(0, 0, 0)
 local FONT_FAMILY = "Hitmarker Text"
 local TRM_MARK = Material("trmbase/ui/trm_mark.png", "smooth")
 
-sound.Add({name = "VGUI.TRM_CUSTOMIZION.Select" , 
-    channel =  4 ,
-    level = 100 , 
+sound.Add({
+    name = "VGUI.TRM_CUSTOMIZION.Select",
+    channel = 4,
+    level = 100,
     sound = {
         "trmbase/vgui/customize/load1.wav",
         "trmbase/vgui/customize/load2.wav",
@@ -53,33 +54,7 @@ local sortAttachCategory = {
 
 
 
-surface.CreateFont("TRM_Mod_Title", {
-    font = FONT_FAMILY,
-    size = 30,
-    weight = 800,
-    antialias = true,
-})
 
-surface.CreateFont("TRM_Mod_Subtitle", {
-    font = FONT_FAMILY,
-    size = 21,
-    weight = 750,
-    antialias = true,
-})
-
-surface.CreateFont("TRM_Mod_Small", {
-    font = FONT_FAMILY,
-    size = 17,
-    weight = 700,
-    antialias = true,
-})
-
-surface.CreateFont("TRM_Mod_Tiny", {
-    font = FONT_FAMILY,
-    size = 14,
-    weight = 650,
-    antialias = true,
-})
 
 function SWEP:SendAttachmentToServer(slotKey, attID)
     if not (game.SinglePlayer() or CLIENT) then return end
@@ -342,15 +317,15 @@ local function WeaponRecoil(weapon)
     local fire = Avg({
         Avg(recoil.Vertical),
         Avg(recoil.Horizonal or recoil.Horizontal),
-        Num(recoil.Shake) + Num(recoil.KickDown),
+        Num(recoil.Shake),
     }) * Avg({ Num(recoil.AdsMultiplier, 1), 1 })
 
     local view = Avg({
         Avg(visual.Vertical),
         Avg(visual.Horizonal or visual.Horizontal),
         Avg(visual.Backward),
-        Avg({ -Num(visual.RecoverSpeed), -Num(visual.RecoverDelay) }),
-    }) * Avg({ Num(visual.AdsMulitplier, 1), 1 })
+        Avg({ -Num(visual.RecoverSpeed), -Num(visual.RecoverDelay or 0) }),
+    }) * Avg({ Num(visual.AdsMulitplier or 1, 1), 1 })
 
     return math.Round(fire + view, 3)
 end
@@ -1208,6 +1183,8 @@ function PANEL:ApplyPreviewModel(ent)
             local finalAng = Angle()
             trm_math.RotateAxis(finalAng, LocalAngle)
 
+            LocalPos, _ = WorldToLocal(LocalPos, Angle(0, 0, 0), Vector(0, 0, 0),
+                slotEntry.OffsetRotate or Angle(0, 0, 0))
             model:SetLocalPos(LocalPos)
             model:SetLocalAngles(finalAng)
         end
@@ -1611,7 +1588,7 @@ function PANEL:RunPresetAction(index, mode)
     if mode == "LOAD" then
         net.Start("TRMBase_LoadLoadout")
         net.WriteEntity(self.m_Weapon)
-        net.WriteUInt(index, 3)
+        net.WriteUInt(index, 8)
         net.SendToServer()
 
         self.m_PresetMessage = "Loaded Preset " .. tostring(index)

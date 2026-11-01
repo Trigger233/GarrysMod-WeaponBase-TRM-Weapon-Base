@@ -62,8 +62,7 @@ function SWEP:SetupViewmodel()
 
 
 
-        wpn.m_OverDraw = true
-
+        wpn.TRMViewModelOverDraw = true
         v:DrawModel(flag)
         ----------------
 
@@ -83,11 +82,10 @@ function SWEP:SetupViewmodel()
                     end
                 elseif tbl and tbl.Model and ! v:GetNoDraw() then
                     wpn:BuildCustomizedGun()
-                    
                 end
             end
         end
-        wpn.m_OverDraw = false
+        wpn.TRMViewModelOverDraw = false
     end
 end
 
@@ -114,7 +112,7 @@ function SWEP:CanEquip(slotIndex, attClass)
     local attData = BASE_TRM_ATTS[attClass]
     if not attData then return true end
 
-    if slot.Category and attData.Category and ! table.HasValue(slot.Category, attData.Category) then
+    if slot.Category and attData.Category and istable(slot.Category) and ! table.HasValue(slot.Category, attData.Category) then
         return false
     end
 
@@ -510,6 +508,7 @@ function SWEP:ApplyCustomizationModels()
             end
 
 
+            addPos, _ = WorldToLocal(addPos, Angle(0, 0, 0), Vector(0, 0, 0), WeaponData.OffsetRotate or Angle(0, 0, 0))
             if IsValid(model) then
                 model:SetLocalPos(addPos)
                 model:SetLocalAngles(finalAng)

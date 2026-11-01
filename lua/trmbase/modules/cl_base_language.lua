@@ -61,7 +61,9 @@ TRMBase.Language.cn = {
     ["TRMBase_InfiniteAmmo"]       = "无限备弹",
     ["TRMBase_AutoReload"]         = "自动换弹",
     ["TRMBase_FireInteruptReload"] = "开火打断换弹",
-    ["TRMBase_SprintReload"]       = "冲刺换弹",
+    ["TRMBase_SprintReload"]       = "冲刺打断换弹",
+    ["TRMBase_AllowSprint"]        = "启用冲刺",
+    ["TRMBase_ReloadSprint"]       = "启用冲刺",
     ["TRMBase_LoadAttOnPickup"]    = "拾取时加载配件（还没做好",
     ["TRMBase_Holster"]            = "在游泳/梯子收起武器",
     --bullet

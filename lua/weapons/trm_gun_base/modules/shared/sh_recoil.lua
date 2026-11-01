@@ -2,6 +2,17 @@ local cvar_VisualRecoil = CreateConVar("trmbase_sv_mod_visual_recoil", 1, FCVAR_
 local vrecoil = Angle(0, 0, 0)
 local progress = 0
 local backforward = 0
+require("trm_math")
+
+
+local GlobalConfig = {
+	BaseRecoilMultiplier = 0.5 ,
+}
+
+
+
+
+
 
 function SWEP:DoVisualRecoil()
 	--暂时搁置
@@ -52,25 +63,21 @@ end
 
 function SWEP:Recover()
 	if CLIENT then
-		
 		return
 	end
 	local owner = self:GetOwner()
 
 
 	local last = self:GetLastFireTime()
-	local Curtime = UnPredictedCurTime()
+	local Curtime = CurTime()
 	local delay = 60 / self.Primary.RPM -- second
 	local ft = FrameTime()
 	--VRecoil(Angle)
-	if Curtime - last > (self.VisualRecoil.RecoverDelay or 0) then
+	if Curtime - last > self.VisualRecoil.RecoverDelay then
 		local Vrecoil = self:GetVisualRecoil()
-		Vrecoil = LerpAngle(ft * self.VisualRecoil.RecoverSpeed * 10, Vrecoil, Angle(0, 0, 0))
+		Vrecoil = trm_math.SafeLerpAngle(ft * self.VisualRecoil.RecoverSpeed * 10, Vrecoil, trm_math.ZeroAngle)
 		self:SetVisualRecoil(Vrecoil)
-		--VRecoil(Vector)
 	end
-
-
 
 
 
@@ -86,7 +93,7 @@ function SWEP:Recover()
 	end
 
 	---Recoil Spray
-	local factor = math.Clamp(self.Recoil.Factor / (ft * 70), 0.01, 0.99)
+	local factor = math.Clamp(self.Recoil.Factor / (ft * 200), 0.01, 0.99)
 	self:SetRecoilUp(self:GetRecoilUp() * factor)
 	self:SetRecoilSide(self:GetRecoilSide() * factor)
 	--
@@ -102,7 +109,9 @@ function SWEP:DoRecoil()
 	if not IsFirstTimePredicted() then return end
 	local owner = self:GetOwner()
 	local Shake = math.Rand(-1, 1) * self.Recoil.Shake
-	math.randomseed(self.Recoil.Seed + self:GetSprayRound() + Shake)
+	if self.Recoil.Seed then
+		math.randomseed(self.Recoil.Seed + self:GetSprayRound() + Shake)
+	end
 	local stats    = self.Recoil
 	local aimdelta = self:GetAimDelta()
 	local AdsScale = Lerp(aimdelta, 1, stats.AdsMultiplier)
@@ -137,7 +146,7 @@ function SWEP:DoRecoil()
 end
 
 function SWEP:GetRecoilMultiplier()
-	local base = cvar_recoil:GetFloat() * 0.25
+	local base = cvar_recoil:GetFloat() * GlobalConfig.BaseRecoilMultiplier
 	if self:HasFlag("BipodDeployed") then
 		base = base * 0.1
 	end
@@ -170,7 +179,7 @@ function SWEP:GetCurrentSpread()
 	if not owner.GetWalkSpeed then return baseSpread end
 	local walkSpeed = owner:GetWalkSpeed()
 	-- 移动扩散
-	local vel = math.max( owner:GetVelocity():Length2DSqr() / 20000, 0)
+	local vel = math.max(owner:GetVelocity():Length2DSqr() / 20000, 0)
 	local moveMult = 1.0
 
 	moveMult = math.max(self.Spread.MoveMultiplier * vel or 1.0, 1)

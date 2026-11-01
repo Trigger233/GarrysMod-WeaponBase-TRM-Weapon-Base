@@ -1,5 +1,5 @@
 "UnlitGeneric"
 {
 	"$basetexture" "trmbase/common/black"
-	$nocull 0
+	$nocull 1
 }

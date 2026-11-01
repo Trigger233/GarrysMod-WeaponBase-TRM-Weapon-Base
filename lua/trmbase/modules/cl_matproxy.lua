@@ -130,3 +130,21 @@ matproxy.Add({
         mat:SetVector("$envmaptint", self.color * lerp(ent.m_Arc9EnvMapTint, self.min, self.max))
     end
 })
+
+
+local cvar_r = CreateClientConVar("trmbase_cl_custom_weaponcolor_r", 255, true, true, "helptext", 0, 255)
+local cvar_g = CreateClientConVar("trmbase_cl_custom_weaponcolor_g", 255, true, true, "helptext", 0, 255)
+local cvar_b = CreateClientConVar("trmbase_cl_custom_weaponcolor_b", 255, true, true, "helptext", 0, 255)
+local CustomColor = Vector()
+matproxy.Add({
+    name = "TRM_Custom_Color",
+
+    init =  function(self, mat, values)
+    end,
+
+    bind =  function(self, mat, ent)
+        CustomColor:SetUnpacked(cvar_r:GetInt() / 255, cvar_g:GetInt() / 255, cvar_b:GetInt() / 255)
+       --print(mat:GetVector("$color2"))
+        mat:SetVector("$color2", CustomColor)
+    end,
+})

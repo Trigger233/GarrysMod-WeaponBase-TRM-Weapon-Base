@@ -347,6 +347,7 @@ SWEP.VisualRecoil = {
     RecoverSpeed = 0.6,
     AdsMultiplier = 0.7,
     Seed = 534,
+    RecoverDelay = 0 ,
     -- Functional = {
     --     Increase = 0.2 ,
     --     Recover = 0.4,
@@ -601,13 +602,20 @@ end
 
 local cvar_attachment = GetConVar("trmbase_load_attachment_on_pickup")
 
-function SWEP:Equip()
+function SWEP:Equip(newowner)
     self:SetFirstDeployed(true)
     -- 服务端同步配件给客户端
-    if cvar_attachment:GetBool() then
+
+    timer.Simple(0 , function()
+            if cvar_attachment:GetBool() then
         self:LoadAttachmentPreset()
     end
     self:BuildCustomizedGun()
+
+    end)
+
+
+
 end
 
 function SWEP:OnDrop(owner)
@@ -619,7 +627,7 @@ function SWEP:OnDrop(owner)
         self:CleanupFlashLights()
     end
     return true
-end
+end 
 
 function SWEP:OnReloaded()
     self:OnAttachmentChanged(true)
@@ -634,7 +642,14 @@ function SWEP:OnRestore()
         end
         self:BuildCustomizedGun()
         self:SetNextRecoil(0)
+ 
+        if CLIENT then
+            self.vm_CameraAttachment_Bone = nil
+        end
+
     end)
+
+    self:SetVisualRecoil(angle_zero)
 end
 
 function SWEP:CanPrimaryAttack()
@@ -672,14 +687,7 @@ function SWEP:SecondaryAttack()
 
 end
 
-function SWEP:Reload()
-    if self:GetUnderbarrel() then
-        self:TrySetTask("UnderBarrel_Reload")
-        return true
-    end
-    self:TrySetTask("Reload")
-    return true
-end
+
 
 function SWEP:IsEmpty()
     return (self:Clip1() <= 0)
@@ -689,6 +697,37 @@ function SWEP:IsFull()
     return (self:Clip1() >= (self.Primary.ClipSize + self.Primary.ChamberSize))
 end
 
+function SWEP:OnPlayerJumped()
+    if !SERVER   then return end
+
+    local ang = self:GetVisualRecoil()
+    ang.p =  - 10 
+    self:SetVisualRecoil(ang)
+
+end
+
+hook.Add("OnPlayerJump", "TRMBase", function(player, speed)
+    local weapon = player:GetActiveWeapon()
+    if ! IsValid(weapon) or ! weapon.IsTRMWeapon then return end
+
+
+    weapon:OnPlayerJumped()
+end)
+
+
+hook.Add("OnPlayerHitGround", "TRMBase", function(player, inWater, onFloater, speed)
+    if inWater or CLIENT then return end
+    local wep = player:GetActiveWeapon()
+    if !IsValid(wep) or !wep.IsTRMWeapon then return end
+
+    local ang = wep:GetVisualRecoil()
+
+    ang.p =  10
+
+    wep:SetVisualRecoil(ang)
+
+end)
+
 SWEP.BasePoseParameter = {
     -- Sprint = {"sprint_loop" , "sprint_offset"} ,
     -- Empty = {"empty_offset"} ,
@@ -697,7 +736,7 @@ SWEP.BasePoseParameter = {
 
 
 
-
+SWEP.AttachmentAngleOffset = Angle(0, 0, 0)
 SWEP.Attachments = {
     -- ["#TrmBase_Sight"] = {
     --     Category = {"Ins2_ksg_optic","att_optic"},
@@ -740,7 +779,6 @@ if SERVER then
     end)
 end
 
-local cvar_reload_slowmove = CreateConVar("trmbase_sv_reload_slowdown", 0, { FCVAR_ARCHIVE }, "helptext", 0, 1)
 -- 在武器文件中
 function SWEP:GetPlayerMoveMult(ply)
     local aimDelta = self:GetAimDelta() or 0
@@ -757,9 +795,6 @@ function SWEP:GetPlayerMoveMult(ply)
         runMult = self.MoveSpeed.Run or 1.0
     end
 
-    if cvar_reload_slowmove:GetBool() and self:IsReloading() then
-        runMult = 0.7
-    end
 
     return runMult, walkMult
 end

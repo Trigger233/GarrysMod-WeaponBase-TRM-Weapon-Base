@@ -34,8 +34,8 @@ local WeaponMap = {
 }
 
 local SpecialAmmoMap = {
-    ["XBowBolt"] = "SniperPenetratedRound",
-    ["XBowBoltHL1"] = "SniperPenetratedRound",
+    ["XBowBolt"] = "357",
+    ["XBowBoltHL1"] = "357",
     ['357Round'] = '357',
 }
 
@@ -49,7 +49,7 @@ local AmmoBoxMap = {
     ['ammo_mp5clip'] = { "item_ammo_smg1", "item_ammo_ar2" },
     ['ammo_mp5grenades'] = "item_ammo_smg1_grenade",
     ['ammo_rpgclip'] = "item_rpg_round",
-    ['item_ammo_crossbow'] = "ent_trm_sniper_ammo",
+    -- ['item_ammo_crossbow'] = "ent_trm_sniper_ammo",
 }
 
 -- ========== 判断是否需要替换武器 ==========

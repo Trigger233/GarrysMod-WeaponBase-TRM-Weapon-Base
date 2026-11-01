@@ -42,6 +42,8 @@ function SWEP:GetAimTime()
     return self.Aim.Time / cvar_aimspeed:GetFloat()
 end
 
+local AimDelta = 0
+
 function SWEP:AimIn()
     if self.Aim.Type == "Linear" then
         self.m_AimDelta = math.Approach(self.m_AimDelta, 1, self:GetAimSpeed())
@@ -98,7 +100,7 @@ function SWEP:AimLogic()
         end
     end
 
-    if SERVER then
+    if SERVER and IsFirstTimePredicted() then
         self:SetAimDelta(self.m_AimDelta)
     end
 

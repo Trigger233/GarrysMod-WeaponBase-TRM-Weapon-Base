@@ -41,15 +41,18 @@ function ATTACHMENT:Render(wep, model)
     if wep:IsCarriedByLocalPlayer() then
         wep:RenderScopeSight(model, self)
     end
-
     -- 2. 渲染瞄准镜
 
     -- 红点模式：渲染红点准星
 
-    if hybridOn then
-        self:RenderReticle(wep, model, self.Sight)
-    else
-        model:DrawModel()
+    if hybridData then
+        self:RenderReticle(wep, model, hybridData)
+    end
+
+    model:DrawModel()
+
+    if ! hybridOn then
+        wep:DrawHoloSight(model, self, true, true)
     end
     -- 3. 绘制模型
 end

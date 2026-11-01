@@ -8,13 +8,12 @@ ENT.Spawnable = true
 ENT.AdminOnly = false
 
 -- 配置参数
-ENT.UseRange = 100  -- 使用距离
-ENT.CheckInterval = 0.5  -- 检测间隔（秒）
-ENT.Lifetime = 30  -- 生命周期（秒），30秒后自动消失
+ENT.UseRange = 100      -- 使用距离
+ENT.CheckInterval = 0.5 -- 检测间隔（秒）
+ENT.Lifetime = 30       -- 生命周期（秒），30秒后自动消失
 
 function ENT:Draw()
     self:DrawModel()
-
 end
 
 function ENT:Initialize()
@@ -23,21 +22,18 @@ function ENT:Initialize()
         self:SetMoveType(MOVETYPE_VPHYSICS)
         self:SetSolid(SOLID_VPHYSICS)
         self:PhysicsInit(SOLID_VPHYSICS)
-        self:SetCollisionGroup(COLLISION_GROUP_WEAPON)  -- 改为武器碰撞组，避免玩家碰撞
+        self:SetCollisionGroup(COLLISION_GROUP_WEAPON) -- 改为武器碰撞组，避免玩家碰撞
         self:DrawShadow(true)
-        
+
         local phys = self:GetPhysicsObject()
         if phys and phys:IsValid() then
             phys:Wake()
         end
         -- 启动距离检测定时器
         self:StartCheckingDistance()
-        
-        end
-        self:AddEffects(EF_ITEM_BLINK)
-
+    end
+    self:AddEffects(EF_ITEM_BLINK)
 end
-
 
 -- 启动距离检测
 function ENT:StartCheckingDistance()
@@ -50,14 +46,14 @@ end
 -- 检测范围内玩家
 function ENT:CheckPlayersInRange()
     local pos = self:GetPos()
-    
-    for _, ply in pairs(player.GetAll()) do
+
+    for _, ply in pairs(ply.GetAll()) do
         if IsValid(ply) and ply:Alive() then
             local dist = pos:Distance(ply:GetPos())
-            
+
             if dist <= self.UseRange then
                 self:GiveAmmoToPlayer(ply)
-                return  -- 只给第一个进入范围的玩家
+                return -- 只给第一个进入范围的玩家
             end
         end
     end
@@ -73,16 +69,14 @@ function ENT:GiveAmmoToPlayer(ply)
     for _, ammoType in pairs(Ammo) do
         local ammoId = game.GetAmmoID(ammoType)
         local reserve = ply:GetAmmoCount(ammoId)
-        if reserve >= game.GetAmmoMax(ammoId) then continue end  -- 已满则跳过
+        if reserve >= game.GetAmmoMax(ammoId) then continue end -- 已满则跳过
         _UseAble = true
-        ply:GiveAmmo(10, ammoType, false)  -- 每种弹药补充10发
+        ply:GiveAmmo(10, ammoType, false)                       -- 每种弹药补充10发
     end
     if _UseAble then
-        self:Remove()  -- 给完弹药后移除实体
+        self:Remove() -- 给完弹药后移除实体
     end
 end
-
-
 
 -- 移除原来的触碰和碰撞函数
 function ENT:PhysicsCollide(data, phys)

@@ -20,7 +20,7 @@ local emptyPose = 0
 local walkPose = 0
 local grip1Pose = 0
 local grip2Pose = 0
-
+local sp= game.SinglePlayer()
 function SWEP:LocoMotion(deltaTime)
     local vm = self:GetViewModel()
     if not IsValid(vm) then return end
@@ -30,7 +30,7 @@ function SWEP:LocoMotion(deltaTime)
     local speed = IsValid(owner) and owner:GetVelocity():Length2D() or 0
     local runSpeed = IsValid(owner) and owner:GetRunSpeed() or 1
     local walkSpeed = IsValid(owner) and owner:GetWalkSpeed() or 1
-    local dt =  RealFrameTime() * (game.SinglePlayer() and 3 or 6)
+    local dt =  RealFrameTime() *(sp and 6 or 15)
     -- Aim Pose
     if self.Sight and self.Sight.PoseParameter then
         aimPose = Lerp(dt * 10, aimPose, self:GetAimDelta())

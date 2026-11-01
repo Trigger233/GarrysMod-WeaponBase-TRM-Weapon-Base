@@ -9,7 +9,7 @@ local camera_delta   = 0
 
 local localAng       = Angle()
 
-local ShouldntFollow = { "Idle", "Fire", "Sprint" }
+local ShouldntFollow = { "Idle", "Iron_Fire", "Fire", "Sprint" }
 
 function SWEP:ShouldCameraFollow()
     local seqId = self:GetStatus()
@@ -19,7 +19,6 @@ function SWEP:ShouldCameraFollow()
             return false
         end
     end
-
 
     return true
 end
@@ -104,7 +103,7 @@ SWEP.m_ShakeDirection = 1
 local delta = 0
 function SWEP:CameraShakeAng(angles)
     local shakeScale = self.Recoil.Shake * Lerp(self:GetAimDelta(), 1, self.Recoil.AdsMultiplier or 0.25)
-    angles.r = angles.r + math.sin(SysTime() * 75) * self.m_ScreenShake * 2 * shakeScale * self.m_ShakeDirection
+    angles.r = angles.r + math.sin(self.m_ScreenShake * 20) * self.m_ScreenShake * 2 * shakeScale * self.m_ShakeDirection
     --  angles.p = angles.p + self.m_ScreenShake * -2 * shakeScale
 end
 
@@ -115,7 +114,7 @@ function SWEP:CameraShakeFOV(fov)
 end
 
 function SWEP:CameraShakeMotionBlur(h, v, f, r)
-    local _delta = self.m_ScreenShake * self.Recoil.Shake
+    local _delta = self.m_ScreenShake * 0.1
     f = f + 0.01 * _delta
     r = r + 0.01 * _delta
     return h, v, f, r
@@ -138,6 +137,7 @@ local Ang = Angle()
 ---@param vm Entity
 function SWEP:GetCameraAttachmentRaw(vm)
     local attId = trm_utils.LookupAttachmentCached(vm, self.CameraAttachment)
+    if !attId or attId < 0 then return end
     local AttData = vm:GetAttachment(attId)
     Ang:Set(vm:WorldToLocalAngles(AttData.Ang))
 
@@ -168,9 +168,12 @@ function SWEP:GetCameraAttachmentAngle(vm)
             return
         end
         self.vm_CameraAttachment_Bone = vm:GetBoneName(Att.Bone)
+        
     end
 
-    local matrix = vm:GetBoneMatrix(trm_utils.LookupBoneCached(vm, self.vm_CameraAttachment_Bone))
+    local boneId = trm_utils.LookupBoneCached(vm, self.vm_CameraAttachment_Bone)
+    if !boneId then return end
+    local matrix = vm:GetBoneMatrix(boneId)
 
     if (matrix != nil) then
         worldMatrix:SetTranslation(vm:GetPos())

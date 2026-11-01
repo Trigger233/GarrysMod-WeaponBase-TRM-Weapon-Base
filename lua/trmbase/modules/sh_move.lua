@@ -15,6 +15,7 @@ hook.Add("StartCommand", "TRMBase", function(ply, cmd)
     TRMBase:StartCommand(ply, cmd)
 end)
 
+local cvar_reload_slowmove = CreateConVar("trmbase_sv_reload_slowdown", 0, { FCVAR_ARCHIVE }, "helptext", 0, 1)
 
 function TRMBase:StartCommand(ply, cmd)
     if ! IsValid(ply) or cmd:CommandNumber() == 0 then return end
@@ -26,7 +27,9 @@ function TRMBase:StartCommand(ply, cmd)
         end
         return
     end
-    self:StartCmdRecoil(ply, cmd, wpn)
+    self:CameraRecoil(ply, cmd, wpn)
+
+    if wpn:IsReloading() and cvar_reload_slowmove:GetBool() then cmd:RemoveKey(IN_SPEED) end
 end
 
 local diff = 0
@@ -34,7 +37,7 @@ local Max = math.max
 local Min = math.min
 local Clamp = math.Clamp
 local Mass = 200
-function TRMBase:StartCmdRecoil(ply, cmd, wpn)
+function TRMBase:CameraRecoil(ply, cmd, wpn)
     if SERVER then return end
     local EyeAngle = cmd:GetViewAngles()
     local rft = RealFrameTime()
@@ -53,29 +56,31 @@ function TRMBase:StartCmdRecoil(ply, cmd, wpn)
 
     local dt = self.ClientRecoilTimeStep
 
-    local wpnUp = wpn:GetRecoilUp()
+    local wpnUp = wpn:GetRecoilUp() 
     local wpnSide = wpn:GetRecoilSide()
 
     self.RecoilProgress = Max(0, self.RecoilProgress - dt * 5)
     if CurTime() > self.ClientRecoilTime then
-        self.ClientRecoil:SetUnpacked(-wpnUp , wpnSide , 0)
+        local velo = self.ClientRecoil
+        self.ClientRecoil:SetUnpacked( - wpnUp, wpnSide, 0)
         self.ClientRecoilTime = CurTime() + dt
 
-        if math.abs(wpnUp) > 0.1 or math.abs(wpnSide) > 0.1 and self.RecoilProgress < 1 then
+        local recoilScale = math.abs(wpnUp) + math.abs(wpnSide)
+        if recoilScale > 0.001 and self.RecoilProgress < 1 then
             self.RecoilProgress = Clamp(self.RecoilProgress + dt * 25, 0, 1)
         end
     end
 
     self.RecoilRise = self.RecoilRise + self.ClientRecoil
-    local recoverScale = wpn.Recoil.Recover * 0.4 * (1 - self.RecoilProgress)
+    local recoverScale = wpn.Recoil.Recover * (1 - self.RecoilProgress) * 0.1 
     if (self.RecoilProgress < 1) then
-        self.RecoilReset[1] = math.Approach(0, self.RecoilRise[1], recoverScale)
+        self.RecoilReset[1] =   self.RecoilRise[1] *Clamp( recoverScale , 0 , 1)
         self.ClientRecoil:Sub(self.RecoilReset)
         self.RecoilRise = self.RecoilRise - self.RecoilReset
     end
 
 
-    EyeAngle:SetUnpacked(EyeAngle.p + self.ClientRecoil[1], EyeAngle.y, EyeAngle.r)
+    EyeAngle:SetUnpacked(EyeAngle.p + self.ClientRecoil[1], EyeAngle.y + self.ClientRecoil[2], EyeAngle.r)
     EyeAngle:Normalize()
 
     cmd:SetViewAngles(EyeAngle)

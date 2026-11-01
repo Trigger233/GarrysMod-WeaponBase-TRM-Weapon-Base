@@ -18,6 +18,8 @@ local rtmat_cheap = GetRenderTarget("trm_rtmat_cheap", ScrW(), ScrH())
 local rtmat_spare = GetRenderTarget("trm_rtmat_spare", rtsize, rtsize)
 local matName = "trm_rt_mat"
 
+local pallmaxColor = Color(164, 254, 233, 1)
+
 local RTMaterial = CreateMaterial(matName .. "_scene", "UnlitGeneric", {
     ["$basetexture"] = rtmat:GetName(),
     ["$vertexcolor"] = "1",
@@ -158,6 +160,7 @@ end
 
 local CacheScopeLenMaterialIndex = {}
 local function findLenMaterialIndex(model, att)
+    if !att.Scope.Lens then return end 
     local modelName = model:GetModel()
     if not modelName then return nil end
 
@@ -241,13 +244,13 @@ function SWEP:DoRTScope(model, att)
         nextRTUpdate = CurTime() + (1 / fps)
     end
 
-    local W ,H = ScrW() ,ScrH()
+    local W, H = ScrW(), ScrH()
     -------------------------------------
     render.PushRenderTarget(rtmat)
     render.Clear(0, 0, 0, 0, true, true)
     render.SetAmbientLight(0, 0, 0)
 
-    
+
 
     render.RenderView({
         x = 0,
@@ -257,7 +260,7 @@ function SWEP:DoRTScope(model, att)
         origin = origin,
         angles = angles,
         fov = zoomfov,
-        aspectratio = W / H  ,
+        aspectratio = W / H,
         drawviewmodel = false,
         viewmodelfov = zoomfov,
         drawhud = false,
@@ -278,12 +281,13 @@ function SWEP:DoRTScope(model, att)
 
     cam.Start2D()
 
-
+    
     surface.SetDrawColor(255, 255, 255, 255)
     surface.SetMaterial(RTMaterial)
     surface.DrawTexturedRect(0, 0, rtsize, rtsize)
-    self:DrawParallax(model, size, att)
 
+    -- surface.SetDrawColor(pallmaxColor)
+    -- surface.DrawRect(0, 0, rtsize, rtsize)
     cam.End2D()
 
     render.PopRenderTarget()
@@ -303,26 +307,7 @@ end
 
 local parallaxMat = Material("trmbase/common/parallax_mask", "smooth")
 local ParallaxColor = Color(255, 255, 255, 100)
-function SWEP:DrawParallax(model, rtSize, att)
-    if att.Scope.DisableParallax then return end
-    local centerX = rtSize / 2
-    local centerY = rtSize / 2
 
-
-
-
-
-    local _size = rtSize * (att.Scope.ParallaxSize or 1.4)
-    surface.SetMaterial(att.Scope.Parallax or parallaxMat)
-    surface.SetDrawColor(ParallaxColor)
-
-    surface.DrawTexturedRect(
-        centerX - _size / 2,
-        centerY - _size / 2,
-        _size,
-        _size
-    )
-end
 
 hook.Add("PreRender", "TRMBASE_ScopeUpdate", function()
     if cvar_cheapscope:GetBool() then return end
@@ -338,8 +323,9 @@ function SWEP:GetZoomRecoilFactor()
 end
 
 local function DrawCheapScopeMaterial(wep, w, h, size, Zoom)
+
     local offset = wep:GetClientVisualRecoil()
-    local factor = (1 - wep:GetZoomRecoilFactor()) * Zoom
+    local factor = Zoom * (1 - wep:GetZoomRecoilFactor())
 
     local x, y = 0, 0
     x = x + AngleToPixel(offset.y) * factor * (w / size)
@@ -369,16 +355,18 @@ function SWEP:DoCheapScope(model, att)
     if att.RTCode then
         att:RTCode(self, rtmat_cheap, size)
     end
-
-
     render.PushRenderTarget(rtmat_spare)
     render.Clear(0, 0, 0, 0, true, true)
 
     cam.Start2D()
     local w, h = ScrW(), ScrH()
-    DrawCheapScopeMaterial(self, w, h, size, self:GetScopeZoom())
 
-    self:DrawParallax(model, size, att)
+
+
+    DrawCheapScopeMaterial(self, w, h, size, self:GetScopeZoom())
+    -- surface.SetDrawColor(pallmaxColor)
+    -- surface.DrawRect(0, 0, w,h)
+
     cam.End2D()
 
 
@@ -455,10 +443,12 @@ local Pos, Ang
 function SWEP:DrawHoloSight(model, attTable, HideSightModel, IsScope)
     local screen = render.GetRenderTarget()
     if screen and screen:GetName() == "_rt_resolvedfullframedepth" then return end
-
-    if self:GetAimDelta() < 0.5 then
+    if self:GetAimDelta() < 0.1 then
         return
     end
+
+    if !self:IsCarriedByLocalPlayer() then return end
+
     if ! attTable.Sight then return end
     local ret = attTable.Sight
     local ret2 = attTable.Scope
@@ -495,7 +485,6 @@ function SWEP:DrawHoloSight(model, attTable, HideSightModel, IsScope)
     end
     render.SetStencilCompareFunction(STENCIL_LESSEQUAL)
 
-    cam.IgnoreZ(true)
     if IsScope then
         render.DrawTextureToScreen(rtmat_spare)
     end
@@ -529,15 +518,23 @@ function SWEP:DrawHoloSight(model, attTable, HideSightModel, IsScope)
     --size = size *( reticlePos:Distance(EyePos()) / 100)
 
     --debugoverlay.Sphere(reticlePos,4, 0, color_white, true)
-    render.SetMaterial(ret.Material)
+    local mat = IsScope and ret2.Material or ret.Material
+
+
+    render.SetMaterial(mat)
     render.DrawQuadEasy(reticlePos, Ang:Forward():GetNegated(), size, size, color, roll)
-    cam.IgnoreZ(false)
+
+
+
 
     render.ClearStencil()
 
 
 
     render.SetStencilEnable(false)
-
     render.SetBlend(1)
+    render.DepthRange(0, 0)
+
 end
+
+//Form Arccw

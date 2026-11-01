@@ -34,7 +34,7 @@ function SWEP:BulletCallback(attacker, tr, dmginfo)
             local dmg = dmginfo:GetDamage() * tbl.Penetration.ArmorPenetrateDamage
             ent:SetArmor(math.max(0, ent:Armor() - dmg))
         end
-        --print(ent,"Take Damage",dmginfo:GetDamage())
+       -- print(ent,"Take Damage",dmginfo:GetDamage())
     end
     self:BulletInterval(attacker, tr, dmginfo)
 end
